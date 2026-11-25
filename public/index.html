@@ -2,285 +2,371 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>UGLY CLICKER 2.0</title>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <style>
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      background: #090909;
-      color: #f5d77a;
-      font-family: Arial, sans-serif;
-      text-align: center;
-      padding: 20px;
-    }
-    h1 { color: #e8bd48; letter-spacing: 3px; }
-    .panel {
-      background: #171717;
-      border: 1px solid #92702a;
-      border-radius: 18px;
-      padding: 18px;
-      margin: 14px auto;
-      max-width: 430px;
-    }
-    .balance { font-size: 32px; font-weight: bold; }
-    .coin {
-      width: 180px;
-      height: 180px;
-      border-radius: 50%;
-      border: 5px solid #f5d77a;
-      background: radial-gradient(circle, #f5d77a, #9b6b0b);
-      color: #171000;
-      font-size: 54px;
-      font-weight: bold;
-      margin: 20px auto;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      box-shadow: 0 0 30px #a77a22;
-    }
-    button {
-      background: #d9ad3e;
-      color: #111;
-      border: 0;
-      border-radius: 10px;
-      padding: 13px 18px;
-      margin: 5px;
-      font-weight: bold;
-      cursor: pointer;
-    }
-    .muted { color: #aaa; }
-    .item {
-      border-bottom: 1px solid #444;
-      padding: 12px 0;
-    }
-    #status { color: #aaa; font-size: 13px; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UGLY CLICKER 2.0</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#090909;color:#f5d77a;font-family:Arial,sans-serif;text-align:center;padding:15px}
+h1{color:#e8bd48;letter-spacing:3px}
+h2{color:#e8bd48}
+.panel{background:#171717;border:1px solid #92702a;border-radius:18px;padding:18px;margin:14px auto;max-width:430px}
+.balance{font-size:32px;font-weight:bold}
+.coin{width:180px;height:180px;border-radius:50%;border:5px solid #f5d77a;background:radial-gradient(circle,#f5d77a,#9b6b0b);color:#171000;font-size:54px;font-weight:bold;margin:20px auto;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 0 30px #a77a22}
+button{background:#d9ad3e;color:#111;border:0;border-radius:10px;padding:13px 18px;margin:5px;font-weight:bold;cursor:pointer}
+button:disabled{opacity:.5}
+.muted{color:#aaa}
+.item{border-bottom:1px solid #444;padding:12px 0}
+#status{color:#aaa;font-size:13px}
+.page{display:none}
+.page.active{display:block}
+.nav button{min-width:125px}
+input{background:#090909;border:1px solid #92702a;border-radius:9px;padding:12px;color:#f5d77a;width:80%;max-width:220px;text-align:center;font-size:17px}
+.small{font-size:13px;color:#aaa}
+</style>
 </head>
 <body>
-  <h1>UGLY CLICKER</h1>
-  <p class="muted">GOLD EDITION</p>
 
-  <div class="panel">
-    <div class="muted">ТВОЙ БАЛАНС</div>
-    <div class="balance">$<span id="balance">0</span></div>
-    <p>Уровень: <span id="level">1</span></p>
-    <p>Опыт: <span id="experience">0</span></p>
-  </div>
+<h1>UGLY CLICKER</h1>
+<p class="muted">GOLD EDITION 2.0</p>
 
-  <div class="coin" id="coin">U</div>
-  <p>Нажимай, чтобы зарабатывать</p>
+<div class="nav">
+<button onclick="showPage('main')">UGLY CLICKER</button>
+<button onclick="showPage('gramm')">GRAMM CLICKER</button>
+</div>
 
-  <div class="panel">
-    <h2>Ежедневная награда</h2>
-    <button id="daily">Получить $1 000</button>
-  </div>
+<section id="main" class="page active">
+<div class="panel">
+<div class="muted">ТВОЙ БАЛАНС</div>
+<div class="balance">$<span id="balance">0</span></div>
+<p>Уровень: <span id="level">1</span></p>
+<p>Опыт: <span id="experience">0</span></p>
+<p>Множитель: x<span id="multiplier">1</span></p>
+</div>
 
-  <div class="panel">
-    <h2>Магазин</h2>
-    <div id="shop">Загрузка магазина...</div>
-  </div>
+<div class="coin" id="coin">U</div>
+<p>Нажимай, чтобы зарабатывать</p>
 
-  <div class="panel">
-    <h2>Мой инвентарь</h2>
-    <div id="inventory">Пока пусто</div>
-  </div>
+<div class="panel">
+<h2>Ежедневная награда</h2>
+<button id="daily">Получить $1 000</button>
+</div>
 
-  <div class="panel">
-    <h2>Топ игроков</h2>
-    <div id="leaderboard">Загрузка...</div>
-  </div>
+<div class="panel">
+<h2>Улучшения</h2>
+<div class="item">
+<b>Бонус x2</b>
+<p>Цена: $5 000</p>
+<p class="small">Действует 3 минуты</p>
+<p id="x2status">Не активен</p>
+<button onclick="buyUpgrade('x2')">Купить x2</button>
+</div>
+<div class="item">
+<b>Бонус x4</b>
+<p>Цена: $12 000</p>
+<p class="small">Действует 3 минуты</p>
+<p id="x4status">Не активен</p>
+<button onclick="buyUpgrade('x4')">Купить x4</button>
+</div>
+<div class="item">
+<b>Постоянное улучшение x10</b>
+<p>Цена: $2 000 000</p>
+<p class="small">Остаётся навсегда</p>
+<p id="x10status">Не куплено</p>
+<button id="x10button" onclick="buyUpgrade('x10')">Купить x10</button>
+</div>
+</div>
 
-  <p id="status">Подключение...</p>
+<div class="panel">
+<h2>Магазин</h2>
+<div id="shop">Загрузка магазина...</div>
+</div>
+
+<div class="panel">
+<h2>Мой инвентарь</h2>
+<div id="inventory">Пока пусто</div>
+</div>
+
+<div class="panel">
+<h2>Топ игроков</h2>
+<div id="leaderboard">Загрузка...</div>
+</div>
+</section>
+
+<section id="gramm" class="page">
+<div class="panel">
+<h2>GRAMM CLICKER</h2>
+<div class="muted">ТВОЙ БАЛАНС GRAMM</div>
+<div class="balance"><span id="grammBalance">0</span> GRAMM</div>
+<p>Множитель: x<span id="grammMultiplier">1</span></p>
+<div class="coin" id="grammCoin">G</div>
+<p>Нажимай, чтобы зарабатывать GRAMM</p>
+</div>
+
+<div class="panel">
+<h2>Обмен валюты</h2>
+<p>Курс: 1 GRAMM = $10</p>
+<input id="exchangeAmount" type="number" min="1" step="1" placeholder="Количество">
+<div>
+<button onclick="exchange('toGramm')">Доллары → GRAMM</button>
+</div>
+<div>
+<button onclick="exchange('toDollars')">GRAMM → Доллары</button>
+</div>
+<p class="small">Обмен действует только внутри игры.</p>
+</div>
+</section>
+
+<p id="status">Подключение...</p>
 
 <script>
-const tg = window.Telegram?.WebApp;
+const tg=window.Telegram?.WebApp;
 tg?.ready();
 tg?.expand();
 
-const initData = tg?.initData || "";
+const initData=tg?.initData||"";
 
-const state = {
-  balance: 0,
-  experience: 0,
-  level: 1,
-  inventory: []
+const state={
+ balance:0,
+ grammBalance:0,
+ experience:0,
+ level:1,
+ inventory:[],
+ bonuses:{
+  x2Active:false,
+  x2Seconds:0,
+  x4Active:false,
+  x4Seconds:0,
+  x10Unlocked:false
+ },
+ multiplier:1
 };
 
-const money = n => Number(n).toLocaleString("ru-RU");
+const money=n=>Number(n||0).toLocaleString("ru-RU");
 
-async function api(path, options = {}) {
-  const response = await fetch(path, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      "x-telegram-init-data": initData,
-      ...(options.headers || {})
-    }
-  });
+function escapeHTML(value){
+ return String(value??"").replace(/[&<>"']/g,char=>({
+  "&":"&amp;",
+  "<":"&lt;",
+  ">":"&gt;",
+  '"':"&quot;",
+  "'":"&#39;"
+ }[char]));
+}
 
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.error || "Ошибка сервера");
+async function api(path,options={}){
+ const response=await fetch(path,{
+  ...options,
+  headers:{
+   "Content-Type":"application/json",
+   "x-telegram-init-data":initData,
+   ...(options.headers||{})
   }
-
-  return data;
+ });
+ const data=await response.json();
+ if(!response.ok) throw new Error(data.error||"Ошибка сервера");
+ return data;
 }
 
-function render() {
-  document.getElementById("balance").textContent =
-    money(state.balance);
-  document.getElementById("experience").textContent =
-    money(state.experience);
-  document.getElementById("level").textContent =
-    state.level;
-
-  document.getElementById("inventory").innerHTML =
-    state.inventory.length
-      ? state.inventory.map(item => `
-        <div class="item">
-          ${item.item_name}<br>
-          <span class="muted">Покупка: $${money(item.purchase_price)}</span><br>
-          <button onclick="sellItem(${Number(item.id)})">
-            Продать за $${money(Math.floor(Number(item.purchase_price) * 0.7))}
-          </button>
-        </div>
-      `).join("")
-      : "Пока пусто";
+function showPage(page){
+ document.querySelectorAll(".page").forEach(el=>el.classList.remove("active"));
+ document.getElementById(page).classList.add("active");
 }
 
-async function loadState() {
-  const data = await api("/api/state");
-  state.balance = data.balance;
-  state.experience = data.experience;
-  state.level = data.level;
-  state.inventory = data.inventory;
+function render(){
+ document.getElementById("balance").textContent=money(state.balance);
+ document.getElementById("grammBalance").textContent=money(state.grammBalance);
+ document.getElementById("experience").textContent=money(state.experience);
+ document.getElementById("level").textContent=state.level;
+ document.getElementById("multiplier").textContent=state.multiplier;
+ document.getElementById("grammMultiplier").textContent=state.multiplier;
+
+ const b=state.bonuses;
+ document.getElementById("x2status").textContent=
+  b.x2Active?"Активен: "+b.x2Seconds+" сек.":"Не активен";
+ document.getElementById("x4status").textContent=
+  b.x4Active?"Активен: "+b.x4Seconds+" сек.":"Не активен";
+ document.getElementById("x10status").textContent=
+  b.x10Unlocked?"Куплено навсегда":"Не куплено";
+ document.getElementById("x10button").disabled=b.x10Unlocked;
+
+ document.getElementById("inventory").innerHTML=
+  state.inventory.length
+  ?state.inventory.map(item=>`
+   <div class="item">
+    ${escapeHTML(item.item_name)}<br>
+    <span class="muted">Покупка: $${money(item.purchase_price)}</span><br>
+    <button onclick="sellItem(${Number(item.id)})">
+     Продать за $${money(Math.floor(Number(item.purchase_price)*0.7))}
+    </button>
+   </div>
+  `).join("")
+  :"Пока пусто";
+}
+
+async function loadState(){
+ const data=await api("/api/state");
+ state.balance=data.balance;
+ state.grammBalance=data.grammBalance;
+ state.experience=data.experience;
+ state.level=data.level;
+ state.inventory=data.inventory;
+ state.bonuses=data.bonuses;
+ state.multiplier=data.multiplier;
+ render();
+}
+
+async function clickCoin(){
+ try{
+  const data=await api("/api/click",{method:"POST"});
+  state.balance=data.balance;
+  state.experience=data.experience;
+  state.level=data.level;
+  state.multiplier=data.multiplier;
+  await loadState();
+ }catch(error){showError(error)}
+}
+
+async function clickGramm(){
+ try{
+  const data=await api("/api/gramm/click",{method:"POST"});
+  state.grammBalance=data.grammBalance;
+  state.multiplier=data.multiplier;
   render();
+ }catch(error){showError(error)}
 }
 
-async function clickCoin() {
-  try {
-    const data = await api("/api/click", { method: "POST" });
-    state.balance = data.balance;
-    state.experience = data.experience;
-    state.level = data.level;
-    render();
-  } catch (error) {
-    showError(error);
+async function buyUpgrade(type){
+ try{
+  await api("/api/upgrades/buy",{
+   method:"POST",
+   body:JSON.stringify({type})
+  });
+  await loadState();
+  alert("Улучшение успешно куплено!");
+ }catch(error){showError(error)}
+}
+
+async function exchange(direction){
+ try{
+  const amount=Number(document.getElementById("exchangeAmount").value);
+  if(!Number.isSafeInteger(amount)||amount<=0){
+   throw new Error("Введи целое положительное число");
   }
+  await api("/api/gramm/exchange",{
+   method:"POST",
+   body:JSON.stringify({direction,amount})
+  });
+  document.getElementById("exchangeAmount").value="";
+  await loadState();
+  alert("Обмен успешно выполнен!");
+ }catch(error){showError(error)}
 }
 
-async function loadShop() {
-  const catalog = await api("/api/catalog");
-  const names = {
-    house: "Дома",
-    car: "Машины",
-    watch: "Часы",
-    painting: "Картины",
-    yacht: "Яхты",
-    island: "Острова"
-  };
+async function loadShop(){
+ const catalog=await api("/api/catalog");
+ const names={
+  house:"Дома",
+  car:"Машины",
+  watch:"Часы",
+  painting:"Картины",
+  yacht:"Яхты",
+  island:"Острова"
+ };
 
-  document.getElementById("shop").innerHTML =
-    Object.entries(catalog).map(([category, items]) => `
-      <h3>${names[category] || category}</h3>
-      ${items.map((item, index) => `
-        <div class="item">
-          ${item.name}<br>
-          <b>$${money(item.price)}</b><br>
-          <button onclick="buyItem('${category}', ${index})">
-            Купить
-          </button>
-        </div>
-      `).join("")}
-    `).join("");
+ document.getElementById("shop").innerHTML=
+  Object.entries(catalog).map(([category,items])=>`
+   <h3>${names[category]||escapeHTML(category)}</h3>
+   ${items.map((item,index)=>`
+    <div class="item">
+     ${escapeHTML(item.name)}<br>
+     <b>$${money(item.price)}</b><br>
+     <button onclick="buyItem('${category}',${index})">Купить</button>
+    </div>
+   `).join("")}
+  `).join("");
 }
 
-async function buyItem(category, index) {
-  try {
-    await api("/api/shop/buy", {
-      method: "POST",
-      body: JSON.stringify({ category, index })
-    });
-    await loadState();
-    alert("Покупка успешна!");
-  } catch (error) {
-    showError(error);
-  }
+async function buyItem(category,index){
+ try{
+  await api("/api/shop/buy",{
+   method:"POST",
+   body:JSON.stringify({category,index})
+  });
+  await loadState();
+  alert("Покупка успешна!");
+ }catch(error){showError(error)}
 }
 
-async function sellItem(itemId) {
-  try {
-    await api("/api/shop/sell", {
-      method: "POST",
-      body: JSON.stringify({ itemId })
-    });
-    await loadState();
-    alert("Предмет продан!");
-  } catch (error) {
-    showError(error);
-  }
+async function sellItem(itemId){
+ try{
+  await api("/api/shop/sell",{
+   method:"POST",
+   body:JSON.stringify({itemId})
+  });
+  await loadState();
+  alert("Предмет продан!");
+ }catch(error){showError(error)}
 }
 
-async function dailyReward() {
-  try {
-    const data = await api("/api/daily", { method: "POST" });
-    state.balance = data.balance;
-    render();
-    alert("Ты получил $1 000!");
-  } catch (error) {
-    showError(error);
-  }
+async function dailyReward(){
+ try{
+  const data=await api("/api/daily",{method:"POST"});
+  state.balance=data.balance;
+  render();
+  alert("Ты получил $1 000!");
+ }catch(error){showError(error)}
 }
 
-async function loadLeaderboard() {
-  try {
-    const players = await api("/api/leaderboard");
-    document.getElementById("leaderboard").innerHTML =
-      players.length
-        ? players.map((p, i) => `
-          <div class="item">
-            ${i + 1}. ${p.username || "Игрок"} —
-            $${money(p.balance)}
-          </div>
-        `).join("")
-        : "Пока нет игроков";
-  } catch (error) {
-    document.getElementById("leaderboard").textContent =
-      error.message;
-  }
+async function loadLeaderboard(){
+ try{
+  const players=await api("/api/leaderboard");
+  document.getElementById("leaderboard").innerHTML=
+   players.length
+   ?players.map((p,i)=>`
+    <div class="item">
+     ${i+1}. ${escapeHTML(p.username||"Игрок")} —
+     $${money(p.balance)}
+    </div>
+   `).join("")
+   :"Пока нет игроков";
+ }catch(error){
+  document.getElementById("leaderboard").textContent=error.message;
+ }
 }
 
-function showError(error) {
-  document.getElementById("status").textContent =
-    error.message;
+function showError(error){
+ document.getElementById("status").textContent=error.message;
 }
 
-document.getElementById("coin").addEventListener("click", clickCoin);
-document.getElementById("daily").addEventListener("click", dailyReward);
+document.getElementById("coin").addEventListener("click",clickCoin);
+document.getElementById("grammCoin").addEventListener("click",clickGramm);
+document.getElementById("daily").addEventListener("click",dailyReward);
 
-async function start() {
-  try {
-    if (!initData) {
-      throw new Error("Открой игру через Telegram-бота");
-    }
+async function start(){
+ try{
+  if(!initData) throw new Error("Открой игру через Telegram-бота");
 
-    await loadState();
-    await loadShop();
-    await loadLeaderboard();
+  await loadState();
+  await loadShop();
+  await loadLeaderboard();
 
-    document.getElementById("status").textContent =
-      "UGLY CLICKER подключён";
-  } catch (error) {
-    showError(error);
-  }
+  document.getElementById("status").textContent="UGLY CLICKER подключён";
+ }catch(error){showError(error)}
 }
 
 start();
+
+setInterval(()=>{
+ if(state.bonuses.x2Seconds>0){
+  state.bonuses.x2Seconds--;
+ }
+ if(state.bonuses.x4Seconds>0){
+  state.bonuses.x4Seconds--;
+ }
+ render();
+},1000);
 </script>
 </body>
 </html>
