@@ -11,6 +11,7 @@
 body{margin:0;background:#090909;color:#f5d77a;font-family:Arial,sans-serif;text-align:center;padding:15px}
 h1{color:#e8bd48;letter-spacing:3px}
 h2{color:#e8bd48}
+h3{color:#e8bd48}
 .panel{background:#171717;border:1px solid #92702a;border-radius:18px;padding:18px;margin:14px auto;max-width:430px}
 .balance{font-size:32px;font-weight:bold}
 .coin{width:180px;height:180px;border-radius:50%;border:5px solid #f5d77a;background:radial-gradient(circle,#f5d77a,#9b6b0b);color:#171000;font-size:54px;font-weight:bold;margin:20px auto;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 0 30px #a77a22}
@@ -24,6 +25,8 @@ button:disabled{opacity:.5}
 .nav button{min-width:125px}
 input{background:#090909;border:1px solid #92702a;border-radius:9px;padding:12px;color:#f5d77a;width:80%;max-width:220px;text-align:center;font-size:17px}
 .small{font-size:13px;color:#aaa}
+.business-number{font-size:25px;font-weight:bold;color:#f5d77a}
+.business-card{border:1px solid #51401e;border-radius:12px;padding:12px;margin:12px 0;background:#111}
 </style>
 </head>
 <body>
@@ -34,6 +37,7 @@ input{background:#090909;border:1px solid #92702a;border-radius:9px;padding:12px
 <div class="nav">
 <button onclick="showPage('main')">UGLY CLICKER</button>
 <button onclick="showPage('gramm')">GRAMM CLICKER</button>
+<button onclick="showPage('businesses')">БИЗНЕСЫ</button>
 </div>
 
 <section id="main" class="page active">
@@ -118,6 +122,41 @@ input{background:#090909;border:1px solid #92702a;border-radius:9px;padding:12px
 </div>
 </section>
 
+<section id="businesses" class="page">
+<div class="panel">
+<h2>МОИ БИЗНЕСЫ</h2>
+<p class="muted">ОТДЕЛЬНЫЙ БИЗНЕС-СЧЁТ</p>
+<div class="business-number">$<span id="businessBalance">0</span></div>
+<p>Пассивный доход зачисляется автоматически 24/7</p>
+<p>Общий доход в час:</p>
+<div class="business-number">$<span id="businessIncome">0</span></div>
+</div>
+
+<div class="panel">
+<h2>ВЫВОД ПРИБЫЛИ</h2>
+<p>Перевод с бизнес-счёта</p>
+<input id="withdrawAmount" type="number" min="1" step="1" placeholder="Сумма в долларах">
+<p class="small">Для перевода в GRAMM сумма должна делиться на 10</p>
+<div>
+<button onclick="withdrawBusiness('usd')">На долларовый баланс</button>
+</div>
+<div>
+<button onclick="withdrawBusiness('gramm')">Обменять на GRAMM</button>
+</div>
+<p class="small">Курс: 1 GRAMM = $10</p>
+</div>
+
+<div class="panel">
+<h2>МОИ ПРЕДПРИЯТИЯ</h2>
+<div id="ownedBusinesses">Загрузка...</div>
+</div>
+
+<div class="panel">
+<h2>КАТАЛОГ БИЗНЕСОВ</h2>
+<div id="businessCatalog">Загрузка бизнеса...</div>
+</div>
+</section>
+
 <p id="status">Подключение...</p>
 
 <script>
@@ -130,6 +169,9 @@ const initData=tg?.initData||"";
 const state={
  balance:0,
  grammBalance:0,
+ businessBalance:0,
+ businessIncomePerHour:0,
+ businesses:[],
  experience:0,
  level:1,
  inventory:[],
@@ -142,6 +184,8 @@ const state={
  },
  multiplier:1
 };
+
+let businessCatalog=[];
 
 const money=n=>Number(n||0).toLocaleString("ru-RU");
 
@@ -177,6 +221,8 @@ function showPage(page){
 function render(){
  document.getElementById("balance").textContent=money(state.balance);
  document.getElementById("grammBalance").textContent=money(state.grammBalance);
+ document.getElementById("businessBalance").textContent=money(state.businessBalance);
+ document.getElementById("businessIncome").textContent=money(state.businessIncomePerHour);
  document.getElementById("experience").textContent=money(state.experience);
  document.getElementById("level").textContent=state.level;
  document.getElementById("multiplier").textContent=state.multiplier;
@@ -203,12 +249,58 @@ function render(){
    </div>
   `).join("")
   :"Пока пусто";
+
+ renderOwnedBusinesses();
+}
+
+function renderOwnedBusinesses(){
+ const container=document.getElementById("ownedBusinesses");
+
+ if(!state.businesses.length){
+  container.innerHTML='<p class="muted">У тебя пока нет предприятий</p>';
+  return;
+ }
+
+ container.innerHTML=state.businesses.map(item=>`
+  <div class="business-card">
+   <b>${escapeHTML(item.business_name)}</b>
+   <p>Цена покупки: $${money(item.purchase_price)}</p>
+   <p>Доход: $${money(item.hourly_income)} / час</p>
+   <p class="small">Куплен: ${new Date(item.purchased_at).toLocaleDateString("ru-RU")}</p>
+   <button onclick="sellBusiness('${escapeHTML(item.id)}')">
+    Продать за $${money(Math.floor(Number(item.purchase_price)*0.7))}
+   </button>
+  </div>
+ `).join("");
+}
+
+function renderBusinessCatalog(){
+ const container=document.getElementById("businessCatalog");
+
+ if(!businessCatalog.length){
+  container.textContent="Каталог пока недоступен";
+  return;
+ }
+
+ container.innerHTML=businessCatalog.map(item=>`
+  <div class="business-card">
+   <b>${escapeHTML(item.name)}</b>
+   <p>Цена: $${money(item.price)}</p>
+   <p>Пассивный доход: $${money(item.income)} / час</p>
+   <button onclick="buyBusiness('${escapeHTML(item.key)}')">
+    Купить бизнес
+   </button>
+  </div>
+ `).join("");
 }
 
 async function loadState(){
  const data=await api("/api/state");
  state.balance=data.balance;
  state.grammBalance=data.grammBalance;
+ state.businessBalance=data.businessBalance||0;
+ state.businessIncomePerHour=data.businessIncomePerHour||0;
+ state.businesses=data.businesses||[];
  state.experience=data.experience;
  state.level=data.level;
  state.inventory=data.inventory;
@@ -336,8 +428,70 @@ async function loadLeaderboard(){
  }
 }
 
+// Загрузка каталога бизнесов
+async function loadBusinessCatalog(){
+ businessCatalog=await api("/api/businesses/catalog");
+ renderBusinessCatalog();
+}
+
+// Покупка бизнеса
+async function buyBusiness(key){
+ try{
+  await api("/api/businesses/buy",{
+   method:"POST",
+   body:JSON.stringify({key})
+  });
+  await loadState();
+  alert("Бизнес успешно куплен!");
+ }catch(error){showError(error)}
+}
+
+// Продажа бизнеса
+async function sellBusiness(businessId){
+ if(!confirm("Продать этот бизнес за 70% первоначальной цены?")) return;
+
+ try{
+  const data=await api("/api/businesses/sell",{
+   method:"POST",
+   body:JSON.stringify({businessId})
+  });
+  await loadState();
+  alert("Бизнес продан! Получено: $"+money(data.refund));
+ }catch(error){showError(error)}
+}
+
+// Вывод денег с бизнес-счёта
+async function withdrawBusiness(destination){
+ try{
+  const amount=Number(document.getElementById("withdrawAmount").value);
+
+  if(!Number.isSafeInteger(amount)||amount<=0){
+   throw new Error("Введи целую положительную сумму в долларах");
+  }
+
+  if(destination==="gramm"&&amount%10!==0){
+   throw new Error("Для обмена на GRAMM сумма должна делиться на 10");
+  }
+
+  const data=await api("/api/businesses/withdraw",{
+   method:"POST",
+   body:JSON.stringify({destination,amount})
+  });
+
+  document.getElementById("withdrawAmount").value="";
+  await loadState();
+
+  if(destination==="gramm"){
+   alert("Перевод выполнен! Получено "+money(amount/10)+" GRAMM");
+  }else{
+   alert("Деньги переведены на основной баланс!");
+  }
+ }catch(error){showError(error)}
+}
+
 function showError(error){
  document.getElementById("status").textContent=error.message;
+ alert(error.message);
 }
 
 document.getElementById("coin").addEventListener("click",clickCoin);
@@ -351,6 +505,7 @@ async function start(){
   await loadState();
   await loadShop();
   await loadLeaderboard();
+  await loadBusinessCatalog();
 
   document.getElementById("status").textContent="UGLY CLICKER подключён";
  }catch(error){showError(error)}
@@ -370,3 +525,4 @@ setInterval(()=>{
 </script>
 </body>
 </html>
+
