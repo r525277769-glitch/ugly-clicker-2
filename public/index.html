@@ -1,0 +1,286 @@
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>UGLY CLICKER 2.0</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: #090909;
+      color: #f5d77a;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 20px;
+    }
+    h1 { color: #e8bd48; letter-spacing: 3px; }
+    .panel {
+      background: #171717;
+      border: 1px solid #92702a;
+      border-radius: 18px;
+      padding: 18px;
+      margin: 14px auto;
+      max-width: 430px;
+    }
+    .balance { font-size: 32px; font-weight: bold; }
+    .coin {
+      width: 180px;
+      height: 180px;
+      border-radius: 50%;
+      border: 5px solid #f5d77a;
+      background: radial-gradient(circle, #f5d77a, #9b6b0b);
+      color: #171000;
+      font-size: 54px;
+      font-weight: bold;
+      margin: 20px auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 0 30px #a77a22;
+    }
+    button {
+      background: #d9ad3e;
+      color: #111;
+      border: 0;
+      border-radius: 10px;
+      padding: 13px 18px;
+      margin: 5px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .muted { color: #aaa; }
+    .item {
+      border-bottom: 1px solid #444;
+      padding: 12px 0;
+    }
+    #status { color: #aaa; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <h1>UGLY CLICKER</h1>
+  <p class="muted">GOLD EDITION</p>
+
+  <div class="panel">
+    <div class="muted">ТВОЙ БАЛАНС</div>
+    <div class="balance">$<span id="balance">0</span></div>
+    <p>Уровень: <span id="level">1</span></p>
+    <p>Опыт: <span id="experience">0</span></p>
+  </div>
+
+  <div class="coin" id="coin">U</div>
+  <p>Нажимай, чтобы зарабатывать</p>
+
+  <div class="panel">
+    <h2>Ежедневная награда</h2>
+    <button id="daily">Получить $1 000</button>
+  </div>
+
+  <div class="panel">
+    <h2>Магазин</h2>
+    <div id="shop">Загрузка магазина...</div>
+  </div>
+
+  <div class="panel">
+    <h2>Мой инвентарь</h2>
+    <div id="inventory">Пока пусто</div>
+  </div>
+
+  <div class="panel">
+    <h2>Топ игроков</h2>
+    <div id="leaderboard">Загрузка...</div>
+  </div>
+
+  <p id="status">Подключение...</p>
+
+<script>
+const tg = window.Telegram?.WebApp;
+tg?.ready();
+tg?.expand();
+
+const initData = tg?.initData || "";
+
+const state = {
+  balance: 0,
+  experience: 0,
+  level: 1,
+  inventory: []
+};
+
+const money = n => Number(n).toLocaleString("ru-RU");
+
+async function api(path, options = {}) {
+  const response = await fetch(path, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      "x-telegram-init-data": initData,
+      ...(options.headers || {})
+    }
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.error || "Ошибка сервера");
+  }
+
+  return data;
+}
+
+function render() {
+  document.getElementById("balance").textContent =
+    money(state.balance);
+  document.getElementById("experience").textContent =
+    money(state.experience);
+  document.getElementById("level").textContent =
+    state.level;
+
+  document.getElementById("inventory").innerHTML =
+    state.inventory.length
+      ? state.inventory.map(item => `
+        <div class="item">
+          ${item.item_name}<br>
+          <span class="muted">Покупка: $${money(item.purchase_price)}</span><br>
+          <button onclick="sellItem(${Number(item.id)})">
+            Продать за $${money(Math.floor(Number(item.purchase_price) * 0.7))}
+          </button>
+        </div>
+      `).join("")
+      : "Пока пусто";
+}
+
+async function loadState() {
+  const data = await api("/api/state");
+  state.balance = data.balance;
+  state.experience = data.experience;
+  state.level = data.level;
+  state.inventory = data.inventory;
+  render();
+}
+
+async function clickCoin() {
+  try {
+    const data = await api("/api/click", { method: "POST" });
+    state.balance = data.balance;
+    state.experience = data.experience;
+    state.level = data.level;
+    render();
+  } catch (error) {
+    showError(error);
+  }
+}
+
+async function loadShop() {
+  const catalog = await api("/api/catalog");
+  const names = {
+    house: "Дома",
+    car: "Машины",
+    watch: "Часы",
+    painting: "Картины",
+    yacht: "Яхты",
+    island: "Острова"
+  };
+
+  document.getElementById("shop").innerHTML =
+    Object.entries(catalog).map(([category, items]) => `
+      <h3>${names[category] || category}</h3>
+      ${items.map((item, index) => `
+        <div class="item">
+          ${item.name}<br>
+          <b>$${money(item.price)}</b><br>
+          <button onclick="buyItem('${category}', ${index})">
+            Купить
+          </button>
+        </div>
+      `).join("")}
+    `).join("");
+}
+
+async function buyItem(category, index) {
+  try {
+    await api("/api/shop/buy", {
+      method: "POST",
+      body: JSON.stringify({ category, index })
+    });
+    await loadState();
+    alert("Покупка успешна!");
+  } catch (error) {
+    showError(error);
+  }
+}
+
+async function sellItem(itemId) {
+  try {
+    await api("/api/shop/sell", {
+      method: "POST",
+      body: JSON.stringify({ itemId })
+    });
+    await loadState();
+    alert("Предмет продан!");
+  } catch (error) {
+    showError(error);
+  }
+}
+
+async function dailyReward() {
+  try {
+    const data = await api("/api/daily", { method: "POST" });
+    state.balance = data.balance;
+    render();
+    alert("Ты получил $1 000!");
+  } catch (error) {
+    showError(error);
+  }
+}
+
+async function loadLeaderboard() {
+  try {
+    const players = await api("/api/leaderboard");
+    document.getElementById("leaderboard").innerHTML =
+      players.length
+        ? players.map((p, i) => `
+          <div class="item">
+            ${i + 1}. ${p.username || "Игрок"} —
+            $${money(p.balance)}
+          </div>
+        `).join("")
+        : "Пока нет игроков";
+  } catch (error) {
+    document.getElementById("leaderboard").textContent =
+      error.message;
+  }
+}
+
+function showError(error) {
+  document.getElementById("status").textContent =
+    error.message;
+}
+
+document.getElementById("coin").addEventListener("click", clickCoin);
+document.getElementById("daily").addEventListener("click", dailyReward);
+
+async function start() {
+  try {
+    if (!initData) {
+      throw new Error("Открой игру через Telegram-бота");
+    }
+
+    await loadState();
+    await loadShop();
+    await loadLeaderboard();
+
+    document.getElementById("status").textContent =
+      "UGLY CLICKER подключён";
+  } catch (error) {
+    showError(error);
+  }
+}
+
+start();
+</script>
+</body>
+</html>
