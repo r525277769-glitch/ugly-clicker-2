@@ -54,6 +54,19 @@ const catalog = {
   ]
 };
 
+// Новый каталог бизнесов
+const businessCatalog = [
+  { key: "kiosk", name: "Ларёк", price: 1000, income: 10 },
+  { key: "cafe", name: "Кафе", price: 15000, income: 150 },
+  { key: "hookah", name: "Кальянка", price: 50000, income: 300 },
+  { key: "tech_store", name: "Магазин техники", price: 100000, income: 1000 },
+  { key: "wb_network", name: "Сеть пунктов выдачи WB", price: 400000, income: 5000 },
+  { key: "basement_club", name: "Стрипуха в подвале", price: 700000, income: 10000 },
+  { key: "gta_club", name: "Стрипуха из GTA 6", price: 1000000, income: 20000 },
+  { key: "tiktok_company", name: "Компания TikTok", price: 5000000, income: 50000 },
+  { key: "ferrari_sales", name: "Продажа транспорта Ferrari", price: 12000000, income: 150000 }
+];
+
 const upgrades = {
   x2: { price: 5000, multiplier: 2, duration: 180000 },
   x4: { price: 12000, multiplier: 4, duration: 180000 },
@@ -112,6 +125,25 @@ async function initDatabase() {
 
     ALTER TABLE players
       ADD COLUMN IF NOT EXISTS x10_unlocked BOOLEAN NOT NULL DEFAULT FALSE;
+
+    -- Отдельный счёт бизнеса
+    ALTER TABLE players
+      ADD COLUMN IF NOT EXISTS business_balance BIGINT NOT NULL DEFAULT 0;
+
+    -- Купленные предприятия игроков
+    CREATE TABLE IF NOT EXISTS player_businesses (
+      id BIGSERIAL PRIMARY KEY,
+      telegram_id BIGINT NOT NULL REFERENCES players(telegram_id),
+      business_key TEXT NOT NULL,
+      business_name TEXT NOT NULL,
+      purchase_price BIGINT NOT NULL,
+      hourly_income BIGINT NOT NULL,
+      purchased_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      last_accrued_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_player_businesses_telegram_id
+      ON player_businesses(telegram_id);
   `);
 
   databaseReady = true;
@@ -194,13 +226,17 @@ function getMultiplier(player) {
 
   let timedMultiplier = 1;
 
-  if (player.bonus_x2_until &&
-      new Date(player.bonus_x2_until).getTime() > now) {
+  if (
+    player.bonus_x2_until &&
+    new Date(player.bonus_x2_until).getTime() > now
+  ) {
     timedMultiplier = Math.max(timedMultiplier, 2);
   }
 
-  if (player.bonus_x4_until &&
-      new Date(player.bonus_x4_until).getTime() > now) {
+  if (
+    player.bonus_x4_until &&
+    new Date(player.bonus_x4_until).getTime() > now
+  ) {
     timedMultiplier = Math.max(timedMultiplier, 4);
   }
 
@@ -229,6 +265,56 @@ function getBonusState(player) {
   };
 }
 
+// Начисляет пассивный доход за всё прошедшее время.
+// Дробная часть времени сохраняется, чтобы доход не терялся.
+async function accrueBusinessIncome(client, telegramId) {
+  const businesses = await client.query(
+    `SELECT id, hourly_income, last_accrued_at
+     FROM player_businesses
+     WHERE telegram_id = $1
+     FOR UPDATE`,
+    [telegramId]
+  );
+
+  const now = Date.now();
+  let totalIncome = 0n;
+
+  for (const business of businesses.rows) {
+    const lastTime = new Date(business.last_accrued_at).getTime();
+    const elapsedMs = BigInt(Math.max(0, now - lastTime));
+    const hourlyIncome = BigInt(business.hourly_income);
+
+    const earned = (elapsedMs * hourlyIncome) / 3600000n;
+
+    if (earned > 0n) {
+      const creditedMs = (earned * 3600000n) / hourlyIncome;
+      const newLastTime = new Date(
+        lastTime + Number(creditedMs)
+      );
+
+      await client.query(
+        `UPDATE player_businesses
+         SET last_accrued_at = $1
+         WHERE id = $2 AND telegram_id = $3`,
+        [newLastTime, business.id, telegramId]
+      );
+
+      totalIncome += earned;
+    }
+  }
+
+  if (totalIncome > 0n) {
+    await client.query(
+      `UPDATE players
+       SET business_balance = business_balance + $1
+       WHERE telegram_id = $2`,
+      [totalIncome.toString(), telegramId]
+    );
+  }
+
+  return totalIncome.toString();
+}
+
 app.get("/health", (req, res) => {
   res.json({
     status: "online",
@@ -241,27 +327,66 @@ app.get("/api/catalog", (req, res) => {
   res.json(catalog);
 });
 
+// Каталог бизнесов
+app.get("/api/businesses/catalog", auth, (req, res) => {
+  res.json(businessCatalog);
+});
+
 app.get("/api/state", auth, async (req, res) => {
+  const client = await pool.connect();
+
   try {
-    const player = await pool.query(
-      `SELECT balance, gramm_balance, experience, level, last_daily,
+    await client.query("BEGIN");
+
+    await client.query(
+      `SELECT telegram_id FROM players
+       WHERE telegram_id = $1 FOR UPDATE`,
+      [req.player.id]
+    );
+
+    await accrueBusinessIncome(client, req.player.id);
+
+    const player = await client.query(
+      `SELECT balance, gramm_balance, business_balance,
+              experience, level, last_daily,
               bonus_x2_until, bonus_x4_until, x10_unlocked
        FROM players WHERE telegram_id = $1`,
       [req.player.id]
     );
 
-    const inventory = await pool.query(
+    const inventory = await client.query(
       `SELECT id, category, item_name, purchase_price, purchased_at
        FROM inventory WHERE telegram_id = $1
        ORDER BY purchased_at DESC`,
       [req.player.id]
     );
 
+    const businesses = await client.query(
+      `SELECT id, business_key, business_name,
+              purchase_price, hourly_income, purchased_at
+       FROM player_businesses
+       WHERE telegram_id = $1
+       ORDER BY purchased_at DESC`,
+      [req.player.id]
+    );
+
+    const income = await client.query(
+      `SELECT COALESCE(SUM(hourly_income), 0)::text AS total
+       FROM player_businesses
+       WHERE telegram_id = $1`,
+      [req.player.id]
+    );
+
+    await client.query("COMMIT");
+
     const p = player.rows[0];
 
     res.json({
       balance: Number(p.balance),
       grammBalance: Number(p.gramm_balance),
+      businessBalance: Number(p.business_balance),
+      businessIncomePerHour: Number(income.rows[0].total),
+      businesses: businesses.rows,
       experience: Number(p.experience),
       level: p.level,
       lastDaily: p.last_daily,
@@ -270,8 +395,11 @@ app.get("/api/state", auth, async (req, res) => {
       multiplier: getMultiplier(p)
     });
   } catch (error) {
+    await client.query("ROLLBACK");
     console.error("State error:", error);
     res.status(500).json({ error: "Could not load game data" });
+  } finally {
+    client.release();
   }
 });
 
@@ -503,6 +631,252 @@ app.post("/api/gramm/exchange", auth, async (req, res) => {
       success: true,
       balance: Number(updated.rows[0].balance),
       grammBalance: Number(updated.rows[0].gramm_balance),
+      rate: 10
+    });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    res.status(400).json({ error: error.message });
+  } finally {
+    client.release();
+  }
+});
+
+// Покупка бизнеса
+app.post("/api/businesses/buy", auth, async (req, res) => {
+  const { key } = req.body;
+  const business = businessCatalog.find(item => item.key === key);
+
+  if (!business) {
+    return res.status(400).json({ error: "Такого бизнеса нет" });
+  }
+
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    const player = await client.query(
+      `SELECT balance FROM players
+       WHERE telegram_id = $1 FOR UPDATE`,
+      [req.player.id]
+    );
+
+    await accrueBusinessIncome(client, req.player.id);
+
+    if (BigInt(player.rows[0].balance) < BigInt(business.price)) {
+      throw new Error("Недостаточно долларов для покупки");
+    }
+
+    await client.query(
+      `UPDATE players
+       SET balance = balance - $1
+       WHERE telegram_id = $2`,
+      [business.price, req.player.id]
+    );
+
+    await client.query(
+      `INSERT INTO player_businesses
+       (telegram_id, business_key, business_name,
+        purchase_price, hourly_income)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [
+        req.player.id,
+        business.key,
+        business.name,
+        business.price,
+        business.income
+      ]
+    );
+
+    await client.query("COMMIT");
+
+    const updated = await pool.query(
+      `SELECT balance, business_balance
+       FROM players WHERE telegram_id = $1`,
+      [req.player.id]
+    );
+
+    res.json({
+      success: true,
+      message: "Бизнес успешно куплен",
+      balance: Number(updated.rows[0].balance),
+      businessBalance: Number(updated.rows[0].business_balance)
+    });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    res.status(400).json({ error: error.message });
+  } finally {
+    client.release();
+  }
+});
+
+// Продажа бизнеса за 70% первоначальной цены
+app.post("/api/businesses/sell", auth, async (req, res) => {
+  const businessId = Number(req.body.businessId);
+
+  if (!Number.isSafeInteger(businessId) || businessId <= 0) {
+    return res.status(400).json({ error: "Неверный номер бизнеса" });
+  }
+
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    await client.query(
+      `SELECT telegram_id FROM players
+       WHERE telegram_id = $1 FOR UPDATE`,
+      [req.player.id]
+    );
+
+    // Сначала начисляем доход до момента продажи
+    await accrueBusinessIncome(client, req.player.id);
+
+    const result = await client.query(
+      `SELECT id, purchase_price, business_name
+       FROM player_businesses
+       WHERE id = $1 AND telegram_id = $2
+       FOR UPDATE`,
+      [businessId, req.player.id]
+    );
+
+    if (!result.rows.length) {
+      throw new Error("Бизнес не найден");
+    }
+
+    const business = result.rows[0];
+    const refund = (
+      BigInt(business.purchase_price) * 70n
+    ) / 100n;
+
+    await client.query(
+      `DELETE FROM player_businesses
+       WHERE id = $1 AND telegram_id = $2`,
+      [businessId, req.player.id]
+    );
+
+    await client.query(
+      `UPDATE players
+       SET balance = balance + $1
+       WHERE telegram_id = $2`,
+      [refund.toString(), req.player.id]
+    );
+
+    await client.query("COMMIT");
+
+    const updated = await pool.query(
+      `SELECT balance, business_balance
+       FROM players WHERE telegram_id = $1`,
+      [req.player.id]
+    );
+
+    res.json({
+      success: true,
+      businessName: business.business_name,
+      refund: Number(refund),
+      balance: Number(updated.rows[0].balance),
+      businessBalance: Number(updated.rows[0].business_balance)
+    });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    res.status(400).json({ error: error.message });
+  } finally {
+    client.release();
+  }
+});
+
+// Вывод денег с бизнес-счёта
+// В GRAMM переводятся доллары по курсу 10 долларов = 1 GRAMM.
+app.post("/api/businesses/withdraw", auth, async (req, res) => {
+  const { destination, amount } = req.body;
+  const value = Number(amount);
+
+  if (!Number.isSafeInteger(value) || value <= 0) {
+    return res.status(400).json({
+      error: "Укажи целую положительную сумму"
+    });
+  }
+
+  const toGramm =
+    destination === "gramm" || destination === "toGramm";
+
+  const toDollars =
+    destination === "usd" || destination === "toDollars";
+
+  if (!toGramm && !toDollars) {
+    return res.status(400).json({
+      error: "Неверное направление перевода"
+    });
+  }
+
+  if (toGramm && value % 10 !== 0) {
+    return res.status(400).json({
+      error: "Для перевода в GRAMM сумма должна делиться на 10"
+    });
+  }
+
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    await client.query(
+      `SELECT telegram_id FROM players
+       WHERE telegram_id = $1 FOR UPDATE`,
+      [req.player.id]
+    );
+
+    // Перед выводом начисляем весь заработанный доход
+    await accrueBusinessIncome(client, req.player.id);
+
+    const result = await client.query(
+      `SELECT balance, gramm_balance, business_balance
+       FROM players
+       WHERE telegram_id = $1
+       FOR UPDATE`,
+      [req.player.id]
+    );
+
+    const player = result.rows[0];
+    const businessBalance = BigInt(player.business_balance);
+
+    if (businessBalance < BigInt(value)) {
+      throw new Error("Недостаточно денег на бизнес-счёте");
+    }
+
+    if (toDollars) {
+      await client.query(
+        `UPDATE players
+         SET business_balance = business_balance - $1,
+             balance = balance + $1
+         WHERE telegram_id = $2`,
+        [value, req.player.id]
+      );
+    } else {
+      const grammAmount = value / 10;
+
+      await client.query(
+        `UPDATE players
+         SET business_balance = business_balance - $1,
+             gramm_balance = gramm_balance + $2
+         WHERE telegram_id = $3`,
+        [value, grammAmount, req.player.id]
+      );
+    }
+
+    await client.query("COMMIT");
+
+    const updated = await pool.query(
+      `SELECT balance, gramm_balance, business_balance
+       FROM players WHERE telegram_id = $1`,
+      [req.player.id]
+    );
+
+    res.json({
+      success: true,
+      balance: Number(updated.rows[0].balance),
+      grammBalance: Number(updated.rows[0].gramm_balance),
+      businessBalance: Number(updated.rows[0].business_balance),
       rate: 10
     });
   } catch (error) {
