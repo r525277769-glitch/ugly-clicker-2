@@ -21,3 +21,12 @@
 @media(max-width:390px){.sim-stage{min-height:410px;height:64vh}.sim-joystick{width:120px;height:120px;left:11px;bottom:12px}.sim-stick{width:50px;height:50px}.sim-action{right:10px;bottom:19px;width:137px;min-height:54px;font-size:9px}.sim-hint{font-size:10px}}
 @media(orientation:landscape) and (max-height:520px){.sim-stage{height:76vh;min-height:270px}.sim-joystick{width:100px;height:100px}.sim-stick{width:44px;height:44px}}
 .sim-management{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0}.sim-management button{min-height:46px;border:1px solid #367ca5;border-radius:11px;background:linear-gradient(145deg,#172e41,#0b1520);color:#c9edff;font-size:10px;font-weight:800;padding:9px}.sim-management button:active{transform:scale(.98)}@media(max-width:390px){.sim-hud strong{font-size:13px}}
+/* Fortnite-inspired colorful arena presentation */
+.sim-stage{border:1px solid #36d8ff;background:linear-gradient(135deg,#0d2440,#25143c 55%,#111b31);box-shadow:0 0 0 1px #8a4dff55,0 16px 42px #000c,0 0 24px #00cfff25}
+.sim-hint{border:1px solid #39dfff99;background:linear-gradient(110deg,#071a2eef,#251443ed);color:#e7f9ff;box-shadow:0 0 18px #00bfff25}
+.sim-joystick{border:2px solid #54e5ff;background:radial-gradient(circle,#d9f8ff20 0 27%,#071b33b8 28% 100%);box-shadow:inset 0 0 22px #00bfff22,0 5px 18px #000a,0 0 15px #00cfff22}
+.sim-stick{background:radial-gradient(circle at 35% 25%,#fff,#4ee7ff 42%,#3656b7 100%);border:2px solid #e9fdff;box-shadow:0 4px 14px #000b,inset 0 2px 6px #fff9,0 0 14px #2bdcff77}
+.sim-action{border:1px solid #b5f7ff;background:linear-gradient(145deg,#a4f7ff,#28bde9 55%,#5c4de0);color:#07172b;text-shadow:0 1px #fff8;box-shadow:0 5px 18px #0009,0 0 18px #22cfff44}
+.sim-management button{border:1px solid #38d9ff;background:linear-gradient(145deg,#174c70,#252052 70%,#111a30);color:#e2faff;box-shadow:inset 0 1px #ffffff22,0 4px 12px #0006}
+.sim-hud>div{background:linear-gradient(145deg,#182d48,#17162f 75%,#101a2b);border-color:#3a8cb0;box-shadow:0 5px 16px #0007,0 0 12px #087ba522}
+.sim-hud strong{color:#69e8ff}.sim-progress-track{background:#172943}.sim-progress-track>div{background:linear-gradient(90deg,#22bde8,#9874ff,#ffcf58)}
