@@ -3,7 +3,7 @@ import * as THREE from "three";
 const $ = id => document.getElementById(id);
 const initData = window.Telegram?.WebApp?.initData || "";
 const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
-const state = { cash:0, level:1, customers:0, xp:0, stations:4, adLevel:0, hourlyIncome:0, clubData:{stations:[],queue:[],sessions:[]} };
+const state = { cash:0, level:1, customers:0, xp:0, stations:4, adLevel:0, hourlyIncome:0, clubData:{stations:[],queue:[],consoleQueue:[],sessions:[],consoleSessions:[]} };
 let renderer, scene, camera, player, clock, ready = false, raf = 0;
 let yaw = 0, moveX = 0, moveY = 0, activeObject = null, actionBusy = false;
 let joyPointer = null, lookPointer = null, lookLastX = 0, joyCenter = { x: 0, y: 0 };
@@ -524,9 +524,9 @@ function animate() {
   }
   const now = performance.now();
   for (const npc of clubNPCs) {
-    const qi=(state.clubData.queue||[]).findIndex(q=>q.id===npc.id),session=(state.clubData.sessions||[]).find(q=>q.id===npc.id),consoleSession=(state.clubData.consoleSessions||[]).find(q=>q.id===npc.id);let dest;
+    const qi=(npc.queueType==="console"?(state.clubData.consoleQueue||[]):(state.clubData.queue||[])).findIndex(q=>q.id===npc.id),session=(state.clubData.sessions||[]).find(q=>q.id===npc.id),consoleSession=(state.clubData.consoleSessions||[]).find(q=>q.id===npc.id);let dest;
     if(session||consoleSession){if(consoleSession){const ci=Number(consoleSession.station),x=9+Number(state.clubData.roomLevel||0)*2+2.5+(ci%2)*4.2,z=-7.5+Math.floor(ci/2)*5;dest=new THREE.Vector3(x,.24,z+.85);}else{const spots=[[-5.1,-3.4],[-1.8,-3.4],[1.8,-3.4],[5.1,-3.4],[-5.1,2],[-1.8,2],[1.8,2],[5.1,2]],p=spots[session.station]||spots[0];dest=new THREE.Vector3(p[0],npc.mode==="play"?.24:0,p[1]+1.05);}if(npc.mode!=="play")npc.mode="toSeat";}
-    else if(qi>=0){dest=new THREE.Vector3(-.9+(qi%3)*.9,0,5.82+Math.floor(qi/3)*.42);if(npc.mode!=="queue")npc.mode="toQueue";}
+    else if(qi>=0){dest=npc.queueType==="console"?new THREE.Vector3(9+Number(state.clubData.roomLevel||0)*2+4.75,0,7.7+Number(state.clubData.consoleRoomLevel||0)*4+Math.floor(qi/3)*.42):new THREE.Vector3(-.9+(qi%3)*.9,0,5.82+Math.floor(qi/3)*.42);if(npc.mode!=="queue")npc.mode="toQueue";}
     else{npc.mode="exit";dest=new THREE.Vector3(0,0,8.5);}
     const delta=dest.clone().sub(npc.mesh.position),distance=delta.length();
     if(distance>.09){const target=Math.atan2(-delta.x,-delta.z);let turn=Math.atan2(Math.sin(target-npc.mesh.rotation.y),Math.cos(target-npc.mesh.rotation.y));npc.mesh.rotation.y+=turn*Math.min(1,dt*7);npc.mesh.position.addScaledVector(delta.normalize(),Math.min(distance,dt*1.5));}
@@ -550,12 +550,12 @@ function animate() {
   if (renderer) renderer.render(scene, camera);
 }
 function syncClubNPCs(){
- const desired=(state.clubData.queue||[]).concat(state.clubData.sessions||[],state.clubData.consoleSessions||[]);
+ const desired=(state.clubData.queue||[]).map(x=>({...x,queueType:"pc"})).concat((state.clubData.consoleQueue||[]).map(x=>({...x,queueType:"console"})),(state.clubData.sessions||[]).map(x=>({...x,queueType:"pc"})),(state.clubData.consoleSessions||[]).map(x=>({...x,queueType:"console"})));
  for(const d of desired){
   if(clubNPCs.some(n=>n.id===d.id))continue;
   const colors=["#e45d48","#43a77b","#8357b9","#e2a33b","#347db7","#d65b9a"];
   const mesh=makePerson(3.4,8.1,colors[clubNPCs.length%colors.length],false,clubNPCs.length+1);
-  clubNPCs.push({id:d.id,mesh,phase:Math.random()*6,mode:"toQueue",station:d.station});
+  clubNPCs.push({id:d.id,mesh,phase:Math.random()*6,mode:"toQueue",station:d.station,queueType:d.queueType});
  }
  for(let i=clubNPCs.length-1;i>=0;i--){
   if(!desired.some(d=>d.id===clubNPCs[i].id)){
@@ -568,9 +568,10 @@ function syncClubNPCs(){
 }
 function renderClubPanels(){
  const qb=$("simQueue"),ub=$("simUpgradePanel"),sb=$("simSessions"),cb=$("simConsoleUpgradePanel");
- const queue=state.clubData.queue||[],sessions=state.clubData.sessions||[],stations=state.clubData.stations||[],cs=state.clubData.consoleStations||[],css=state.clubData.consoleSessions||[];
+ const queue=state.clubData.queue||[],consoleQueue=state.clubData.consoleQueue||[],sessions=state.clubData.sessions||[],stations=state.clubData.stations||[],cs=state.clubData.consoleStations||[],css=state.clubData.consoleSessions||[];
  const busy=new Set(sessions.map(x=>Number(x.station))),free=stations.map((x,i)=>i).filter(i=>!busy.has(i)),cbusy=new Set(css.map(x=>Number(x.station))),cfree=cs.map((x,i)=>i).filter(i=>!cbusy.has(i));
- if(qb){qb.innerHTML="";if(!queue.length)qb.textContent="Ожидаем посетителей у стойки ресепшена.";queue.forEach((q,i)=>{const row=document.createElement("div");row.className="sim-queue-row";const label=document.createElement("b");label.textContent="🧍 "+(q.name||"Посетитель")+" · очередь №"+(i+1);row.appendChild(label);const status=document.createElement("span");status.textContent=state.clubData.adminEnabled?(free.length||cfree.length?"Администратор назначит свободное место":"Все места заняты"):free.length||cfree.length?"Готов к оформлению на ресепшене":"Нет свободных мест";row.appendChild(status);qb.appendChild(row);});}
+ if(qb){qb.innerHTML="";if(!queue.length)qb.textContent="Очередь ПК пуста.";queue.forEach((q,i)=>{const row=document.createElement("div");row.className="sim-queue-row";const label=document.createElement("b");label.textContent="🖥 "+(q.name||"Посетитель")+" · очередь №"+(i+1);row.appendChild(label);const status=document.createElement("span");status.textContent=state.clubData.adminEnabled?(free.length?"Администратор ПК назначит место":"Все ПК заняты"):free.length?"Готов к оформлению на ПК":"Нет свободных ПК";row.appendChild(status);qb.appendChild(row);});}
+ const cq=$("simConsoleQueue");if(cq){cq.innerHTML="";if(!consoleQueue.length)cq.textContent="Очередь консолей пуста.";consoleQueue.forEach((q,i)=>{const row=document.createElement("div");row.className="sim-queue-row";const label=document.createElement("b");label.textContent="🎮 "+(q.name||"Посетитель")+" · очередь №"+(i+1);row.appendChild(label);const status=document.createElement("span");status.textContent=state.clubData.consoleAdminEnabled?(cfree.length?"Администратор консолей назначит место":"Все консоли заняты"):cfree.length?"Готов к оформлению на консоль":"Нет свободных консолей";row.appendChild(status);cq.appendChild(row);});}
  const names={gpu:"Видеокарта",cpu:"Процессор",ram:"ОЗУ",monitor:"Монитор",keyboard:"Клавиатура",mouse:"Мышь",chair:"Кресло",desk:"Стол"};
  if(ub){ub.innerHTML="";stations.forEach((st,i)=>{const wrap=document.createElement("div");wrap.className="sim-upgrade-station";const head=document.createElement("b");head.textContent="ИГРОВОЕ МЕСТО №"+(i+1);wrap.appendChild(head);const grid=document.createElement("div");grid.className="sim-component-grid";Object.keys(names).forEach(k=>{const lv=Number((st.components||{})[k]||st.tier||1),next=lv+1,price=[0,500,2500,11000,24000][next]||0,item=document.createElement("div");item.className="sim-component";const title=document.createElement("span");title.textContent=names[k];const level=document.createElement("b");level.textContent="LVL "+lv+"/4";const button=document.createElement("button");button.type="button";button.dataset.upgradeStation=i;button.dataset.upgradeComponent=k;button.disabled=lv>=4;button.textContent=lv>=4?"MAX":"УЛУЧШИТЬ ДО LVL "+next+" · $"+price.toLocaleString("ru-RU");item.append(title,level,button);grid.appendChild(item);});wrap.appendChild(grid);ub.appendChild(wrap);});}
  if(cb){cb.innerHTML="";const labels={tv:"Телевизор",console:"Приставка",sofa:"Диван"};cs.forEach((st,i)=>{const wrap=document.createElement("div");wrap.className="sim-upgrade-station";const head=document.createElement("b");head.textContent=(st.name||"КОНСОЛЬ")+" №"+(i+1);wrap.appendChild(head);const grid=document.createElement("div");grid.className="sim-component-grid";Object.keys(labels).forEach(k=>{const lv=Number(st[k]||1),next=lv+1,price=[0,1800,6500,18000,45000][next]||0,item=document.createElement("div");item.className="sim-component";const title=document.createElement("span");title.textContent=labels[k];const level=document.createElement("b");level.textContent="LVL "+lv+"/4";const button=document.createElement("button");button.type="button";button.dataset.consoleUpgradeStation=i;button.dataset.consoleUpgradeComponent=k;button.disabled=lv>=4;button.textContent=lv>=4?"MAX":"УЛУЧШИТЬ ДО LVL "+next+" · $"+price.toLocaleString("ru-RU");item.append(title,level,button);grid.appendChild(item);});wrap.appendChild(grid);cb.appendChild(wrap);});}
@@ -583,10 +584,10 @@ async function tapClub(){
  finally{if(button)button.disabled=false;}
 }
 function openReception(){receptionMode="pc";const modal=$("simReceptionModal"),queue=state.clubData.queue||[];if(!modal)return;if(!queue.length){toast("Пока никто не подошёл к ресепшену","info");return;}receptionGuestId=queue[0].id;receptionDuration=120+Math.floor(Math.random()*181);renderReceptionModal();modal.classList.add("open");modal.setAttribute("aria-hidden","false");}
-function openConsoleReception(){receptionMode="console";const modal=$("simReceptionModal"),queue=state.clubData.queue||[];if(!modal)return;if(!queue.length){toast("Пока никто не подошёл к консольному ресепшену","info");return;}receptionGuestId=queue[0].id;receptionDuration=240;renderReceptionModal();modal.classList.add("open");modal.setAttribute("aria-hidden","false");}
+function openConsoleReception(){receptionMode="console";const modal=$("simReceptionModal"),queue=state.clubData.consoleQueue||[];if(!modal)return;if(!queue.length){toast("Пока никто не подошёл к консольному ресепшену","info");return;}receptionGuestId=queue[0].id;receptionDuration=240;renderReceptionModal();modal.classList.add("open");modal.setAttribute("aria-hidden","false");}
 function closeReception(){const modal=$("simReceptionModal");if(modal){modal.classList.remove("open");modal.setAttribute("aria-hidden","true");}receptionGuestId=null;}
 function renderReceptionModal(){
- const modal=$("simReceptionModal");if(!modal)return;const guest=(state.clubData.queue||[]).find(x=>x.id===receptionGuestId);if(!guest){closeReception();return;}
+ const modal=$("simReceptionModal");if(!modal)return;const guest=(receptionMode==="console"?(state.clubData.consoleQueue||[]):(state.clubData.queue||[])).find(x=>x.id===receptionGuestId);if(!guest){closeReception();return;}
  const sessions=state.clubData.sessions||[],stations=state.clubData.stations||[],busy=new Set(sessions.map(x=>Number(x.station)));
  const select=$("simReceptionStation");$("simReceptionGuest").textContent=guest.name||"Посетитель";const modalTitle=$("simReceptionModal").querySelector("h2");if(modalTitle)modalTitle.textContent=receptionMode==="console"?"🎮 ОФОРМЛЕНИЕ ИГРОКА НА КОНСОЛЬ":"💻 ОФОРМЛЕНИЕ ПОСЕТИТЕЛЯ";const stationLabel=select.previousElementSibling;if(stationLabel)stationLabel.textContent=receptionMode==="console"?"ВЫБЕРИ СВОБОДНУЮ КОНСОЛЬ":"ВЫБЕРИ СВОБОДНЫЙ ПК ИЛИ КОНСОЛЬ";
  $("simReceptionDuration").textContent=Math.floor(receptionDuration/60)+" мин "+String(receptionDuration%60).padStart(2,"0")+" сек";
