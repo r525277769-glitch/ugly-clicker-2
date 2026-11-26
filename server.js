@@ -2326,6 +2326,11 @@ const CLUB_TIER_RATE=[0,20,42,78,125];
 const CLUB_COMPONENTS=["gpu","cpu","ram","monitor","keyboard","mouse","chair","desk"];
 const CLUB_NAMES=["Алекс","Макс","Даня","Марк","Илья","Никита","Саша","Рома","Егор","Тим"];
 const CLUB_COMPONENT_DEFAULTS={gpu:1,cpu:1,ram:1,monitor:1,keyboard:1,mouse:1,chair:1,desk:1};
+const CONSOLE_COMPONENTS=["tv","console","sofa"],CONSOLE_NAMES=["PlayStation","Xbox"];
+const CONSOLE_LEVEL_PRICE=[0,1800,6500,18000,45000];
+const CONSOLE_SESSION_PRICES={30:[350,550],60:[650,950],120:[1200,1800],180:[1700,2600]};
+function consoleStationLevel(st){return Math.max(1,Math.min(4,...CONSOLE_COMPONENTS.map(k=>Number(st[k]||1))));}
+function consoleFreeStations(d){const busy=new Set((d.consoleSessions||[]).map(x=>Number(x.station)));return d.consoleStations.map((_,i)=>i).filter(i=>!busy.has(i));}
 function clubStationLevel(st){
  const c=st.components||CLUB_COMPONENT_DEFAULTS;
  return Math.max(1,Math.min(4,...CLUB_COMPONENTS.map(k=>Number(c[k]||st.tier||1))));
@@ -2346,11 +2351,15 @@ async function getClub(client,id,lock=false){
  d.stations=Array.isArray(d.stations)&&d.stations.length?d.stations:[{tier:1},{tier:1},{tier:1},{tier:1}];
  d.stations=d.stations.slice(0,8).map(st=>({...st,components:{...CLUB_COMPONENT_DEFAULTS,...(st.components||Object.fromEntries(CLUB_COMPONENTS.map(k=>[k,Number(st.tier)||1])))}}));
  d.adLevel=Number(d.adLevel||0);d.adminEnabled=Boolean(d.adminEnabled);d.queue=Array.isArray(d.queue)?d.queue:[];d.sessions=Array.isArray(d.sessions)?d.sessions:[];
+ d.consoleStations=Array.isArray(d.consoleStations)?d.consoleStations:[{tv:1,console:1,sofa:1},{tv:1,console:1,sofa:1}];
+ d.consoleStations=d.consoleStations.slice(0,8).map((st,i)=>({tv:1,console:1,sofa:1,...st,name:st.name||CONSOLE_NAMES[i%2]}));
+ d.consoleSessions=Array.isArray(d.consoleSessions)?d.consoleSessions:[];
  const now=Date.now();let cash=Number(r.shop_cash),xp=Number(r.shop_xp),customers=Number(r.customers_served),dirty=false;
- const finished=d.sessions.filter(x=>new Date(x.endsAt).getTime()<=now);
- if(finished.length){
-  for(const session of finished){cash+=Number(session.reward||0);xp+=15;customers++;}
-  d.sessions=d.sessions.filter(x=>new Date(x.endsAt).getTime()>now);dirty=true;
+ const finished=d.sessions.filter(x=>new Date(x.endsAt).getTime()<=now),finishedConsoles=d.consoleSessions.filter(x=>new Date(x.endsAt).getTime()<=now);
+ if(finished.length||finishedConsoles.length){
+  for(const session of [...finished,...finishedConsoles]){cash+=Number(session.reward||0);xp+=15;customers++;}
+  d.sessions=d.sessions.filter(x=>new Date(x.endsAt).getTime()>now);
+  d.consoleSessions=d.consoleSessions.filter(x=>new Date(x.endsAt).getTime()>now);dirty=true;
  }
  if(!d.nextArrivalAt){d.nextArrivalAt=new Date(now+8000).toISOString();dirty=true;}
  const free=clubFreeStations(d);
@@ -2368,12 +2377,19 @@ async function getClub(client,id,lock=false){
    d.sessions.push({id:guest.id,name:guest.name,station,duration,reward,startedAt,endsAt:new Date(now+duration*1000).toISOString(),autoReception:true});
    xp+=5;dirty=true;
   }
+  let freeConsole=consoleFreeStations(d);
+  while(d.queue.length&&freeConsole.length){
+   const guest=d.queue.shift(),station=freeConsole.shift(),range=CONSOLE_SESSION_PRICES[60],duration=3600;
+   const reward=range[0]+Math.floor(Math.random()*(range[1]-range[0]+1));
+   d.consoleSessions.push({id:guest.id,name:guest.name,station,minutes:60,duration,reward,startedAt:new Date(now).toISOString(),endsAt:new Date(now+duration*1000).toISOString(),autoReception:true});
+   xp+=5;dirty=true;
+  }
  }
- const hourly=Math.round(d.stations.reduce((n,st)=>n+CLUB_TIER_RATE[clubStationLevel(st)],0)*(1+d.adLevel*.12));
+ const hourly=Math.round(d.stations.reduce((n,st)=>n+CLUB_TIER_RATE[clubStationLevel(st)],0)*(1+d.adLevel*.12)+d.consoleStations.reduce((n,st)=>n+[0,12,25,45,75][consoleStationLevel(st)],0));
  if(dirty||cash!==Number(r.shop_cash)||xp!==Number(r.shop_xp)||customers!==Number(r.customers_served)){
   await client.query("UPDATE ugly_simulator_players SET shop_cash=$1,shop_xp=$2,customers_served=$3,club_data=$4::jsonb,updated_at=NOW() WHERE telegram_id=$5",[cash,xp,customers,JSON.stringify(d),id]);
  }
- return {cash,xp,level:Math.floor(xp/100)+1,customers,stations:d.stations.length,adLevel:d.adLevel,hourlyIncome:hourly,clubData:d};
+ return {cash,xp,level:Math.floor(xp/100)+1,customers,stations:d.stations.length,consoleStations:d.consoleStations.length,adLevel:d.adLevel,hourlyIncome:hourly,clubData:d};
 }
 app.get("/api/simulator/state",auth,async(req,res)=>{
  const c=await pool.connect();
@@ -2398,16 +2414,37 @@ app.post("/api/simulator/action",auth,async(req,res)=>{
   await c.query("BEGIN");
   let s=await getClub(c,req.player.id,true),d=s.clubData,msg="",a=req.body.action;
   if(a==="start_session"){
-   const queueId=String(req.body.queueId||""),i=Number(req.body.station),guest=d.queue.find(x=>x.id===queueId);
+   const queueId=String(req.body.queueId||""),guest=d.queue.find(x=>x.id===queueId);
    if(!guest)throw Error("Этот посетитель уже ушёл из очереди");
-   if(!Number.isInteger(i)||!d.stations[i])throw Error("Игровое место не найдено");
-   if((d.sessions||[]).some(x=>Number(x.station)===i))throw Error("Это место уже занято");
-   const requestedDuration=Number(req.body.duration),duration=Number.isInteger(requestedDuration)&&requestedDuration>=120&&requestedDuration<=300?requestedDuration:120+Math.floor(Math.random()*181),tier=clubStationLevel(d.stations[i]);
-   const paymentRange=CLUB_CUSTOMER_PAYMENT[tier],requestedReward=Number(req.body.expectedReward),reward=Number.isInteger(requestedReward)&&requestedReward>=paymentRange[0]&&requestedReward<=paymentRange[1]?requestedReward:paymentRange[0]+Math.floor(Math.random()*(paymentRange[1]-paymentRange[0]+1));
-   d.queue=d.queue.filter(x=>x.id!==queueId);
-   d.sessions.push({id:queueId,name:guest.name,station:i,duration,reward,startedAt:new Date().toISOString(),endsAt:new Date(Date.now()+duration*1000).toISOString()});
+   if(String(req.body.station||"").startsWith("console:")){
+    const ci=Number(String(req.body.station).split(":")[1]),st=d.consoleStations[ci];
+    if(!Number.isInteger(ci)||!st)throw Error("Консольное место не найдено");
+    if((d.consoleSessions||[]).some(x=>Number(x.station)===ci))throw Error("Консольное место уже занято");
+    const minutes=[30,60,120,180].includes(Number(req.body.minutes))?Number(req.body.minutes):60,range=CONSOLE_SESSION_PRICES[minutes],reward=range[0]+Math.floor(Math.random()*(range[1]-range[0]+1)),duration=minutes*60;
+    d.queue=d.queue.filter(x=>x.id!==queueId);
+    d.consoleSessions.push({id:queueId,name:guest.name,station:ci,minutes,duration,reward,startedAt:new Date().toISOString(),endsAt:new Date(Date.now()+duration*1000).toISOString()});
+    msg=guest.name+" оформлен на консоль №"+(ci+1)+" на "+minutes+" мин.";
+   }else{
+    const i=Number(req.body.station);if(!Number.isInteger(i)||!d.stations[i])throw Error("Игровое место не найдено");
+    if((d.sessions||[]).some(x=>Number(x.station)===i))throw Error("Это место уже занято");
+    const requestedDuration=Number(req.body.duration),duration=Number.isInteger(requestedDuration)&&requestedDuration>=120&&requestedDuration<=300?requestedDuration:120+Math.floor(Math.random()*181),tier=clubStationLevel(d.stations[i]);
+    const paymentRange=CLUB_CUSTOMER_PAYMENT[tier],requestedReward=Number(req.body.expectedReward),reward=Number.isInteger(requestedReward)&&requestedReward>=paymentRange[0]&&requestedReward<=paymentRange[1]?requestedReward:paymentRange[0]+Math.floor(Math.random()*(paymentRange[1]-paymentRange[0]+1));
+    d.queue=d.queue.filter(x=>x.id!==queueId);d.sessions.push({id:queueId,name:guest.name,station:i,duration,reward,startedAt:new Date().toISOString(),endsAt:new Date(Date.now()+duration*1000).toISOString()});
+    msg=guest.name+" посажен за ПК №"+(i+1)+". Сессия "+Math.ceil(duration/60)+" мин.";
+   }
    await c.query("UPDATE ugly_simulator_players SET club_data=$1::jsonb,shop_xp=shop_xp+5,updated_at=NOW() WHERE telegram_id=$2",[JSON.stringify(d),req.player.id]);
-   msg=guest.name+" посажен за ПК №"+(i+1)+". Сессия "+Math.ceil(duration/60)+" мин.";
+  }else if(a==="upgrade_console_component"){
+   const i=Number(req.body.station),key=String(req.body.component||""),st=d.consoleStations[i];
+   if(!Number.isInteger(i)||!st||!CONSOLE_COMPONENTS.includes(key))throw Error("Оборудование консоли не найдено");
+   const next=Number(st[key]||1)+1;if(next>4)throw Error("Уже установлен максимальный уровень");
+   const price=CONSOLE_LEVEL_PRICE[next];if(s.cash<price)throw Error("Нужно $"+price.toLocaleString("ru-RU")+" для улучшения");
+   st[key]=next;await c.query("UPDATE ugly_simulator_players SET shop_cash=shop_cash-$1,club_data=$2::jsonb,shop_xp=shop_xp+18,updated_at=NOW() WHERE telegram_id=$3",[price,JSON.stringify(d),req.player.id]);
+   msg=["Телевизор","Приставка","Диван"][CONSOLE_COMPONENTS.indexOf(key)]+" №"+(i+1)+" улучшен до уровня "+next+".";
+  }else if(a==="buy_console_station"){
+   if(d.consoleStations.length>=8)throw Error("Максимум 8 консольных мест");
+   const price=12000;if(s.cash<price)throw Error("Нужно $12 000 для нового консольного места");
+   d.consoleStations.push({tv:1,console:1,sofa:1,name:CONSOLE_NAMES[d.consoleStations.length%2]});
+   await c.query("UPDATE ugly_simulator_players SET shop_cash=shop_cash-$1,club_data=$2::jsonb,shop_xp=shop_xp+30,updated_at=NOW() WHERE telegram_id=$3",[price,JSON.stringify(d),req.player.id]);msg="Новое консольное место установлено!";
   }else if(a==="buy_station"){
    if(d.stations.length>=8)throw Error("Уже установлено 8 игровых мест");
    if(s.cash<3500)throw Error("Нужно $3 500 на новое игровое место");
