@@ -16,7 +16,7 @@ h3{color:#e8bd48}
 .balance{font-size:32px;font-weight:bold}
 .coin{width:180px;height:180px;border-radius:50%;border:5px solid #f5d77a;background:radial-gradient(circle,#f5d77a,#9b6b0b);color:#171000;font-size:54px;font-weight:bold;margin:20px auto;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 0 30px #a77a22}
 button{background:#d9ad3e;color:#111;border:0;border-radius:10px;padding:13px 18px;margin:5px;font-weight:bold;cursor:pointer}
-button:disabled{opacity:.5}
+button:disabled{opacity:.5;cursor:not-allowed}
 .muted{color:#aaa}
 .item{border-bottom:1px solid #444;padding:12px 0}
 #status{color:#aaa;font-size:13px}
@@ -27,6 +27,34 @@ input{background:#090909;border:1px solid #92702a;border-radius:9px;padding:12px
 .small{font-size:13px;color:#aaa}
 .business-number{font-size:25px;font-weight:bold;color:#f5d77a}
 .business-card{border:1px solid #51401e;border-radius:12px;padding:12px;margin:12px 0;background:#111}
+
+/* BATTLE PASS */
+.bp-header{background:linear-gradient(145deg,#30220b,#171717 65%);border:1px solid #d9ad3e}
+.bp-level{font-size:42px;font-weight:bold;color:#f5d77a}
+.bp-progress{height:14px;background:#333;border-radius:20px;overflow:hidden;margin:12px 0}
+.bp-progress-fill{height:100%;background:linear-gradient(90deg,#a8791c,#ffe28a);width:0%;transition:width .3s}
+.bp-task{background:#111;border:1px solid #51401e;border-radius:12px;padding:13px;margin:10px 0;text-align:left}
+.bp-task-title{font-weight:bold;color:#f5d77a}
+.bp-task-progress{height:8px;background:#333;border-radius:10px;margin:9px 0;overflow:hidden}
+.bp-task-fill{height:100%;background:#d9ad3e}
+.bp-reward{background:#111;border:1px solid #51401e;border-radius:10px;padding:12px;margin:8px 0}
+.bp-reward.free{border-color:#92702a}
+.bp-reward.premium{border-color:#d9ad3e;background:linear-gradient(120deg,#211a0d,#111)}
+.bp-reward-title{font-weight:bold;margin-bottom:7px}
+.bp-columns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.bp-columns button{width:100%;margin:4px 0;padding:10px 5px;font-size:12px}
+.bp-tag{display:inline-block;padding:5px 9px;border-radius:8px;background:#35280e;color:#f5d77a;font-size:12px;margin:3px}
+.bp-claimed{color:#8bd49b;font-weight:bold}
+.bp-locked{color:#888}
+.bp-section-title{margin-top:25px}
+.bp-level-number{font-size:20px;color:#f5d77a;font-weight:bold}
+.bp-reward-value{font-size:13px;line-height:1.7}
+.bp-buy-buttons{display:flex;flex-wrap:wrap;justify-content:center}
+.bp-buy-buttons button{flex:1;min-width:130px}
+@media(max-width:360px){
+ .nav button{min-width:105px;padding:10px}
+ .bp-columns{grid-template-columns:1fr}
+}
 </style>
 </head>
 <body>
@@ -38,6 +66,7 @@ input{background:#090909;border:1px solid #92702a;border-radius:9px;padding:12px
 <button onclick="showPage('main')">UGLY CLICKER</button>
 <button onclick="showPage('gramm')">GRAMM CLICKER</button>
 <button onclick="showPage('businesses')">БИЗНЕСЫ</button>
+<button onclick="showPage('battlepass')">BATTLE PASS</button>
 </div>
 
 <section id="main" class="page active">
@@ -157,6 +186,48 @@ input{background:#090909;border:1px solid #92702a;border-radius:9px;padding:12px
 </div>
 </section>
 
+<!-- BATTLE PASS -->
+<section id="battlepass" class="page">
+
+<div class="panel bp-header">
+<h2>UGLY BATTLE PASS</h2>
+<p class="muted">СЕЗОННЫЙ ПРОПУСК</p>
+<div class="bp-level">УРОВЕНЬ <span id="bpLevel">1</span> / 100</div>
+<div class="bp-progress">
+<div class="bp-progress-fill" id="bpProgressFill"></div>
+</div>
+<p><span id="bpXP">0</span> / <span id="bpNextXP">200</span> BP XP</p>
+<p id="bpSeasonDates" class="small">Загрузка сезона...</p>
+<p id="bpPremiumStatus" class="bp-tag">FREE PASS</p>
+<button onclick="loadBattlePass()">Обновить Battle Pass</button>
+</div>
+
+<div class="panel">
+<h2>PREMIUM PASS</h2>
+<p>Открой премиальную дорожку наград!</p>
+<p><b>$300 000</b> или <b>30 000 GRAMM</b></p>
+<p class="small">Покупка Premium открывает премиальные награды сезона.</p>
+<div class="bp-buy-buttons">
+<button id="bpBuyUsd" onclick="buyBPPremium('usd')">Купить за $300 000</button>
+<button id="bpBuyGramm" onclick="buyBPPremium('gramm')">Купить за 30 000 GRAMM</button>
+</div>
+</div>
+
+<div class="panel">
+<h2>ЕЖЕДНЕВНЫЕ ЗАДАНИЯ</h2>
+<p class="small">Выполняй задания и получай BP XP.</p>
+<div id="bpTasks">Загрузка заданий...</div>
+</div>
+
+<div class="panel">
+<h2 class="bp-section-title">ДОРОЖКА НАГРАД</h2>
+<p class="small">Каждый уровень содержит доллары и GRAMM.</p>
+<p><span class="bp-tag">FREE</span> <span class="bp-tag">PREMIUM — x2</span></p>
+<div id="bpRewards">Загрузка наград...</div>
+</div>
+
+</section>
+
 <p id="status">Подключение...</p>
 
 <script>
@@ -186,6 +257,7 @@ const state={
 };
 
 let businessCatalog=[];
+let bpState=null;
 
 const money=n=>Number(n||0).toLocaleString("ru-RU");
 
@@ -216,6 +288,10 @@ async function api(path,options={}){
 function showPage(page){
  document.querySelectorAll(".page").forEach(el=>el.classList.remove("active"));
  document.getElementById(page).classList.add("active");
+
+ if(page==="battlepass"){
+  loadBattlePass();
+ }
 }
 
 function render(){
@@ -428,13 +504,11 @@ async function loadLeaderboard(){
  }
 }
 
-// Загрузка каталога бизнесов
 async function loadBusinessCatalog(){
  businessCatalog=await api("/api/businesses/catalog");
  renderBusinessCatalog();
 }
 
-// Покупка бизнеса
 async function buyBusiness(key){
  try{
   await api("/api/businesses/buy",{
@@ -446,7 +520,6 @@ async function buyBusiness(key){
  }catch(error){showError(error)}
 }
 
-// Продажа бизнеса
 async function sellBusiness(businessId){
  if(!confirm("Продать этот бизнес за 70% первоначальной цены?")) return;
 
@@ -460,7 +533,6 @@ async function sellBusiness(businessId){
  }catch(error){showError(error)}
 }
 
-// Вывод денег с бизнес-счёта
 async function withdrawBusiness(destination){
  try{
   const amount=Number(document.getElementById("withdrawAmount").value);
@@ -489,6 +561,201 @@ async function withdrawBusiness(destination){
  }catch(error){showError(error)}
 }
 
+/* BATTLE PASS FUNCTIONS */
+
+async function loadBattlePass(){
+ const tasks=document.getElementById("bpTasks");
+ const rewards=document.getElementById("bpRewards");
+
+ tasks.textContent="Загрузка заданий...";
+ rewards.textContent="Загрузка наград...";
+
+ try{
+  bpState=await api("/api/battle-pass/state");
+  renderBattlePass();
+ }catch(error){
+  tasks.textContent="Не удалось загрузить задания: "+error.message;
+  rewards.textContent="Не удалось загрузить награды";
+ }
+}
+
+function bpIsClaimed(level,track){
+ if(!bpState||!Array.isArray(bpState.claimed)) return false;
+ return bpState.claimed.some(item=>
+  Number(item.level)===Number(level)&&item.track===track
+ );
+}
+
+function renderBattlePass(){
+ if(!bpState) return;
+
+ const level=Number(bpState.level||1);
+ const xp=Number(bpState.xp||0);
+ const xpProgress=Number(
+  bpState.xpProgress!==undefined
+   ?bpState.xpProgress
+   :xp%200
+ );
+ const xpPerLevel=Number(bpState.xpPerLevel||200);
+ const maxLevel=Number(bpState.maxLevel||100);
+ const premium=Boolean(bpState.premium);
+
+ document.getElementById("bpLevel").textContent=level;
+ document.getElementById("bpXP").textContent=money(xpProgress);
+ document.getElementById("bpNextXP").textContent=xpPerLevel;
+
+ const percent=level>=maxLevel?100:
+  Math.min(100,(xpProgress/xpPerLevel)*100);
+
+ document.getElementById("bpProgressFill").style.width=percent+"%";
+
+ const season=bpState.season||{};
+ let seasonText="Сезон активен";
+
+ if(season.endsAt){
+  const end=new Date(season.endsAt);
+  const remaining=Math.max(0,Math.ceil((end-Date.now())/86400000));
+  seasonText="До конца сезона: "+remaining+" дн.";
+ }
+
+ document.getElementById("bpSeasonDates").textContent=seasonText;
+
+ document.getElementById("bpPremiumStatus").textContent=
+  premium?"PREMIUM PASS АКТИВЕН":"FREE PASS";
+
+ document.getElementById("bpBuyUsd").disabled=premium;
+ document.getElementById("bpBuyGramm").disabled=premium;
+
+ renderBPTasks();
+ renderBPRewards();
+}
+
+function renderBPTasks(){
+ const container=document.getElementById("bpTasks");
+ const tasks=bpState.tasks||[];
+
+ if(!tasks.length){
+  container.textContent="Задания пока не найдены";
+  return;
+ }
+
+ container.innerHTML=tasks.map(task=>{
+  const target=Math.max(1,Number(task.target||1));
+  const progress=Math.min(target,Number(task.progress||0));
+  const completed=Boolean(task.completed);
+  const percent=Math.min(100,(progress/target)*100);
+
+  return `
+   <div class="bp-task">
+    <div class="bp-task-title">${escapeHTML(task.title)}</div>
+    <p class="small">Прогресс: ${money(progress)} / ${money(target)}</p>
+    <div class="bp-task-progress">
+     <div class="bp-task-fill" style="width:${percent}%"></div>
+    </div>
+    <div>
+     <span class="bp-tag">+${money(task.xpReward)} BP XP</span>
+     ${completed
+      ?'<span class="bp-claimed">ВЫПОЛНЕНО ✓</span>'
+      :'<span class="bp-locked">В процессе</span>'}
+    </div>
+   </div>
+  `;
+ }).join("");
+}
+
+function renderBPRewards(){
+ const container=document.getElementById("bpRewards");
+ const currentLevel=Number(bpState.level||1);
+ const premium=Boolean(bpState.premium);
+
+ let html="";
+
+ for(let level=1;level<=100;level++){
+  const freeDollars=level*1000;
+  const freeGramm=level*10;
+  const premiumDollars=level*2000;
+  const premiumGramm=level*20;
+
+  const freeClaimed=bpIsClaimed(level,"free");
+  const premiumClaimed=bpIsClaimed(level,"premium");
+  const unlocked=level<=currentLevel;
+
+  html+=`
+   <div class="bp-reward">
+    <div class="bp-level-number">УРОВЕНЬ ${level}</div>
+
+    <div class="bp-columns">
+     <div class="bp-reward free">
+      <div class="bp-reward-title">FREE</div>
+      <div class="bp-reward-value">
+       $${money(freeDollars)}<br>
+       ${money(freeGramm)} GRAMM
+      </div>
+      ${freeClaimed
+       ?'<p class="bp-claimed">ПОЛУЧЕНО ✓</p>'
+       :unlocked
+        ?`<button onclick="claimBPReward(${level},'free')">Забрать</button>`
+        :'<p class="bp-locked">Закрыто</p>'}
+     </div>
+
+     <div class="bp-reward premium">
+      <div class="bp-reward-title">PREMIUM</div>
+      <div class="bp-reward-value">
+       $${money(premiumDollars)}<br>
+       ${money(premiumGramm)} GRAMM
+      </div>
+      ${premiumClaimed
+       ?'<p class="bp-claimed">ПОЛУЧЕНО ✓</p>'
+       :!premium
+        ?'<p class="bp-locked">Нужен Premium</p>'
+        :unlocked
+         ?`<button onclick="claimBPReward(${level},'premium')">Забрать</button>`
+         :'<p class="bp-locked">Закрыто</p>'}
+     </div>
+    </div>
+   </div>
+  `;
+ }
+
+ container.innerHTML=html;
+}
+
+async function buyBPPremium(currency){
+ if(!confirm(
+  currency==="usd"
+   ?"Купить Premium Pass за $300 000?"
+   :"Купить Premium Pass за 30 000 GRAMM?"
+ )) return;
+
+ try{
+  await api("/api/battle-pass/buy-premium",{
+   method:"POST",
+   body:JSON.stringify({currency})
+  });
+
+  await loadState();
+  await loadBattlePass();
+  alert("PREMIUM PASS успешно активирован!");
+ }catch(error){
+  showError(error);
+ }
+}
+
+async function claimBPReward(level,track){
+ try{
+  await api("/api/battle-pass/claim",{
+   method:"POST",
+   body:JSON.stringify({level,track})
+  });
+
+  await loadState();
+  await loadBattlePass();
+  alert("Награда Battle Pass получена!");
+ }catch(error){
+  showError(error);
+ }
+}
+
 function showError(error){
  document.getElementById("status").textContent=error.message;
  alert(error.message);
@@ -506,6 +773,7 @@ async function start(){
   await loadShop();
   await loadLeaderboard();
   await loadBusinessCatalog();
+  await loadBattlePass();
 
   document.getElementById("status").textContent="UGLY CLICKER подключён";
  }catch(error){showError(error)}
