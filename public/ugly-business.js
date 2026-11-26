@@ -8,7 +8,8 @@ let renderer, scene, camera, player, clock, ready = false, raf = 0;
 let yaw = 0, moveX = 0, moveY = 0, activeObject = null, actionBusy = false;
 let joyPointer = null, lookPointer = null, lookLastX = 0, joyCenter = { x: 0, y: 0 };
 let joystickRadius = 48, cameraDistance = 5.8, cameraHeight = 3.2;
-const interactables = [], animated = [], keys = Object.create(null);\nconst stationGroups=[], clubNPCs=[];
+const interactables = [], animated = [], keys = Object.create(null);
+const stationGroups=[], clubNPCs=[];
 const tempForward = new THREE.Vector3(), tempRight = new THREE.Vector3(), tempMove = new THREE.Vector3();
 const _v = new THREE.Vector3();
 
@@ -201,6 +202,7 @@ function currentInput() {
 function findInteractable() {
   let best = null, bestDistance = Infinity;
   for (const item of interactables) {
+    if (item.index >= (state.stations || 4)) continue;
     const d = player.position.distanceTo(item.position);
     if (d < item.radius && d < bestDistance) { best = item; bestDistance = d; }
   }
@@ -235,6 +237,23 @@ function animate() {
   for (const a of animated) {
     if (a.type === "idle") a.mesh.position.y = Math.sin(performance.now() * .0017 + a.phase) * .025;
   }
+  const now = performance.now();
+  for (const npc of clubNPCs) {
+    npc.timer -= dt;
+    if (npc.mode === "walk") {
+      const spots = [[-5.1,-2.2],[-1.8,-2.2],[1.8,-2.2],[5.1,-2.2]];
+      const p = spots[npc.station % spots.length], dest = new THREE.Vector3(p[0],0,p[1]);
+      npc.mesh.position.lerp(dest, Math.min(1,dt*.22));
+      if (npc.mesh.position.distanceTo(dest) < .35) { npc.mode="play"; npc.timer=8+Math.random()*12; }
+    } else if (npc.mode === "play") {
+      npc.mesh.position.y = Math.sin(now*.006+npc.phase)*.02;
+      if (npc.timer <= 0) npc.mode="exit";
+    } else {
+      npc.mesh.position.lerp(npc.home,Math.min(1,dt*.28));
+      if (npc.mesh.position.distanceTo(npc.home) < .35) { npc.mesh.position.set(-7+Math.random()*2,0,7.1); npc.station=Math.floor(Math.random()*Math.max(1,state.stations||4)); npc.mode="walk"; }
+    }
+  }
+  stationGroups.forEach((g,i)=>g.visible=i<(state.stations||4));
   updateCamera(dt);
   activeObject = findInteractable();
   $("simHint").textContent = activeObject ? activeObject.hint : "Двигайся по клубу. Подойди к игровому месту.";
@@ -247,7 +266,14 @@ function updateHUD() {
   $("simLevel").textContent = state.level || 1;
   $("simCustomers").textContent = state.customers || 0;
   $("simXpText").textContent = (Number(state.xp || 0) % 100) + " / 100 опыта";
-  $("simXpFill").style.width = (Number(state.xp || 0) % 100) + "%";\n  if ($("simStations")) $("simStations").textContent=(state.stations||4)+" / 8";\n  if ($("simIncome")) $("simIncome").textContent="$"+Number(state.hourlyIncome||0).toLocaleString("ru-RU")+"/ч";\n  if ($("simAdLevel")) $("simAdLevel").textContent=state.adLevel||0;
+  $("simXpFill").style.width = (Number(state.xp || 0) % 100) + "%";
+  if ($("simStations")) $("simStations").textContent = (state.stations || 4) + " / 8";
+  if ($("simIncome")) $("simIncome").textContent = "$" + Number(state.hourlyIncome || 0).toLocaleString("ru-RU") + "/ч";
+  if ($("simAdLevel")) $("simAdLevel").textContent = state.adLevel || 0;
+  stationGroups.forEach((g,i)=>g.visible=i<(state.stations||4));
+  if ($("simStations")) $("simStations").textContent=(state.stations||4)+" / 8";
+  if ($("simIncome")) $("simIncome").textContent="$"+Number(state.hourlyIncome||0).toLocaleString("ru-RU")+"/ч";
+  if ($("simAdLevel")) $("simAdLevel").textContent=state.adLevel||0;
 }
 async function loadState() {
   try {
@@ -302,7 +328,10 @@ function bindControls() {
   const releaseLook = event => { if (event.pointerId === lookPointer) lookPointer = null; };
   canvas.addEventListener("pointerup", releaseLook);
   canvas.addEventListener("pointercancel", releaseLook);
-  $("simAction").addEventListener("click",()=>{if(activeObject)doAction("upgrade_station",{station:activeObject.index});});\n  $("simBuyStation")?.addEventListener("click",()=>doAction("buy_station"));\n  $("simAdvertise")?.addEventListener("click",()=>doAction("advertise"));\n  $("simCashout")?.addEventListener("click",async()=>{try{const d=await api("/api/simulator/exchange",{method:"POST",body:JSON.stringify({currency:"gramm"})});Object.assign(state,d.state||{});updateHUD();toast("Зачислено "+d.gramm+" GRAMM на основной баланс");}catch(e){toast(e.message,"error");}});
+  $("simAction").addEventListener("click",()=>{if(activeObject)doAction("upgrade_station",{station:activeObject.index});});
+  $("simBuyStation")?.addEventListener("click",()=>doAction("buy_station"));
+  $("simAdvertise")?.addEventListener("click",()=>doAction("advertise"));
+  $("simCashout")?.addEventListener("click",async()=>{try{const d=await api("/api/simulator/exchange",{method:"POST",body:JSON.stringify({currency:"gramm"})});Object.assign(state,d.state||{});updateHUD();toast("Зачислено "+d.gramm+" GRAMM на основной баланс");}catch(e){toast(e.message,"error");}});
   window.addEventListener("keydown", event => {
     if (["KeyW","KeyA","KeyS","KeyD","ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].includes(event.code)) {
       keys[event.code] = true; event.preventDefault();
@@ -322,8 +351,7 @@ window.initUglyBusiness = async function() {
     renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.12;
-    buildStore(); clock = new THREE.Clock(); bindControls(); ready = true; resize();
-    await loadState();
+    await loadState(); buildStore(); clock = new THREE.Clock(); bindControls(); ready = true; resize();
     yaw = 0; camera.position.set(0, 3.2, 11.2); camera.lookAt(player.position.x, 1, player.position.z);
     animate();
   } catch (error) {
