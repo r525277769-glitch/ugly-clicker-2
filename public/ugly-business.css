@@ -30,3 +30,21 @@
 .sim-management button{border:1px solid #38d9ff;background:linear-gradient(145deg,#174c70,#252052 70%,#111a30);color:#e2faff;box-shadow:inset 0 1px #ffffff22,0 4px 12px #0006}
 .sim-hud>div{background:linear-gradient(145deg,#182d48,#17162f 75%,#101a2b);border-color:#3a8cb0;box-shadow:0 5px 16px #0007,0 0 12px #087ba522}
 .sim-hud strong{color:#69e8ff}.sim-progress-track{background:#172943}.sim-progress-track>div{background:linear-gradient(90deg,#22bde8,#9874ff,#ffcf58)}
+
+/* Club economy, reception queue and component workshop */
+.sim-tap-panel{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:12px 0;padding:15px;border:1px solid #3ddcff88;border-radius:17px;background:linear-gradient(120deg,#142d49,#241b48 70%,#13233b);box-shadow:0 7px 20px #0008,0 0 18px #20cfff18;text-align:left}
+.sim-tap-panel>div{display:flex;flex-direction:column;gap:5px;min-width:0}.sim-tap-panel small{font-size:9px;letter-spacing:1.2px;color:#6deaff;font-weight:900}.sim-tap-panel b{font-size:13px;color:#f0fbff}.sim-tap-panel span{font-size:10px;color:#a9c9df;line-height:1.4}
+.sim-tap-panel button{flex:0 0 auto;min-width:105px;min-height:54px;margin:0;border:1px solid #c7faff;background:linear-gradient(145deg,#b8faff,#24bfe9 55%,#6455df);color:#07172b;font-size:12px;font-weight:1000;box-shadow:0 4px 16px #00cfff44}
+.sim-tap-panel button.tap-pop{animation:clubTapPop .2s ease}@keyframes clubTapPop{50%{transform:scale(.91);filter:brightness(1.35)}}
+.sim-queue-row,.sim-session-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 0;border-bottom:1px solid #29425a;text-align:left}.sim-queue-row:last-child,.sim-session-row:last-child{border-bottom:0}
+.sim-queue-row>div:first-child{display:flex;flex-direction:column;gap:5px;min-width:0}.sim-queue-row b,.sim-session-row b{font-size:12px;color:#e5faff}.sim-queue-row small,.sim-session-row span{font-size:10px;color:#8eabc3;line-height:1.4}
+.sim-queue-actions{display:flex;align-items:center;gap:5px;flex:0 0 auto}.sim-queue-actions select{max-width:80px;min-width:66px;padding:8px 4px;background:#0c1c2d;border:1px solid #398eb2;border-radius:8px;color:#dffaff;font-size:10px}.sim-queue-actions button{margin:0;padding:9px 10px;font-size:9px;white-space:nowrap}
+.sim-session-row{flex-direction:column;align-items:flex-start;gap:5px}
+.sim-upgrade-station{padding:13px 0;border-bottom:1px solid #2c4660}.sim-upgrade-station:last-child{border-bottom:0}
+.sim-upgrade-head{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:10px}.sim-upgrade-head b{font-size:11px;color:#6deaff}.sim-upgrade-head span{font-size:9px;color:#b2c4d9}
+.sim-component-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+.sim-component{display:flex;flex-direction:column;align-items:flex-start;gap:5px;min-width:0;padding:9px;border:1px solid #315474;border-radius:10px;background:linear-gradient(145deg,#172b43,#151a32)}
+.sim-component span{font-size:10px;color:#dcefff}.sim-component b{font-size:10px;color:#62e3ff}
+.sim-component button{width:100%;min-height:31px;margin:0;padding:6px 4px;font-size:8px;line-height:1.25;border:1px solid #428eb7;background:linear-gradient(145deg,#174c70,#292052);color:#e6fbff;box-shadow:none}
+.sim-component button:disabled{opacity:.55}
+@media(max-width:390px){.sim-tap-panel{padding:11px}.sim-tap-panel b{font-size:11px}.sim-tap-panel button{min-width:94px;font-size:10px}.sim-queue-row{align-items:flex-start;flex-direction:column}.sim-queue-actions{width:100%}.sim-queue-actions select{flex:1;max-width:none}.sim-queue-actions button{flex:1}}
