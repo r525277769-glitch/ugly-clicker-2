@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -6,1957 +7,248 @@
 <meta name="theme-color" content="#090909">
 <title>UGLY CLICKER 2.0</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-
 <style>
-:root{
- --bg:#080808;
- --surface:#111;
- --surface2:#171717;
- --gold:#e9bd59;
- --gold2:#ffdf91;
- --gold-dark:#805b1b;
- --text:#f5e5bd;
- --muted:#89847a;
- --green:#77d69a;
- --red:#d66b61;
- --border:rgba(220,174,75,.24);
-}
-
+:root{--bg:#080808;--surface:#111;--surface2:#171717;--gold:#e9bd59;--gold2:#ffdf91;--gold-dark:#805b1b;--text:#f5e5bd;--muted:#89847a;--green:#77d69a;--red:#d66b61;--border:rgba(220,174,75,.24)}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-
-body{
- margin:0;
- background:
- radial-gradient(ellipse at 50% -15%,rgba(174,124,35,.15),transparent 55%),
- var(--bg);
- color:var(--text);
- font-family:Arial,sans-serif;
- text-align:center;
- padding:0 0 105px;
- min-height:100vh;
-}
-
-button,input{font:inherit}
-button{cursor:pointer;touch-action:manipulation}
-
-button:disabled{
- opacity:.4;
- cursor:not-allowed;
- filter:grayscale(1);
-}
-
-#app{
- max-width:520px;
- margin:auto;
- padding:0 15px;
-}
-
-/* HEADER */
-
-.top-header{
- padding:17px 0 12px;
- display:flex;
- align-items:center;
- justify-content:space-between;
- gap:10px;
-}
-
-.brand{text-align:left}
-
-.brand-name{
- font-size:21px;
- font-weight:900;
- letter-spacing:2px;
- color:var(--gold2);
-}
-
-.brand-sub{
- font-size:9px;
- letter-spacing:3px;
- color:var(--muted);
- margin-top:4px;
-}
-
-.profile-button{
- width:43px;
- height:43px;
- border-radius:14px;
- background:linear-gradient(145deg,#30230e,#17130b);
- border:1px solid var(--border);
- color:var(--gold2);
- font-size:20px;
-}
-
-.gold-line{
- height:1px;
- background:linear-gradient(90deg,transparent,var(--gold-dark),var(--gold2),var(--gold-dark),transparent);
- opacity:.7;
-}
-
-/* BALANCES */
-
-.balance-grid{
- display:grid;
- grid-template-columns:1fr 1fr;
- gap:10px;
- margin:15px 0;
-}
-
-.balance-card{
- text-align:left;
- padding:14px;
- border:1px solid var(--border);
- border-radius:17px;
- background:linear-gradient(145deg,#19150d,#101010 75%);
- box-shadow:0 8px 25px #0008;
- min-width:0;
- transition:transform .2s,border-color .2s;
-}
-
-.balance-card.pulse{
- animation:balancePulse .5s ease;
-}
-
-@keyframes balancePulse{
- 0%{transform:scale(1);border-color:var(--border)}
- 45%{transform:scale(1.035);border-color:var(--gold2);box-shadow:0 0 22px #e9bd5940}
- 100%{transform:scale(1);border-color:var(--border)}
-}
-
-.balance-label{
- color:var(--muted);
- font-size:10px;
- font-weight:bold;
- letter-spacing:1.5px;
-}
-
-.balance-value{
- color:var(--gold2);
- font-size:23px;
- font-weight:900;
- margin-top:8px;
- overflow-wrap:anywhere;
-}
-
-.balance-symbol{
- color:var(--gold);
- font-size:11px;
- margin-top:4px;
-}
-
-/* PLAYER INFO */
-
-.player-info{
- display:flex;
- align-items:center;
- justify-content:space-between;
- gap:10px;
- padding:12px 14px;
- border-radius:14px;
- background:#111;
- border:1px solid #292318;
- margin-bottom:18px;
-}
-
-.player-level{
- text-align:left;
- font-size:12px;
- font-weight:bold;
-}
-
-.player-level strong{
- display:block;
- color:var(--gold2);
- font-size:17px;
- margin-top:4px;
-}
-
-.player-xp{
- text-align:right;
- font-size:11px;
- color:var(--muted);
-}
-
-.player-xp strong{
- display:block;
- color:var(--gold);
- font-size:14px;
- margin-top:4px;
-}
-
-/* PAGE SYSTEM */
-
-.page{display:none;animation:pageIn .25s ease}
-.page.active{display:block}
-
-@keyframes pageIn{
- from{opacity:0;transform:translateY(7px)}
- to{opacity:1;transform:translateY(0)}
-}
-
-.section-heading{
- text-align:left;
- margin:24px 2px 12px;
-}
-
-.section-heading h2{
- color:var(--gold2);
- font-size:17px;
- letter-spacing:1.5px;
- margin:0;
-}
-
-.section-heading p{
- color:var(--muted);
- font-size:10px;
- letter-spacing:1px;
- margin:6px 0 0;
-}
-
-.panel{
- background:linear-gradient(145deg,#171717,#101010);
- border:1px solid var(--border);
- border-radius:19px;
- padding:17px;
- margin:13px 0;
- box-shadow:0 8px 25px #0005;
- transition:border-color .2s,transform .2s,box-shadow .2s;
-}
-
-.panel.purchase-flash{
- animation:purchaseFlash .65s ease;
-}
-
-@keyframes purchaseFlash{
- 0%{border-color:var(--border);box-shadow:0 8px 25px #0005}
- 40%{border-color:var(--gold2);box-shadow:0 0 25px #e9bd5950}
- 100%{border-color:var(--border);box-shadow:0 8px 25px #0005}
-}
-
-.panel h2{
- color:var(--gold2);
- font-size:16px;
- letter-spacing:1px;
- margin:2px 0 15px;
-}
-
-.muted,.small{color:var(--muted)}
-.small{font-size:11px;line-height:1.6}
-.balance{color:var(--gold2);font-size:29px;font-weight:900}
-
-/* MAIN CLICKER */
-
-.clicker-hero{
- position:relative;
- overflow:hidden;
- padding:23px 15px 20px;
- border-radius:22px;
- background:
- radial-gradient(ellipse at center,rgba(174,124,35,.15),transparent 65%),
- linear-gradient(145deg,#19150e,#0d0d0d);
- border:1px solid rgba(233,189,89,.35);
- box-shadow:0 12px 35px #0008;
-}
-
-.hero-label{
- color:var(--muted);
- font-size:10px;
- letter-spacing:2px;
- font-weight:bold;
-}
-
-.coin{
- width:190px;
- height:190px;
- border-radius:50%;
- margin:25px auto 20px;
- display:flex;
- align-items:center;
- justify-content:center;
- cursor:pointer;
- user-select:none;
- color:#382507;
- font-size:65px;
- font-weight:1000;
- border:7px solid #a87926;
- background:
- radial-gradient(circle at 35% 27%,#fff1b9 0%,#f7d77d 17%,#d6a43b 48%,#936319 75%,#553607 100%);
- box-shadow:
- 0 0 0 5px #38270e,
- 0 0 0 7px #9a702c,
- 0 0 40px rgba(220,166,60,.3),
- inset 0 5px 12px #fff8;
- transition:transform .09s,filter .1s;
- position:relative;
- z-index:2;
-}
-
-.coin:active{
- transform:scale(.93);
- filter:brightness(1.2);
-}
-
-.coin.coin-hit{
- animation:coinHit .22s ease;
-}
-
-@keyframes coinHit{
- 0%{transform:scale(1)}
- 45%{transform:scale(.91) rotate(-3deg);filter:brightness(1.35)}
- 100%{transform:scale(1)}
-}
-
-.coin-caption{
- color:var(--muted);
- font-size:11px;
- letter-spacing:1px;
-}
-
-.click-reward-info{
- background:linear-gradient(145deg,#211a0c,#121212);
- border:1px solid var(--border);
- border-radius:15px;
- padding:15px;
- margin-top:17px;
-}
-
-.click-reward-info .balance{
- font-size:30px;
- margin:7px 0;
-}
-
-/* CLICK EFFECTS */
-
-#fxLayer{
- position:fixed;
- inset:0;
- z-index:500;
- pointer-events:none;
- overflow:hidden;
-}
-
-.float-reward{
- position:fixed;
- z-index:501;
- color:var(--gold2);
- font-size:21px;
- font-weight:1000;
- text-shadow:0 2px 8px #000,0 0 14px #e9bd59;
- pointer-events:none;
- white-space:nowrap;
- animation:floatReward .85s ease-out forwards;
-}
-
-.float-reward.gramm{
- color:#a9e7ce;
- text-shadow:0 2px 8px #000,0 0 14px #65d7a0;
-}
-
-@keyframes floatReward{
- 0%{opacity:0;transform:translate(-50%,10px) scale(.7)}
- 15%{opacity:1;transform:translate(-50%,0) scale(1.12)}
- 100%{opacity:0;transform:translate(-50%,-85px) scale(.9)}
-}
-
-.coin-particle{
- position:fixed;
- z-index:500;
- width:7px;
- height:7px;
- border-radius:50%;
- background:radial-gradient(circle,#fff5bd,#e9bd59 65%,#8b5c12);
- box-shadow:0 0 10px #e9bd59;
- pointer-events:none;
- animation:particleFly .65s ease-out forwards;
-}
-
-@keyframes particleFly{
- 0%{opacity:1;transform:translate(0,0) scale(1)}
- 100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(.1)}
-}
-
-/* TOASTS */
-
-.toast-stack{
- position:fixed;
- top:calc(12px + env(safe-area-inset-top));
- left:50%;
- transform:translateX(-50%);
- width:min(92%,420px);
- z-index:1000;
- display:flex;
- flex-direction:column;
- gap:8px;
- pointer-events:none;
-}
-
-.toast{
- display:flex;
- align-items:center;
- gap:10px;
- text-align:left;
- padding:13px 15px;
- border-radius:14px;
- background:linear-gradient(145deg,#211b10,#111);
- border:1px solid var(--gold-dark);
- color:var(--gold2);
- box-shadow:0 8px 28px #000b;
- font-size:13px;
- font-weight:bold;
- animation:toastIn .25s ease both;
-}
-
-.toast.error{border-color:#9b443a;color:#ffc1ad}
-.toast.success{border-color:#92702a}
-.toast.info{border-color:#555;color:#eee}
-.toast-icon{font-size:18px}
-.toast.removing{animation:toastOut .22s ease forwards}
-
-@keyframes toastIn{
- from{opacity:0;transform:translateY(-12px) scale(.96)}
- to{opacity:1;transform:translateY(0) scale(1)}
-}
-
-@keyframes toastOut{
- to{opacity:0;transform:translateY(-10px) scale(.96)}
-}
-
-/* BUTTONS */
-
-button{
- background:linear-gradient(145deg,#f0ce79,#c18d2d);
- color:#171005;
- border:1px solid #f3d68c;
- border-radius:11px;
- padding:12px 17px;
- margin:5px 3px;
- font-weight:900;
- font-size:12px;
- box-shadow:0 4px 12px #0005;
- transition:transform .12s,filter .12s,box-shadow .12s;
-}
-
-button:active{transform:scale(.97);filter:brightness(1.1)}
-button.button-success{animation:buttonSuccess .45s ease}
-
-@keyframes buttonSuccess{
- 0%{box-shadow:0 4px 12px #0005}
- 50%{box-shadow:0 0 22px #e9bd5970}
- 100%{box-shadow:0 4px 12px #0005}
-}
-
-.button-secondary{
- background:#211b10;
- border:1px solid var(--gold-dark);
- color:var(--gold2);
-}
-
-.button-danger{
- background:#321714;
- color:#ffc1ad;
- border:1px solid #72382e;
-}
-
-.button-full{width:100%;margin:8px 0 0}
-
-/* ITEMS */
-
-.item{
- border-bottom:1px solid #302819;
- padding:13px 0;
- font-size:13px;
-}
-
-.item:last-child{border-bottom:0}
-
-/* BUSINESS CARDS — БЕЗ ФОТОГРАФИЙ */
-
-.business-number{
- font-size:26px;
- font-weight:900;
- color:var(--gold2);
-}
-
-.business-card{
- border:1px solid var(--border);
- border-radius:14px;
- padding:15px;
- margin:12px 0;
- background:linear-gradient(145deg,#1b1811,#111);
- text-align:left;
- transition:border-color .2s,transform .2s;
-}
-
-.business-card:active{transform:scale(.99)}
-.business-card b{color:var(--gold2)}
-
-.business-card-content{
- padding:0 0 2px;
-}
-
-.business-card-content p{
- margin:9px 0;
- font-size:13px;
-}
-
-/* INPUTS */
-
-input{
- background:#090909;
- border:1px solid var(--gold-dark);
- border-radius:11px;
- padding:13px;
- color:var(--gold2);
- width:100%;
- max-width:260px;
- text-align:center;
- font-size:16px;
- outline:none;
- margin:8px 0;
-}
-
-input:focus{border-color:var(--gold2)}
-
-/* CLICK UPGRADES */
-
-.click-upgrade-card{
- background:linear-gradient(145deg,#1b1811,#101010);
- border:1px solid var(--border);
- border-radius:15px;
- padding:16px;
- margin:12px 0;
- transition:border-color .2s,transform .2s;
-}
-
-.click-upgrade-card.owned{border-color:#477a51}
-.click-upgrade-card h3{color:var(--gold2);margin:5px 0 12px}
-.click-upgrade-bonus{color:var(--gold2);font-size:19px;font-weight:bold}
-.click-upgrade-price{color:var(--muted);margin:10px 0;font-size:12px}
-.click-upgrade-owned{color:var(--green);font-weight:bold;margin:10px 0;font-size:12px}
-
-/* GRAMM */
-
-.gramm-hero{
- background:linear-gradient(145deg,#1b1710,#0c0c0c);
- border:1px solid var(--border);
- border-radius:20px;
- padding:20px 15px;
-}
-
-/* BOOST STATUS */
-
-.boost-active{
- color:var(--green)!important;
- font-weight:bold;
- text-shadow:0 0 10px #77d69a40;
-}
-
-.boost-inactive{color:var(--muted)}
-.boost-permanent{color:var(--gold2)!important;font-weight:bold}
-
-/* BATTLE PASS */
-
-.bp-header{
- background:
- radial-gradient(ellipse at top,rgba(213,164,65,.2),transparent 70%),
- linear-gradient(145deg,#211a0c,#101010);
- border:1px solid #9e772e;
-}
-
-.bp-level{font-size:35px;font-weight:900;color:var(--gold2);margin:14px 0}
-
-.bp-progress{
- height:13px;
- background:#302a1e;
- border-radius:20px;
- overflow:hidden;
- margin:12px 0;
- border:1px solid #4d3a1d;
-}
-
-.bp-progress-fill{
- height:100%;
- background:linear-gradient(90deg,#95681b,#ffdf91);
- width:0%;
- transition:width .3s;
- box-shadow:0 0 12px #e9bd59;
-}
-
-.bp-task{
- background:#111;
- border:1px solid var(--border);
- border-radius:14px;
- padding:14px;
- margin:10px 0;
- text-align:left;
-}
-
-.bp-task-title{font-weight:bold;color:var(--gold2)}
-
-.bp-task-progress{
- height:7px;
- background:#302a1e;
- border-radius:10px;
- margin:10px 0;
- overflow:hidden;
-}
-
-.bp-task-fill{
- height:100%;
- background:linear-gradient(90deg,#a8791c,#f5d77a);
-}
-
-.bp-reward{
- background:#111;
- border:1px solid var(--border);
- border-radius:12px;
- padding:12px;
- margin:9px 0;
-}
-
-.bp-reward.free{border-color:#92702a}
-
-.bp-reward.premium{
- border-color:#d9ad3e;
- background:linear-gradient(120deg,#211a0d,#111);
-}
-
-.bp-reward-title{font-weight:bold;margin-bottom:7px;color:var(--gold2)}
-.bp-columns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.bp-columns button{width:100%;margin:5px 0;padding:10px 5px;font-size:11px}
-.bp-tag{
- display:inline-block;
- padding:6px 10px;
- border-radius:8px;
- background:#35280e;
- color:var(--gold2);
- font-size:11px;
- margin:3px;
-}
-.bp-claimed{color:var(--green);font-weight:bold}
-.bp-locked{color:#777}
-.bp-level-number{font-size:19px;color:var(--gold2);font-weight:bold}
-.bp-reward-value{font-size:12px;line-height:1.8}
-.bp-section-title{margin-top:20px}
-.bp-buy-buttons{display:flex;flex-wrap:wrap;justify-content:center;gap:5px}
-.bp-buy-buttons button{flex:1;min-width:125px}
-
-/* BOTTOM NAVIGATION */
-
-.bottom-nav{
- position:fixed;
- bottom:0;
- left:0;
- right:0;
- z-index:100;
- padding:9px 7px calc(9px + env(safe-area-inset-bottom));
- background:rgba(10,10,10,.96);
- border-top:1px solid rgba(220,174,75,.3);
- backdrop-filter:blur(15px);
- display:grid;
- grid-template-columns:repeat(4,1fr);
- gap:3px;
- max-width:520px;
- margin:auto;
-}
-
-.nav-button{
- background:transparent;
- color:#777;
- border:0;
- box-shadow:none;
- border-radius:12px;
- padding:8px 2px;
- margin:0;
- min-width:0;
- display:flex;
- flex-direction:column;
- align-items:center;
- justify-content:center;
- gap:5px;
- font-size:9px;
- letter-spacing:.3px;
-}
-
-.nav-icon{font-size:20px;line-height:1}
-
-.nav-button.active{
- color:var(--gold2);
- background:linear-gradient(145deg,#30230e,#17130b);
- border:1px solid rgba(220,174,75,.25);
-}
-
-/* STATUS */
-
-#status{
- color:var(--muted);
- font-size:10px;
- padding:15px 5px;
-}
-
-@media(max-width:360px){
- #app{padding:0 10px}
- .coin{width:165px;height:165px}
- .balance-value{font-size:19px}
- .bp-columns{grid-template-columns:1fr}
- .brand-name{font-size:18px}
-}
-
-@media(prefers-reduced-motion:reduce){
- *,*::before,*::after{
-  animation-duration:.01ms!important;
-  animation-iteration-count:1!important;
-  scroll-behavior:auto!important;
- }
-}
+body{margin:0;background:radial-gradient(ellipse at 50% -15%,rgba(174,124,35,.15),transparent 55%),var(--bg);color:var(--text);font-family:Arial,sans-serif;text-align:center;padding:0 0 105px;min-height:100vh}
+button,input{font:inherit}button{cursor:pointer;touch-action:manipulation}button:disabled{opacity:.4;cursor:not-allowed;filter:grayscale(1)}
+#app{max-width:520px;margin:auto;padding:0 15px}
+.top-header{padding:17px 0 12px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.brand{text-align:left}.brand-name{font-size:21px;font-weight:900;letter-spacing:2px;color:var(--gold2)}.brand-sub{font-size:9px;letter-spacing:3px;color:var(--muted);margin-top:4px}
+.profile-button{width:43px;height:43px;border-radius:14px;background:linear-gradient(145deg,#30230e,#17130b);border:1px solid var(--border);color:var(--gold2);font-size:20px}
+.gold-line{height:1px;background:linear-gradient(90deg,transparent,var(--gold-dark),var(--gold2),var(--gold-dark),transparent);opacity:.7}
+.balance-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:15px 0}
+.balance-card{text-align:left;padding:14px;border:1px solid var(--border);border-radius:17px;background:linear-gradient(145deg,#19150d,#101010 75%);box-shadow:0 8px 25px #0008;min-width:0;transition:transform .2s,border-color .2s}
+.balance-card.pulse{animation:balancePulse .5s ease}
+@keyframes balancePulse{0%{transform:scale(1);border-color:var(--border)}45%{transform:scale(1.035);border-color:var(--gold2);box-shadow:0 0 22px #e9bd5940}100%{transform:scale(1);border-color:var(--border)}}
+.balance-label{color:var(--muted);font-size:10px;font-weight:bold;letter-spacing:1.5px}
+.balance-value{color:var(--gold2);font-size:23px;font-weight:900;margin-top:8px;overflow-wrap:anywhere}.balance-symbol{color:var(--gold);font-size:11px;margin-top:4px}
+.player-info{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;border-radius:14px;background:#111;border:1px solid #292318;margin-bottom:18px}
+.player-level{text-align:left;font-size:12px;font-weight:bold}.player-level strong{display:block;color:var(--gold2);font-size:17px;margin-top:4px}
+.player-xp{text-align:right;font-size:11px;color:var(--muted)}.player-xp strong{display:block;color:var(--gold);font-size:14px;margin-top:4px}
+.page{display:none;animation:pageIn .25s ease}.page.active{display:block}@keyframes pageIn{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
+.section-heading{text-align:left;margin:24px 2px 12px}.section-heading h2{color:var(--gold2);font-size:17px;letter-spacing:1.5px;margin:0}.section-heading p{color:var(--muted);font-size:10px;letter-spacing:1px;margin:6px 0 0}
+.panel{background:linear-gradient(145deg,#171717,#101010);border:1px solid var(--border);border-radius:19px;padding:17px;margin:13px 0;box-shadow:0 8px 25px #0005;transition:border-color .2s,transform .2s,box-shadow .2s}
+.panel.purchase-flash{animation:purchaseFlash .65s ease}@keyframes purchaseFlash{0%{border-color:var(--border);box-shadow:0 8px 25px #0005}40%{border-color:var(--gold2);box-shadow:0 0 25px #e9bd5950}100%{border-color:var(--border);box-shadow:0 8px 25px #0005}}
+.panel h2{color:var(--gold2);font-size:16px;letter-spacing:1px;margin:2px 0 15px}.muted,.small{color:var(--muted)}.small{font-size:11px;line-height:1.6}.balance{color:var(--gold2);font-size:29px;font-weight:900}
+.clicker-hero{position:relative;overflow:hidden;padding:23px 15px 20px;border-radius:22px;background:radial-gradient(ellipse at center,rgba(174,124,35,.15),transparent 65%),linear-gradient(145deg,#19150e,#0d0d0d);border:1px solid rgba(233,189,89,.35);box-shadow:0 12px 35px #0008}
+.hero-label{color:var(--muted);font-size:10px;letter-spacing:2px;font-weight:bold}
+.coin{width:190px;height:190px;border-radius:50%;margin:25px auto 20px;display:flex;align-items:center;justify-content:center;cursor:pointer;user-select:none;color:#382507;font-size:65px;font-weight:1000;border:7px solid #a87926;background:radial-gradient(circle at 35% 27%,#fff1b9 0%,#f7d77d 17%,#d6a43b 48%,#936319 75%,#553607 100%);box-shadow:0 0 0 5px #38270e,0 0 0 7px #9a702c,0 0 40px rgba(220,166,60,.3),inset 0 5px 12px #fff8;transition:transform .09s,filter .1s;position:relative;z-index:2}
+.coin:active{transform:scale(.93);filter:brightness(1.2)}.coin.coin-hit{animation:coinHit .22s ease}@keyframes coinHit{0%{transform:scale(1)}45%{transform:scale(.91) rotate(-3deg);filter:brightness(1.35)}100%{transform:scale(1)}}
+.coin-caption{color:var(--muted);font-size:11px;letter-spacing:1px}.click-reward-info{background:linear-gradient(145deg,#211a0c,#121212);border:1px solid var(--border);border-radius:15px;padding:15px;margin-top:17px}.click-reward-info .balance{font-size:30px;margin:7px 0}
+#fxLayer{position:fixed;inset:0;z-index:500;pointer-events:none;overflow:hidden}
+.float-reward{position:fixed;z-index:501;color:var(--gold2);font-size:21px;font-weight:1000;text-shadow:0 2px 8px #000,0 0 14px #e9bd59;pointer-events:none;white-space:nowrap;animation:floatReward .85s ease-out forwards}
+.float-reward.gramm{color:#a9e7ce;text-shadow:0 2px 8px #000,0 0 14px #65d7a0}
+@keyframes floatReward{0%{opacity:0;transform:translate(-50%,10px) scale(.7)}15%{opacity:1;transform:translate(-50%,0) scale(1.12)}100%{opacity:0;transform:translate(-50%,-85px) scale(.9)}}
+.coin-particle{position:fixed;z-index:500;width:7px;height:7px;border-radius:50%;background:radial-gradient(circle,#fff5bd,#e9bd59 65%,#8b5c12);box-shadow:0 0 10px #e9bd59;pointer-events:none;animation:particleFly .65s ease-out forwards}
+@keyframes particleFly{0%{opacity:1;transform:translate(0,0) scale(1)}100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(.1)}}
+.toast-stack{position:fixed;top:calc(12px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);width:min(92%,420px);z-index:1000;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast{display:flex;align-items:center;gap:10px;text-align:left;padding:13px 15px;border-radius:14px;background:linear-gradient(145deg,#211b10,#111);border:1px solid var(--gold-dark);color:var(--gold2);box-shadow:0 8px 28px #000b;font-size:13px;font-weight:bold;animation:toastIn .25s ease both}
+.toast.error{border-color:#9b443a;color:#ffc1ad}.toast.success{border-color:#92702a}.toast.info{border-color:#555;color:#eee}.toast-icon{font-size:18px}.toast.removing{animation:toastOut .22s ease forwards}
+@keyframes toastIn{from{opacity:0;transform:translateY(-12px) scale(.96)}to{opacity:1;transform:translateY(0) scale(1)}}@keyframes toastOut{to{opacity:0;transform:translateY(-10px) scale(.96)}}
+button{background:linear-gradient(145deg,#f0ce79,#c18d2d);color:#171005;border:1px solid #f3d68c;border-radius:11px;padding:12px 17px;margin:5px 3px;font-weight:900;font-size:12px;box-shadow:0 4px 12px #0005;transition:transform .12s,filter .12s,box-shadow .12s}
+button:active{transform:scale(.97);filter:brightness(1.1)}button.button-success{animation:buttonSuccess .45s ease}@keyframes buttonSuccess{0%{box-shadow:0 4px 12px #0005}50%{box-shadow:0 0 22px #e9bd5970}100%{box-shadow:0 4px 12px #0005}}
+.button-secondary{background:#211b10;border:1px solid var(--gold-dark);color:var(--gold2)}.button-danger{background:#321714;color:#ffc1ad;border:1px solid #72382e}.button-full{width:100%;margin:8px 0 0}
+.item{border-bottom:1px solid #302819;padding:13px 0;font-size:13px}.item:last-child{border-bottom:0}
+.business-number{font-size:26px;font-weight:900;color:var(--gold2)}.business-card{border:1px solid var(--border);border-radius:14px;padding:15px;margin:12px 0;background:linear-gradient(145deg,#1b1811,#111);text-align:left;transition:border-color .2s,transform .2s}.business-card:active{transform:scale(.99)}.business-card b{color:var(--gold2)}.business-card-content{padding:0 0 2px}.business-card-content p{margin:9px 0;font-size:13px}
+input{background:#090909;border:1px solid var(--gold-dark);border-radius:11px;padding:13px;color:var(--gold2);width:100%;max-width:260px;text-align:center;font-size:16px;outline:none;margin:8px 0}input:focus{border-color:var(--gold2)}
+.click-upgrade-card{background:linear-gradient(145deg,#1b1811,#101010);border:1px solid var(--border);border-radius:15px;padding:16px;margin:12px 0;transition:border-color .2s,transform .2s}.click-upgrade-card.owned{border-color:#477a51}.click-upgrade-card h3{color:var(--gold2);margin:5px 0 12px}.click-upgrade-bonus{color:var(--gold2);font-size:19px;font-weight:bold}.click-upgrade-price{color:var(--muted);margin:10px 0;font-size:12px}.click-upgrade-owned{color:var(--green);font-weight:bold;margin:10px 0;font-size:12px}
+.gramm-hero{background:linear-gradient(145deg,#1b1710,#0c0c0c);border:1px solid var(--border);border-radius:20px;padding:20px 15px}
+.boost-active{color:var(--green)!important;font-weight:bold;text-shadow:0 0 10px #77d69a40}.boost-inactive{color:var(--muted)}.boost-permanent{color:var(--gold2)!important;font-weight:bold}
+.bp-header{background:radial-gradient(ellipse at top,rgba(213,164,65,.2),transparent 70%),linear-gradient(145deg,#211a0c,#101010);border:1px solid #9e772e}
+.bp-level{font-size:35px;font-weight:900;color:var(--gold2);margin:14px 0}.bp-progress{height:13px;background:#302a1e;border-radius:20px;overflow:hidden;margin:12px 0;border:1px solid #4d3a1d}.bp-progress-fill{height:100%;background:linear-gradient(90deg,#95681b,#ffdf91);width:0%;transition:width .3s;box-shadow:0 0 12px #e9bd59}
+.bp-task{background:#111;border:1px solid var(--border);border-radius:14px;padding:14px;margin:10px 0;text-align:left}.bp-task-title{font-weight:bold;color:var(--gold2)}.bp-task-progress{height:7px;background:#302a1e;border-radius:10px;margin:10px 0;overflow:hidden}.bp-task-fill{height:100%;background:linear-gradient(90deg,#a8791c,#f5d77a)}
+.bp-reward{background:#111;border:1px solid var(--border);border-radius:12px;padding:12px;margin:9px 0}.bp-reward.free{border-color:#92702a}.bp-reward.premium{border-color:#d9ad3e;background:linear-gradient(120deg,#211a0d,#111)}.bp-reward-title{font-weight:bold;margin-bottom:7px;color:var(--gold2)}.bp-columns{display:grid;grid-template-columns:1fr 1fr;gap:8px}.bp-columns button{width:100%;margin:5px 0;padding:10px 5px;font-size:11px}.bp-tag{display:inline-block;padding:6px 10px;border-radius:8px;background:#35280e;color:var(--gold2);font-size:11px;margin:3px}.bp-claimed{color:var(--green);font-weight:bold}.bp-locked{color:#777}.bp-level-number{font-size:19px;color:var(--gold2);font-weight:bold}.bp-reward-value{font-size:12px;line-height:1.8}.bp-section-title{margin-top:20px}.bp-buy-buttons{display:flex;flex-wrap:wrap;justify-content:center;gap:5px}.bp-buy-buttons button{flex:1;min-width:125px}
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;z-index:100;padding:9px 7px calc(9px + env(safe-area-inset-bottom));background:rgba(10,10,10,.96);border-top:1px solid rgba(220,174,75,.3);backdrop-filter:blur(15px);display:grid;grid-template-columns:repeat(5,1fr);gap:3px;max-width:520px;margin:auto}
+.nav-button{background:transparent;color:#777;border:0;box-shadow:none;border-radius:12px;padding:8px 2px;margin:0;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;font-size:9px;letter-spacing:.3px}.nav-icon{font-size:20px;line-height:1}.nav-button.active{color:var(--gold2);background:linear-gradient(145deg,#30230e,#17130b);border:1px solid rgba(220,174,75,.25)}
+#status{color:var(--muted);font-size:10px;padding:15px 5px}
+.farm-hero{background:radial-gradient(ellipse at center,rgba(233,189,89,.16),transparent 70%),linear-gradient(145deg,#211a0c,#101010);border:1px solid #a87926;border-radius:20px;padding:20px 15px;margin:13px 0}
+.farm-btc{color:var(--gold2);font-size:27px;font-weight:900;overflow-wrap:anywhere;margin:12px 0}
+.farm-stat{background:#111;border:1px solid var(--border);border-radius:13px;padding:13px;margin:9px 0}.farm-stat-label{color:var(--muted);font-size:10px;letter-spacing:1px}.farm-stat-value{color:var(--gold2);font-size:20px;font-weight:900;margin-top:7px;overflow-wrap:anywhere}
+.farm-equipment{background:linear-gradient(145deg,#1b1811,#101010);border:1px solid var(--border);border-radius:15px;padding:15px;margin:11px 0;text-align:left}.farm-equipment h3{color:var(--gold2);margin:3px 0 10px}.farm-equipment p{font-size:12px;margin:7px 0}.farm-rate{color:var(--green);font-weight:bold}.farm-exchange-rate{color:var(--gold2);font-weight:bold;font-size:14px;margin:8px 0}.farm-badge{display:inline-block;color:var(--gold2);background:#35280e;border:1px solid var(--gold-dark);border-radius:8px;padding:6px 9px;font-size:10px;margin:3px}
+@media(max-width:360px){#app{padding:0 10px}.coin{width:165px;height:165px}.balance-value{font-size:19px}.bp-columns{grid-template-columns:1fr}.brand-name{font-size:18px}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important}}
 </style>
 </head>
-
 <body>
-
-<div id="fxLayer"></div>
-<div id="toastStack" class="toast-stack" aria-live="polite"></div>
-
+<div id="fxLayer"></div><div id="toastStack" class="toast-stack" aria-live="polite"></div>
 <div id="app">
-
-<header class="top-header">
- <div class="brand">
-  <div class="brand-name">UGLY CLICKER</div>
-  <div class="brand-sub">PREMIUM GOLD EDITION</div>
- </div>
- <button class="profile-button" onclick="showPage('main')" aria-label="Профиль">♛</button>
-</header>
-
+<header class="top-header"><div class="brand"><div class="brand-name">UGLY CLICKER</div><div class="brand-sub">PREMIUM GOLD EDITION</div></div><button class="profile-button" onclick="showPage('main')" aria-label="Профиль">♛</button></header>
 <div class="gold-line"></div>
-
 <div class="balance-grid">
- <div class="balance-card" id="usdBalanceCard">
-  <div class="balance-label">USD BALANCE</div>
-  <div class="balance-value">$<span id="balance">0</span></div>
-  <div class="balance-symbol">◆ DOLLAR ACCOUNT</div>
- </div>
- <div class="balance-card" id="grammBalanceCard">
-  <div class="balance-label">GRAMM BALANCE</div>
-  <div class="balance-value"><span id="grammBalance">0</span></div>
-  <div class="balance-symbol">◆ GRAMM ACCOUNT</div>
- </div>
+ <div class="balance-card" id="usdBalanceCard"><div class="balance-label">USD BALANCE</div><div class="balance-value">$<span id="balance">0</span></div><div class="balance-symbol">◆ DOLLAR ACCOUNT</div></div>
+ <div class="balance-card" id="grammBalanceCard"><div class="balance-label">GRAMM BALANCE</div><div class="balance-value"><span id="grammBalance">0</span></div><div class="balance-symbol">◆ GRAMM ACCOUNT</div></div>
 </div>
-
-<div class="player-info">
- <div class="player-level">
-  PLAYER LEVEL
-  <strong>LVL <span id="level">1</span></strong>
- </div>
- <div class="player-xp">
-  EXPERIENCE
-  <strong><span id="experience">0</span> XP</strong>
- </div>
-</div>
-
-<!-- MAIN -->
+<div class="player-info"><div class="player-level">PLAYER LEVEL<strong>LVL <span id="level">1</span></strong></div><div class="player-xp">EXPERIENCE<strong><span id="experience">0</span> XP</strong></div></div>
 
 <section id="main" class="page active">
-
- <div class="clicker-hero">
-  <div class="hero-label">YOUR PERSONAL MONEY MACHINE</div>
-  <div class="coin" id="coin">U</div>
-  <div class="coin-caption">TAP TO EARN MONEY</div>
-  <div class="click-reward-info">
-   <div class="balance-label">REWARD PER CLICK</div>
-   <div class="balance">$<span id="clickReward">1</span></div>
-   <div class="small">Multiplier x<span id="multiplier">1</span></div>
-  </div>
+ <div class="clicker-hero"><div class="hero-label">YOUR PERSONAL MONEY MACHINE</div><div class="coin" id="coin">U</div><div class="coin-caption">TAP TO EARN MONEY</div><div class="click-reward-info"><div class="balance-label">REWARD PER CLICK</div><div class="balance">$<span id="clickReward">1</span></div><div class="small">Multiplier x<span id="multiplier">1</span></div></div></div>
+ <div class="section-heading"><h2>DAILY REWARD</h2><p>ЕЖЕДНЕВНЫЙ БОНУС</p></div>
+ <div class="panel"><h2>Ежедневная награда</h2><div class="balance">$1 000</div><button class="button-full" id="daily">ПОЛУЧИТЬ НАГРАДУ</button></div>
+ <div class="section-heading"><h2>BOOST CENTER</h2><p>ВРЕМЕННЫЕ И ПОСТОЯННЫЕ УЛУЧШЕНИЯ</p></div>
+ <div class="panel"><h2>Улучшения клика</h2>
+  <div class="item"><b>⚡ Бонус x2</b><p>Цена: $5 000</p><p class="small">Действует 3 минуты</p><p id="x2status" class="boost-inactive">Не активен</p><button onclick="buyUpgrade('x2')">АКТИВИРОВАТЬ x2</button></div>
+  <div class="item"><b>⚡ Бонус x4</b><p>Цена: $12 000</p><p class="small">Действует 3 минуты</p><p id="x4status" class="boost-inactive">Не активен</p><button onclick="buyUpgrade('x4')">АКТИВИРОВАТЬ x4</button></div>
+  <div class="item"><b>♛ Постоянное улучшение x10</b><p>Цена: $2 000 000</p><p class="small">Остаётся навсегда</p><p id="x10status" class="boost-inactive">Не куплено</p><button id="x10button" onclick="buyUpgrade('x10')">КУПИТЬ x10</button></div>
  </div>
-
- <div class="section-heading">
-  <h2>DAILY REWARD</h2>
-  <p>ЕЖЕДНЕВНЫЙ БОНУС</p>
- </div>
-
- <div class="panel">
-  <h2>Ежедневная награда</h2>
-  <div class="balance">$1 000</div>
-  <button class="button-full" id="daily">ПОЛУЧИТЬ НАГРАДУ</button>
- </div>
-
- <div class="section-heading">
-  <h2>BOOST CENTER</h2>
-  <p>ВРЕМЕННЫЕ И ПОСТОЯННЫЕ УЛУЧШЕНИЯ</p>
- </div>
-
- <div class="panel">
-  <h2>Улучшения клика</h2>
-
-  <div class="item">
-   <b>⚡ Бонус x2</b>
-   <p>Цена: $5 000</p>
-   <p class="small">Действует 3 минуты</p>
-   <p id="x2status" class="boost-inactive">Не активен</p>
-   <button onclick="buyUpgrade('x2')">АКТИВИРОВАТЬ x2</button>
-  </div>
-
-  <div class="item">
-   <b>⚡ Бонус x4</b>
-   <p>Цена: $12 000</p>
-   <p class="small">Действует 3 минуты</p>
-   <p id="x4status" class="boost-inactive">Не активен</p>
-   <button onclick="buyUpgrade('x4')">АКТИВИРОВАТЬ x4</button>
-  </div>
-
-  <div class="item">
-   <b>♛ Постоянное улучшение x10</b>
-   <p>Цена: $2 000 000</p>
-   <p class="small">Остаётся навсегда</p>
-   <p id="x10status" class="boost-inactive">Не куплено</p>
-   <button id="x10button" onclick="buyUpgrade('x10')">КУПИТЬ x10</button>
-  </div>
- </div>
-
- <div class="panel">
-  <h2>⚡ ПОСТОЯННЫЕ УЛУЧШЕНИЯ</h2>
-  <p class="small">Увеличивай базовую награду за каждый клик навсегда.</p>
-  <div class="click-reward-info">
-   <div class="balance-label">BASE CLICK REWARD</div>
-   <div class="balance">$<span id="clickBase">1</span></div>
-  </div>
-  <div id="clickUpgradeList">
-   <p class="muted">Загрузка улучшений...</p>
-  </div>
- </div>
-
- <div class="section-heading">
-  <h2>PREMIUM MARKET</h2>
-  <p>МАГАЗИН И ИМУЩЕСТВО</p>
- </div>
-
- <div class="panel">
-  <h2>МАГАЗИН</h2>
-  <div id="shop">Загрузка магазина...</div>
- </div>
-
- <div class="panel">
-  <h2>МОЙ ИНВЕНТАРЬ</h2>
-  <div id="inventory">Пока пусто</div>
- </div>
-
- <div class="panel">
-  <h2>TOP PLAYERS</h2>
-  <div id="leaderboard">Загрузка...</div>
- </div>
-
+ <div class="panel"><h2>⚡ ПОСТОЯННЫЕ УЛУЧШЕНИЯ</h2><p class="small">Увеличивай базовую награду за каждый клик навсегда.</p><div class="click-reward-info"><div class="balance-label">BASE CLICK REWARD</div><div class="balance">$<span id="clickBase">1</span></div></div><div id="clickUpgradeList"><p class="muted">Загрузка улучшений...</p></div></div>
+ <div class="section-heading"><h2>PREMIUM MARKET</h2><p>МАГАЗИН И ИМУЩЕСТВО</p></div>
+ <div class="panel"><h2>МАГАЗИН</h2><div id="shop">Загрузка магазина...</div></div>
+ <div class="panel"><h2>МОЙ ИНВЕНТАРЬ</h2><div id="inventory">Пока пусто</div></div>
+ <div class="panel"><h2>TOP PLAYERS</h2><div id="leaderboard">Загрузка...</div></div>
 </section>
-
-<!-- GRAMM -->
 
 <section id="gramm" class="page">
- <div class="section-heading">
-  <h2>GRAMM CLICKER</h2>
-  <p>ОТДЕЛЬНАЯ ИГРОВАЯ ВАЛЮТА</p>
- </div>
-
- <div class="gramm-hero">
-  <div class="balance-label">YOUR GRAMM BALANCE</div>
-  <div class="balance" style="margin:12px 0">
-   <span id="grammBalanceMirror">0</span> GRAMM
-  </div>
-  <div class="coin" id="grammCoin">G</div>
-  <div class="coin-caption">TAP TO EARN GRAMM</div>
-  <p class="small">Множитель: x<span id="grammMultiplier">1</span></p>
- </div>
-
- <div class="section-heading">
-  <h2>CURRENCY EXCHANGE</h2>
-  <p>ОБМЕН ВНУТРИ ИГРЫ</p>
- </div>
-
- <div class="panel">
-  <h2>ОБМЕН ВАЛЮТЫ</h2>
-  <div class="balance">$10 = 1 GRAMM</div>
-  <input id="exchangeAmount" type="number" min="1" step="1" placeholder="Количество">
-  <button class="button-full" onclick="exchange('toGramm')">USD → GRAMM</button>
-  <button class="button-full button-secondary" onclick="exchange('toDollars')">GRAMM → USD</button>
-  <p class="small">Курс: 1 GRAMM = $10</p>
- </div>
+ <div class="section-heading"><h2>GRAMM CLICKER</h2><p>ОТДЕЛЬНАЯ ИГРОВАЯ ВАЛЮТА</p></div>
+ <div class="gramm-hero"><div class="balance-label">YOUR GRAMM BALANCE</div><div class="balance" style="margin:12px 0"><span id="grammBalanceMirror">0</span> GRAMM</div><div class="coin" id="grammCoin">G</div><div class="coin-caption">TAP TO EARN GRAMM</div><p class="small">Множитель: x<span id="grammMultiplier">1</span></p></div>
+ <div class="section-heading"><h2>CURRENCY EXCHANGE</h2><p>ОБМЕН ВНУТРИ ИГРЫ</p></div>
+ <div class="panel"><h2>ОБМЕН ВАЛЮТЫ</h2><div class="balance">$10 = 1 GRAMM</div><input id="exchangeAmount" type="number" min="1" step="1" placeholder="Количество"><button class="button-full" onclick="exchange('toGramm')">USD → GRAMM</button><button class="button-full button-secondary" onclick="exchange('toDollars')">GRAMM → USD</button><p class="small">Курс: 1 GRAMM = $10</p></div>
 </section>
-
-<!-- BUSINESSES -->
 
 <section id="businesses" class="page">
- <div class="section-heading">
-  <h2>BUSINESS EMPIRE</h2>
-  <p>ТВОЯ БИЗНЕС-ИМПЕРИЯ</p>
- </div>
-
- <div class="panel">
-  <h2>BUSINESS ACCOUNT</h2>
-  <div class="balance-label">БИЗНЕС-БАЛАНС</div>
-  <div class="business-number">$<span id="businessBalance">0</span></div>
-  <div class="gold-line" style="margin:15px 0"></div>
-  <p class="muted">ПАССИВНЫЙ ДОХОД В ЧАС</p>
-  <div class="business-number">$<span id="businessIncome">0</span></div>
-  <p class="small">Предприятия приносят прибыль автоматически 24/7.</p>
- </div>
-
- <div class="panel">
-  <h2>WITHDRAW PROFITS</h2>
-  <p class="small">Перевод средств с бизнес-счёта</p>
-  <input id="withdrawAmount" type="number" min="1" step="1" placeholder="Сумма в долларах">
-  <button class="button-full" onclick="withdrawBusiness('usd')">ПЕРЕВЕСТИ В USD</button>
-  <button class="button-full button-secondary" onclick="withdrawBusiness('gramm')">ОБМЕНЯТЬ НА GRAMM</button>
-  <p class="small">Курс: 1 GRAMM = $10</p>
- </div>
-
- <div class="panel">
-  <h2>MY BUSINESSES</h2>
-  <div id="ownedBusinesses">Загрузка...</div>
- </div>
-
- <div class="panel">
-  <h2>BUSINESS CATALOG</h2>
-  <div id="businessCatalog">Загрузка бизнеса...</div>
- </div>
+ <div class="section-heading"><h2>BUSINESS EMPIRE</h2><p>ТВОЯ БИЗНЕС-ИМПЕРИЯ</p></div>
+ <div class="panel"><h2>BUSINESS ACCOUNT</h2><div class="balance-label">БИЗНЕС-БАЛАНС</div><div class="business-number">$<span id="businessBalance">0</span></div><div class="gold-line" style="margin:15px 0"></div><p class="muted">ПАССИВНЫЙ ДОХОД В ЧАС</p><div class="business-number">$<span id="businessIncome">0</span></div><p class="small">Предприятия приносят прибыль автоматически 24/7.</p></div>
+ <div class="panel"><h2>WITHDRAW PROFITS</h2><p class="small">Перевод средств с бизнес-счёта</p><input id="withdrawAmount" type="number" min="1" step="1" placeholder="Сумма в долларах"><button class="button-full" onclick="withdrawBusiness('usd')">ПЕРЕВЕСТИ В USD</button><button class="button-full button-secondary" onclick="withdrawBusiness('gramm')">ОБМЕНЯТЬ НА GRAMM</button><p class="small">Курс: 1 GRAMM = $10</p></div>
+ <div class="panel"><h2>MY BUSINESSES</h2><div id="ownedBusinesses">Загрузка...</div></div>
+ <div class="panel"><h2>BUSINESS CATALOG</h2><div id="businessCatalog">Загрузка бизнеса...</div></div>
 </section>
 
-<!-- BATTLE PASS -->
+<section id="game" class="page">
+ <div class="section-heading"><h2>GAME CENTER</h2><p>TYCOON CRYPTOCURRENCY FARM</p></div>
+ <div class="farm-hero"><div class="hero-label">BITCOIN MINING EMPIRE</div><div style="font-size:48px;margin:15px 0">₿</div><div class="balance-label">YOUR BTC BALANCE</div><div class="farm-btc" id="farmBtcBalance">0 BTC</div><div class="small">Bitcoin добывается автоматически 24/7</div></div>
+ <div class="panel"><h2>MY MINING FARM</h2>
+  <div class="farm-stat"><div class="farm-stat-label">FARM CASH</div><div class="farm-stat-value">$<span id="farmCash">500</span></div></div>
+  <div class="farm-stat"><div class="farm-stat-label">MINING SPEED</div><div class="farm-stat-value" id="farmHourlyRate">0 BTC / HOUR</div></div>
+  <div class="farm-stat"><div class="farm-stat-label">OWNED EQUIPMENT</div><div class="farm-stat-value" id="farmEquipmentCount">0</div></div>
+  <p class="small">Ферма работает независимо от того, открыта ли игра. Начисление происходит на сервере с учётом прошедшего времени.</p>
+ </div>
+ <div class="section-heading"><h2>MINING EQUIPMENT</h2><p>ПОКУПАЙ ОБОРУДОВАНИЕ ДЛЯ ДОБЫЧИ BTC</p></div>
+ <div class="panel"><h2>MY EQUIPMENT</h2><div id="farmOwnedEquipment">Загрузка...</div></div>
+ <div class="panel"><h2>EQUIPMENT MARKET</h2><div id="farmCatalog">Загрузка оборудования...</div></div>
+ <div class="section-heading"><h2>BITCOIN EXCHANGE</h2><p>ВЫВОД BTC НА ОСНОВНЫЕ БАЛАНСЫ</p></div>
+ <div class="panel"><h2>FIXED EXCHANGE RATES</h2><div class="farm-exchange-rate">1 BTC = $7 000</div><div class="farm-exchange-rate">1 BTC = 700 GRAMM</div>
+  <input id="farmExchangeAmount" type="number" min="0" step="any" placeholder="Количество BTC">
+  <button class="button-full" onclick="exchangeFarmBTC('usd')">BTC → USD BALANCE</button>
+  <button class="button-full button-secondary" onclick="exchangeFarmBTC('gramm')">BTC → GRAMM BALANCE</button>
+  <p class="small">Фиксированный курс обмена. Стоимость оборудования и добыча не зависят от курса.</p>
+ </div>
+ <button class="button-full button-secondary" onclick="loadBitcoinFarm()">ОБНОВИТЬ ФЕРМУ</button>
+</section>
 
 <section id="battlepass" class="page">
- <div class="section-heading">
-  <h2>UGLY BATTLE PASS</h2>
-  <p>SEASONAL REWARDS</p>
- </div>
-
- <div class="panel bp-header">
-  <div class="bp-tag">SEASON 01</div>
-  <div class="bp-level">LEVEL <span id="bpLevel">1</span> / 100</div>
-  <div class="bp-progress">
-   <div class="bp-progress-fill" id="bpProgressFill"></div>
-  </div>
-  <p><span id="bpXP">0</span> / <span id="bpNextXP">200</span> BP XP</p>
-  <p id="bpSeasonDates" class="small">Загрузка сезона...</p>
-  <p id="bpPremiumStatus" class="bp-tag">FREE PASS</p>
-  <button class="button-full" onclick="loadBattlePass()">ОБНОВИТЬ PASS</button>
- </div>
-
- <div class="panel">
-  <h2>♛ PREMIUM PASS</h2>
-  <p class="small">ОТКРОЙ ПРЕМИАЛЬНУЮ ДОРОЖКУ НАГРАД</p>
-  <div class="balance">$300 000</div>
-  <p class="muted">ИЛИ</p>
-  <div class="balance">30 000 GRAMM</div>
-  <div class="bp-buy-buttons">
-   <button id="bpBuyUsd" onclick="buyBPPremium('usd')">BUY USD</button>
-   <button id="bpBuyGramm" onclick="buyBPPremium('gramm')">BUY GRAMM</button>
-  </div>
- </div>
-
- <div class="panel">
-  <h2>DAILY MISSIONS</h2>
-  <p class="small">ВЫПОЛНЯЙ ЗАДАНИЯ И ПОЛУЧАЙ BP XP</p>
-  <div id="bpTasks">Загрузка заданий...</div>
- </div>
-
- <div class="panel">
-  <h2>REWARD TRACK</h2>
-  <p class="small">100 УРОВНЕЙ НАГРАД</p>
-  <p><span class="bp-tag">FREE</span><span class="bp-tag">PREMIUM x2</span></p>
-  <div id="bpRewards">Загрузка наград...</div>
- </div>
+ <div class="section-heading"><h2>UGLY BATTLE PASS</h2><p>SEASONAL REWARDS</p></div>
+ <div class="panel bp-header"><div class="bp-tag">SEASON 01</div><div class="bp-level">LEVEL <span id="bpLevel">1</span> / 100</div><div class="bp-progress"><div class="bp-progress-fill" id="bpProgressFill"></div></div><p><span id="bpXP">0</span> / <span id="bpNextXP">200</span> BP XP</p><p id="bpSeasonDates" class="small">Загрузка сезона...</p><p id="bpPremiumStatus" class="bp-tag">FREE PASS</p><button class="button-full" onclick="loadBattlePass()">ОБНОВИТЬ PASS</button></div>
+ <div class="panel"><h2>♛ PREMIUM PASS</h2><p class="small">ОТКРОЙ ПРЕМИАЛЬНУЮ ДОРОЖКУ НАГРАД</p><div class="balance">$300 000</div><p class="muted">ИЛИ</p><div class="balance">30 000 GRAMM</div><div class="bp-buy-buttons"><button id="bpBuyUsd" onclick="buyBPPremium('usd')">BUY USD</button><button id="bpBuyGramm" onclick="buyBPPremium('gramm')">BUY GRAMM</button></div></div>
+ <div class="panel"><h2>DAILY MISSIONS</h2><p class="small">ВЫПОЛНЯЙ ЗАДАНИЯ И ПОЛУЧАЙ BP XP</p><div id="bpTasks">Загрузка заданий...</div></div>
+ <div class="panel"><h2>REWARD TRACK</h2><p class="small">100 УРОВНЕЙ НАГРАД</p><p><span class="bp-tag">FREE</span><span class="bp-tag">PREMIUM x2</span></p><div id="bpRewards">Загрузка наград...</div></div>
 </section>
-
 <p id="status">Подключение...</p>
 </div>
 
-<!-- BOTTOM NAV -->
-
 <nav class="bottom-nav">
- <button class="nav-button active" data-page="main" onclick="showPage('main')">
-  <span class="nav-icon">◈</span><span>ГЛАВНАЯ</span>
- </button>
- <button class="nav-button" data-page="gramm" onclick="showPage('gramm')">
-  <span class="nav-icon">◎</span><span>GRAMM</span>
- </button>
- <button class="nav-button" data-page="businesses" onclick="showPage('businesses')">
-  <span class="nav-icon">♜</span><span>БИЗНЕС</span>
- </button>
- <button class="nav-button" data-page="battlepass" onclick="showPage('battlepass')">
-  <span class="nav-icon">♛</span><span>BATTLE PASS</span>
- </button>
+ <button class="nav-button active" data-page="main" onclick="showPage('main')"><span class="nav-icon">◈</span><span>ГЛАВНАЯ</span></button>
+ <button class="nav-button" data-page="gramm" onclick="showPage('gramm')"><span class="nav-icon">◎</span><span>GRAMM</span></button>
+ <button class="nav-button" data-page="businesses" onclick="showPage('businesses')"><span class="nav-icon">♜</span><span>БИЗНЕС</span></button>
+ <button class="nav-button" data-page="game" onclick="showPage('game')"><span class="nav-icon">₿</span><span>GAME</span></button>
+ <button class="nav-button" data-page="battlepass" onclick="showPage('battlepass')"><span class="nav-icon">♛</span><span>PASS</span></button>
 </nav>
 
 <script>
-const tg=window.Telegram?.WebApp;
-tg?.ready();
-tg?.expand();
-
+const tg=window.Telegram?.WebApp;tg?.ready();tg?.expand();
 const initData=tg?.initData||"";
-
-const state={
- balance:0,
- grammBalance:0,
- businessBalance:0,
- businessIncomePerHour:0,
- businesses:[],
- experience:0,
- level:1,
- inventory:[],
- bonuses:{
-  x2Active:false,
-  x2Seconds:0,
-  x4Active:false,
-  x4Seconds:0,
-  x10Unlocked:false
- },
- multiplier:1,
- clickUpgradeBonus:0,
- clickBase:1,
- clickReward:1,
- ownedClickUpgrades:[]
-};
-
-let businessCatalog=[];
-let bpState=null;
-let clickUpgradeData=[];
-
+const state={balance:0,grammBalance:0,businessBalance:0,businessIncomePerHour:0,businesses:[],experience:0,level:1,inventory:[],bonuses:{x2Active:false,x2Seconds:0,x4Active:false,x4Seconds:0,x10Unlocked:false},multiplier:1,clickUpgradeBonus:0,clickBase:1,clickReward:1,ownedClickUpgrades:[]};
+let businessCatalog=[],bpState=null,clickUpgradeData=[],bitcoinFarmState=null;
 const money=n=>Number(n||0).toLocaleString("ru-RU");
-
-function escapeHTML(value){
- return String(value??"").replace(/[&<>"']/g,char=>({
-  "&":"&amp;",
-  "<":"&lt;",
-  ">":"&gt;",
-  '"':"&quot;",
-  "'":"&#39;"
- }[char]));
-}
+function escapeHTML(value){return String(value??"").replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));}
+function formatBTC(value){return Number(value||0).toLocaleString("en-US",{minimumFractionDigits:0,maximumFractionDigits:12});}
 
 /* NOTIFICATIONS AND EFFECTS */
-
-function showToast(message,type="success"){
- const stack=document.getElementById("toastStack");
- if(!stack)return;
-
- const toast=document.createElement("div");
- toast.className="toast "+type;
-
- const icon=type==="error"?"⚠":type==="info"?"ℹ":"✦";
- const text=document.createElement("span");
- text.textContent=String(message);
-
- const iconElement=document.createElement("span");
- iconElement.className="toast-icon";
- iconElement.textContent=icon;
-
- toast.append(iconElement,text);
- stack.appendChild(toast);
-
- while(stack.children.length>4){
-  stack.firstElementChild.remove();
- }
-
- setTimeout(()=>{
-  toast.classList.add("removing");
-  setTimeout(()=>toast.remove(),240);
- },2800);
-}
-
-window.alert=function(message){
- const value=String(message||"");
- const isError=/ошиб|не удалось|недостаточно|неверн|нельзя|открой игру/i.test(value);
- showToast(value,isError?"error":"success");
-};
-
-function spawnClickEffect(element,label,isGramm=false){
- if(!element)return;
-
- const rect=element.getBoundingClientRect();
- const x=rect.left+rect.width/2;
- const y=rect.top+rect.height/2;
-
- const reward=document.createElement("div");
- reward.className="float-reward"+(isGramm?" gramm":"");
- reward.textContent=label;
- reward.style.left=x+"px";
- reward.style.top=(y-25)+"px";
- document.getElementById("fxLayer").appendChild(reward);
-
- setTimeout(()=>reward.remove(),900);
-
- for(let i=0;i<9;i++){
-  const particle=document.createElement("div");
-  particle.className="coin-particle";
-
-  const angle=(Math.PI*2*i)/9+(Math.random()*.3);
-  const distance=35+Math.random()*55;
-
-  particle.style.left=x+"px";
-  particle.style.top=y+"px";
-  particle.style.setProperty("--dx",Math.cos(angle)*distance+"px");
-  particle.style.setProperty("--dy",Math.sin(angle)*distance+"px");
-
-  document.getElementById("fxLayer").appendChild(particle);
-  setTimeout(()=>particle.remove(),700);
- }
-
- element.classList.remove("coin-hit");
- void element.offsetWidth;
- element.classList.add("coin-hit");
- setTimeout(()=>element.classList.remove("coin-hit"),250);
-}
-
-function pulseElement(element){
- if(!element)return;
- element.classList.remove("purchase-flash","pulse","button-success");
- void element.offsetWidth;
- element.classList.add(
-  element.classList.contains("balance-card")?"pulse":
-  element.tagName==="BUTTON"?"button-success":"purchase-flash"
- );
- setTimeout(()=>{
-  element.classList.remove("purchase-flash","pulse","button-success");
- },750);
-}
-
-function pulseBalance(id){
- pulseElement(document.getElementById(id));
-}
-
-async function api(path,options={}){
- const response=await fetch(path,{
-  ...options,
-  headers:{
-   "Content-Type":"application/json",
-   "x-telegram-init-data":initData,
-   ...(options.headers||{})
-  }
- });
-
- let data;
-
- try{
-  data=await response.json();
- }catch{
-  throw new Error("Сервер вернул некорректный ответ");
- }
-
- if(!response.ok){
-  throw new Error(data.error||"Ошибка сервера");
- }
-
- return data;
-}
+function showToast(message,type="success"){const stack=document.getElementById("toastStack");if(!stack)return;const toast=document.createElement("div");toast.className="toast "+type;const icon=type==="error"?"⚠":type==="info"?"ℹ":"✦";const text=document.createElement("span");text.textContent=String(message);const iconElement=document.createElement("span");iconElement.className="toast-icon";iconElement.textContent=icon;toast.append(iconElement,text);stack.appendChild(toast);while(stack.children.length>4)stack.firstElementChild.remove();setTimeout(()=>{toast.classList.add("removing");setTimeout(()=>toast.remove(),240);},2800);}
+window.alert=function(message){const value=String(message||"");const isError=/ошиб|не удалось|недостаточно|неверн|нельзя|открой игру/i.test(value);showToast(value,isError?"error":"success");};
+function spawnClickEffect(element,label,isGramm=false){if(!element)return;const rect=element.getBoundingClientRect(),x=rect.left+rect.width/2,y=rect.top+rect.height/2;const reward=document.createElement("div");reward.className="float-reward"+(isGramm?" gramm":"");reward.textContent=label;reward.style.left=x+"px";reward.style.top=(y-25)+"px";document.getElementById("fxLayer").appendChild(reward);setTimeout(()=>reward.remove(),900);for(let i=0;i<9;i++){const particle=document.createElement("div");particle.className="coin-particle";const angle=Math.PI*2*i/9+Math.random()*.3,distance=35+Math.random()*55;particle.style.left=x+"px";particle.style.top=y+"px";particle.style.setProperty("--dx",Math.cos(angle)*distance+"px");particle.style.setProperty("--dy",Math.sin(angle)*distance+"px");document.getElementById("fxLayer").appendChild(particle);setTimeout(()=>particle.remove(),700);}element.classList.remove("coin-hit");void element.offsetWidth;element.classList.add("coin-hit");setTimeout(()=>element.classList.remove("coin-hit"),250);}
+function pulseElement(element){if(!element)return;element.classList.remove("purchase-flash","pulse","button-success");void element.offsetWidth;element.classList.add(element.classList.contains("balance-card")?"pulse":element.tagName==="BUTTON"?"button-success":"purchase-flash");setTimeout(()=>element.classList.remove("purchase-flash","pulse","button-success"),750);}
+function pulseBalance(id){pulseElement(document.getElementById(id));}
+async function api(path,options={}){const response=await fetch(path,{...options,headers:{"Content-Type":"application/json","x-telegram-init-data":initData,...(options.headers||{})}});let data;try{data=await response.json();}catch{throw new Error("Сервер вернул некорректный ответ");}if(!response.ok)throw new Error(data.error||"Ошибка сервера");return data;}
 
 /* NAVIGATION */
-
-function showPage(page){
- const target=document.getElementById(page);
- if(!target)return;
-
- document.querySelectorAll(".page").forEach(el=>{
-  el.classList.remove("active");
- });
-
- target.classList.add("active");
-
- document.querySelectorAll(".nav-button").forEach(button=>{
-  button.classList.toggle("active",button.dataset.page===page);
- });
-
- window.scrollTo({top:0,behavior:"smooth"});
-
- if(page==="battlepass")loadBattlePass();
- if(page==="main")loadClickUpgrades();
-}
+function showPage(page){const target=document.getElementById(page);if(!target)return;document.querySelectorAll(".page").forEach(el=>el.classList.remove("active"));target.classList.add("active");document.querySelectorAll(".nav-button").forEach(button=>button.classList.toggle("active",button.dataset.page===page));window.scrollTo({top:0,behavior:"smooth"});if(page==="battlepass")loadBattlePass();if(page==="main")loadClickUpgrades();if(page==="game")loadBitcoinFarm();}
 
 /* RENDER */
+function render(){document.getElementById("balance").textContent=money(state.balance);document.getElementById("grammBalance").textContent=money(state.grammBalance);const mirror=document.getElementById("grammBalanceMirror");if(mirror)mirror.textContent=money(state.grammBalance);document.getElementById("businessBalance").textContent=money(state.businessBalance);document.getElementById("businessIncome").textContent=money(state.businessIncomePerHour);document.getElementById("experience").textContent=money(state.experience);document.getElementById("level").textContent=state.level;document.getElementById("multiplier").textContent=state.multiplier;document.getElementById("grammMultiplier").textContent=state.multiplier;document.getElementById("clickBase").textContent=money(state.clickBase);document.getElementById("clickReward").textContent=money(state.clickReward);const b=state.bonuses||{};const x2=document.getElementById("x2status"),x4=document.getElementById("x4status"),x10=document.getElementById("x10status");x2.textContent=b.x2Active&&b.x2Seconds>0?"Активен: "+b.x2Seconds+" сек.":"Не активен";x4.textContent=b.x4Active&&b.x4Seconds>0?"Активен: "+b.x4Seconds+" сек.":"Не активен";x10.textContent=b.x10Unlocked?"Куплено навсегда":"Не куплено";x2.className=b.x2Active&&b.x2Seconds>0?"boost-active":"boost-inactive";x4.className=b.x4Active&&b.x4Seconds>0?"boost-active":"boost-inactive";x10.className=b.x10Unlocked?"boost-permanent":"boost-inactive";document.getElementById("x10button").disabled=Boolean(b.x10Unlocked);document.getElementById("inventory").innerHTML=state.inventory.length?state.inventory.map(item=>`<div class="item">${escapeHTML(item.item_name)}<br><span class="muted">Покупка: $${money(item.purchase_price)}</span><br><button onclick="sellItem(${Number(item.id)})">ПРОДАТЬ ЗА $${money(Math.floor(Number(item.purchase_price)*.7))}</button></div>`).join(""):"Пока пусто";renderOwnedBusinesses();renderClickUpgrades();}
+function renderOwnedBusinesses(){const c=document.getElementById("ownedBusinesses");if(!state.businesses.length){c.innerHTML='<p class="muted">У тебя пока нет предприятий</p>';return;}c.innerHTML=state.businesses.map(item=>`<div class="business-card"><div class="business-card-content"><b>${escapeHTML(item.business_name||item.name||"Бизнес")}</b><p>Цена покупки: $${money(item.purchase_price)}</p><p>Доход: $${money(item.hourly_income)} / час</p><p class="small">Куплен: ${item.purchased_at?new Date(item.purchased_at).toLocaleDateString("ru-RU"):"—"}</p><button onclick="sellBusiness('${escapeHTML(item.id)}')">ПРОДАТЬ ЗА $${money(Math.floor(Number(item.purchase_price)*.7))}</button></div></div>`).join("");}
+function renderBusinessCatalog(){const c=document.getElementById("businessCatalog");if(!businessCatalog.length){c.textContent="Каталог пока недоступен";return;}c.innerHTML=businessCatalog.map(item=>`<div class="business-card"><div class="business-card-content"><b>${escapeHTML(item.name)}</b><p>Цена: $${money(item.price)}</p><p>Пассивный доход: $${money(item.income)} / час</p><button onclick="buyBusiness('${escapeHTML(item.key)}')">КУПИТЬ БИЗНЕС</button></div></div>`).join("");}
 
-function render(){
- document.getElementById("balance").textContent=money(state.balance);
- document.getElementById("grammBalance").textContent=money(state.grammBalance);
-
- const grammMirror=document.getElementById("grammBalanceMirror");
- if(grammMirror)grammMirror.textContent=money(state.grammBalance);
-
- document.getElementById("businessBalance").textContent=money(state.businessBalance);
- document.getElementById("businessIncome").textContent=money(state.businessIncomePerHour);
- document.getElementById("experience").textContent=money(state.experience);
- document.getElementById("level").textContent=state.level;
- document.getElementById("multiplier").textContent=state.multiplier;
- document.getElementById("grammMultiplier").textContent=state.multiplier;
-
- document.getElementById("clickBase").textContent=money(state.clickBase);
- document.getElementById("clickReward").textContent=money(state.clickReward);
-
- const b=state.bonuses||{};
-
- const x2=document.getElementById("x2status");
- const x4=document.getElementById("x4status");
- const x10=document.getElementById("x10status");
-
- x2.textContent=b.x2Active&&b.x2Seconds>0
-  ?"Активен: "+b.x2Seconds+" сек."
-  :"Не активен";
-
- x4.textContent=b.x4Active&&b.x4Seconds>0
-  ?"Активен: "+b.x4Seconds+" сек."
-  :"Не активен";
-
- x10.textContent=b.x10Unlocked?"Куплено навсегда":"Не куплено";
-
- x2.className=b.x2Active&&b.x2Seconds>0?"boost-active":"boost-inactive";
- x4.className=b.x4Active&&b.x4Seconds>0?"boost-active":"boost-inactive";
- x10.className=b.x10Unlocked?"boost-permanent":"boost-inactive";
-
- document.getElementById("x10button").disabled=Boolean(b.x10Unlocked);
-
- document.getElementById("inventory").innerHTML=
-  state.inventory.length
-  ?state.inventory.map(item=>`
-   <div class="item">
-    ${escapeHTML(item.item_name)}<br>
-    <span class="muted">Покупка: $${money(item.purchase_price)}</span><br>
-    <button onclick="sellItem(${Number(item.id)})">
-     ПРОДАТЬ ЗА $${money(Math.floor(Number(item.purchase_price)*0.7))}
-    </button>
-   </div>
-  `).join("")
-  :"Пока пусто";
-
- renderOwnedBusinesses();
- renderClickUpgrades();
-}
-
-/* BUSINESS RENDER — БЕЗ ИЗОБРАЖЕНИЙ */
-
-function renderOwnedBusinesses(){
- const container=document.getElementById("ownedBusinesses");
-
- if(!state.businesses.length){
-  container.innerHTML='<p class="muted">У тебя пока нет предприятий</p>';
-  return;
- }
-
- container.innerHTML=state.businesses.map(item=>`
-  <div class="business-card">
-   <div class="business-card-content">
-    <b>${escapeHTML(item.business_name||item.name||"Бизнес")}</b>
-    <p>Цена покупки: $${money(item.purchase_price)}</p>
-    <p>Доход: $${money(item.hourly_income)} / час</p>
-    <p class="small">Куплен: ${item.purchased_at?new Date(item.purchased_at).toLocaleDateString("ru-RU"):"—"}</p>
-    <button onclick="sellBusiness('${escapeHTML(item.id)}')">
-     ПРОДАТЬ ЗА $${money(Math.floor(Number(item.purchase_price)*0.7))}
-    </button>
-   </div>
-  </div>
- `).join("");
-}
-
-function renderBusinessCatalog(){
- const container=document.getElementById("businessCatalog");
-
- if(!businessCatalog.length){
-  container.textContent="Каталог пока недоступен";
-  return;
- }
-
- container.innerHTML=businessCatalog.map(item=>`
-  <div class="business-card">
-   <div class="business-card-content">
-    <b>${escapeHTML(item.name)}</b>
-    <p>Цена: $${money(item.price)}</p>
-    <p>Пассивный доход: $${money(item.income)} / час</p>
-    <button onclick="buyBusiness('${escapeHTML(item.key)}')">
-     КУПИТЬ БИЗНЕС
-    </button>
-   </div>
-  </div>
- `).join("");
-}
-
-/* LOAD PLAYER STATE */
-
-async function loadState(){
- const data=await api("/api/state");
-
- state.balance=Number(data.balance||0);
- state.grammBalance=Number(data.grammBalance||0);
- state.businessBalance=Number(data.businessBalance||0);
- state.businessIncomePerHour=Number(data.businessIncomePerHour||0);
- state.businesses=data.businesses||[];
- state.experience=Number(data.experience||0);
- state.level=Number(data.level||1);
- state.inventory=data.inventory||[];
-
- state.bonuses=data.bonuses||{
-  x2Active:false,x2Seconds:0,
-  x4Active:false,x4Seconds:0,
-  x10Unlocked:false
- };
-
- state.multiplier=Number(data.multiplier||1);
- state.clickUpgradeBonus=Number(data.clickUpgradeBonus||0);
- state.clickBase=Number(data.clickBase||1);
- state.clickReward=Number(data.clickReward||state.clickBase*state.multiplier);
- state.ownedClickUpgrades=data.ownedClickUpgrades||[];
-
- render();
-}
+/* PLAYER STATE */
+async function loadState(){const data=await api("/api/state");state.balance=Number(data.balance||0);state.grammBalance=Number(data.grammBalance||0);state.businessBalance=Number(data.businessBalance||0);state.businessIncomePerHour=Number(data.businessIncomePerHour||0);state.businesses=data.businesses||[];state.experience=Number(data.experience||0);state.level=Number(data.level||1);state.inventory=data.inventory||[];state.bonuses=data.bonuses||{x2Active:false,x2Seconds:0,x4Active:false,x4Seconds:0,x10Unlocked:false};state.multiplier=Number(data.multiplier||1);state.clickUpgradeBonus=Number(data.clickUpgradeBonus||0);state.clickBase=Number(data.clickBase||1);state.clickReward=Number(data.clickReward||state.clickBase*state.multiplier);state.ownedClickUpgrades=data.ownedClickUpgrades||[];render();}
 
 /* PERMANENT CLICK UPGRADES */
-
-async function loadClickUpgrades(){
- const container=document.getElementById("clickUpgradeList");
-
- try{
-  const data=await api("/api/click-upgrades");
-  clickUpgradeData=data.upgrades||[];
-
-  if(Array.isArray(data.owned)){
-   state.ownedClickUpgrades=data.owned;
-  }
-
-  renderClickUpgrades();
-
- }catch(error){
-  console.error("Click upgrades error:",error);
-
-  if(container){
-   container.innerHTML=
-    '<p class="muted">Не удалось загрузить улучшения. Попробуй обновить страницу.</p>';
-  }
- }
-}
-
-function renderClickUpgrades(){
- const container=document.getElementById("clickUpgradeList");
- if(!container)return;
-
- if(!clickUpgradeData.length){
-  container.innerHTML='<p class="muted">Улучшения пока недоступны</p>';
-  return;
- }
-
- const ownedBonus=clickUpgradeData
-  .filter(item=>item.owned)
-  .reduce((sum,item)=>sum+Number(item.amount),0);
-
- const baseReward=1+ownedBonus;
- document.getElementById("clickBase").textContent=money(baseReward);
-
- container.innerHTML=clickUpgradeData.map(item=>{
-  const owned=Boolean(item.owned);
-
-  return `
-   <div class="click-upgrade-card ${owned?"owned":""}">
-    <h3>${escapeHTML(item.name)}</h3>
-    <div class="click-upgrade-bonus">+$${money(item.amount)} за каждый клик</div>
-    <div class="click-upgrade-price">Цена: $${money(item.price)}</div>
-    ${
-     owned
-     ?'<div class="click-upgrade-owned">✓ КУПЛЕНО НАВСЕГДА</div>'
-     :`<button
-        onclick="buyClickUpgrade('${escapeHTML(item.key)}')"
-        ${Number(state.balance)<Number(item.price)?"disabled":""}>
-        КУПИТЬ ЗА $${money(item.price)}
-       </button>`
-    }
-   </div>
-  `;
- }).join("");
-}
-
-async function buyClickUpgrade(key){
- try{
-  const button=document.querySelector(
-   `button[onclick="buyClickUpgrade('${key}')"]`
-  );
-  if(button)button.disabled=true;
-
-  const data=await api("/api/click-upgrades/buy",{
-   method:"POST",
-   body:JSON.stringify({key})
-  });
-
-  await loadState();
-  await loadClickUpgrades();
-
-  showToast(
-   "Улучшение куплено! Новая базовая награда: $"+money(data.clickBase),
-   "success"
-  );
-
-  pulseBalance("usdBalanceCard");
-
- }catch(error){
-  showError(error);
-  await loadState();
-  await loadClickUpgrades();
- }
-}
-
-/* MAIN CLICKER */
-
-async function clickCoin(){
- try{
-  const data=await api("/api/click",{method:"POST"});
-
-  state.balance=Number(data.balance||0);
-  state.experience=Number(data.experience||0);
-  state.level=Number(data.level||1);
-  state.multiplier=Number(data.multiplier||1);
-  state.clickBase=Number(data.clickBase||state.clickBase);
-  state.clickReward=Number(data.clickReward||state.clickBase*state.multiplier);
-  state.clickUpgradeBonus=Number(data.clickUpgradeBonus||state.clickUpgradeBonus);
-
-  render();
-
-  spawnClickEffect(
-   document.getElementById("coin"),
-   "+$"+money(data.clickReward||state.clickReward),
-   false
-  );
-
-  pulseBalance("usdBalanceCard");
-
- }catch(error){
-  showError(error);
- }
-}
-
-/* GRAMM CLICKER */
-
-async function clickGramm(){
- try{
-  const data=await api("/api/gramm/click",{method:"POST"});
-
-  state.grammBalance=Number(data.grammBalance||0);
-  state.multiplier=Number(data.multiplier||1);
-
-  render();
-
-  spawnClickEffect(
-   document.getElementById("grammCoin"),
-   "+"+money(data.multiplier||1)+" GRAMM",
-   true
-  );
-
-  pulseBalance("grammBalanceCard");
-
- }catch(error){
-  showError(error);
- }
-}
-
-/* BOOSTS */
-
-async function buyUpgrade(type){
- try{
-  const data=await api("/api/upgrades/buy",{
-   method:"POST",
-   body:JSON.stringify({type})
-  });
-
-  if(data.balance!==undefined)state.balance=Number(data.balance);
-
-  await loadState();
-
-  const names={
-   x2:"Бонус x2 активирован",
-   x4:"Бонус x4 активирован",
-   x10:"Постоянное улучшение x10 куплено"
-  };
-
-  showToast(names[type]||"Улучшение успешно куплено","success");
-  pulseBalance("usdBalanceCard");
-
- }catch(error){
-  showError(error);
- }
-}
-
-/* EXCHANGE */
-
-async function exchange(direction){
- try{
-  const amount=Number(document.getElementById("exchangeAmount").value);
-
-  if(!Number.isSafeInteger(amount)||amount<=0){
-   throw new Error("Введи целое положительное число");
-  }
-
-  await api("/api/gramm/exchange",{
-   method:"POST",
-   body:JSON.stringify({direction,amount})
-  });
-
-  document.getElementById("exchangeAmount").value="";
-  await loadState();
-
-  showToast("Обмен успешно выполнен!");
-  pulseBalance("usdBalanceCard");
-  pulseBalance("grammBalanceCard");
-
- }catch(error){
-  showError(error);
- }
-}
-
-/* SHOP */
-
-async function loadShop(){
- const catalog=await api("/api/catalog");
-
- const names={
-  house:"Дома",
-  car:"Машины",
-  watch:"Часы",
-  painting:"Картины",
-  yacht:"Яхты",
-  island:"Острова"
- };
-
- document.getElementById("shop").innerHTML=
-  Object.entries(catalog).map(([category,items])=>`
-   <h3>${names[category]||escapeHTML(category)}</h3>
-   ${items.map((item,index)=>`
-    <div class="item">
-     ${escapeHTML(item.name)}<br>
-     <b>$${money(item.price)}</b><br>
-     <button onclick="buyItem('${category}',${index})">КУПИТЬ</button>
-    </div>
-   `).join("")}
-  `).join("");
-}
-
-async function buyItem(category,index){
- try{
-  await api("/api/shop/buy",{
-   method:"POST",
-   body:JSON.stringify({category,index})
-  });
-
-  await loadState();
-  showToast("Покупка успешна!");
-  pulseBalance("usdBalanceCard");
-
- }catch(error){
-  showError(error);
- }
-}
-
-async function sellItem(itemId){
- try{
-  await api("/api/shop/sell",{
-   method:"POST",
-   body:JSON.stringify({itemId})
-  });
-
-  await loadState();
-  showToast("Предмет продан!");
-  pulseBalance("usdBalanceCard");
-
- }catch(error){
-  showError(error);
- }
-}
-
-/* DAILY REWARD */
-
-async function dailyReward(){
- try{
-  const data=await api("/api/daily",{method:"POST"});
-
-  state.balance=Number(data.balance||state.balance);
-  await loadState();
-
-  showToast("Ты получил $1 000!");
-  pulseBalance("usdBalanceCard");
-
- }catch(error){
-  showError(error);
- }
-}
-
-/* LEADERBOARD */
-
-async function loadLeaderboard(){
- try{
-  const players=await api("/api/leaderboard");
-
-  document.getElementById("leaderboard").innerHTML=
-   players.length
-   ?players.map((p,i)=>`
-    <div class="item">
-     ${i+1}. ${escapeHTML(p.username||"Игрок")} — $${money(p.balance)}
-    </div>
-   `).join("")
-   :"Пока нет игроков";
-
- }catch(error){
-  document.getElementById("leaderboard").textContent=error.message;
- }
-}
+async function loadClickUpgrades(){const c=document.getElementById("clickUpgradeList");try{const data=await api("/api/click-upgrades");clickUpgradeData=data.upgrades||[];if(Array.isArray(data.owned))state.ownedClickUpgrades=data.owned;renderClickUpgrades();}catch(error){console.error("Click upgrades error:",error);if(c)c.innerHTML='<p class="muted">Не удалось загрузить улучшения. Попробуй обновить страницу.</p>';}}
+function renderClickUpgrades(){const c=document.getElementById("clickUpgradeList");if(!c)return;if(!clickUpgradeData.length){c.innerHTML='<p class="muted">Улучшения пока недоступны</p>';return;}const bonus=clickUpgradeData.filter(i=>i.owned).reduce((s,i)=>s+Number(i.amount),0);document.getElementById("clickBase").textContent=money(1+bonus);c.innerHTML=clickUpgradeData.map(item=>`<div class="click-upgrade-card ${item.owned?"owned":""}"><h3>${escapeHTML(item.name)}</h3><div class="click-upgrade-bonus">+$${money(item.amount)} за каждый клик</div><div class="click-upgrade-price">Цена: $${money(item.price)}</div>${item.owned?'<div class="click-upgrade-owned">✓ КУПЛЕНО НАВСЕГДА</div>':`<button onclick="buyClickUpgrade('${escapeHTML(item.key)}')" ${Number(state.balance)<Number(item.price)?"disabled":""}>КУПИТЬ ЗА $${money(item.price)}</button>`}</div>`).join("");}
+async function buyClickUpgrade(key){try{const button=document.querySelector(`button[onclick="buyClickUpgrade('${key}')"]`);if(button)button.disabled=true;const data=await api("/api/click-upgrades/buy",{method:"POST",body:JSON.stringify({key})});await loadState();await loadClickUpgrades();showToast("Улучшение куплено! Новая базовая награда: $"+money(data.clickBase));pulseBalance("usdBalanceCard");}catch(error){showError(error);await loadState();await loadClickUpgrades();}}
+
+/* CLICKERS */
+async function clickCoin(){try{const data=await api("/api/click",{method:"POST"});state.balance=Number(data.balance||0);state.experience=Number(data.experience||0);state.level=Number(data.level||1);state.multiplier=Number(data.multiplier||1);state.clickBase=Number(data.clickBase||state.clickBase);state.clickReward=Number(data.clickReward||state.clickBase*state.multiplier);state.clickUpgradeBonus=Number(data.clickUpgradeBonus||state.clickUpgradeBonus);render();spawnClickEffect(document.getElementById("coin"),"+$"+money(data.clickReward||state.clickReward));pulseBalance("usdBalanceCard");}catch(error){showError(error);}}
+async function clickGramm(){try{const data=await api("/api/gramm/click",{method:"POST"});state.grammBalance=Number(data.grammBalance||0);state.multiplier=Number(data.multiplier||1);render();spawnClickEffect(document.getElementById("grammCoin"),"+"+money(data.multiplier||1)+" GRAMM",true);pulseBalance("grammBalanceCard");}catch(error){showError(error);}}
+async function buyUpgrade(type){try{const data=await api("/api/upgrades/buy",{method:"POST",body:JSON.stringify({type})});if(data.balance!==undefined)state.balance=Number(data.balance);await loadState();showToast(({x2:"Бонус x2 активирован",x4:"Бонус x4 активирован",x10:"Постоянное улучшение x10 куплено"})[type]||"Улучшение успешно куплено");pulseBalance("usdBalanceCard");}catch(error){showError(error);}}
+async function exchange(direction){try{const amount=Number(document.getElementById("exchangeAmount").value);if(!Number.isSafeInteger(amount)||amount<=0)throw new Error("Введи целое положительное число");await api("/api/gramm/exchange",{method:"POST",body:JSON.stringify({direction,amount})});document.getElementById("exchangeAmount").value="";await loadState();showToast("Обмен успешно выполнен!");pulseBalance("usdBalanceCard");pulseBalance("grammBalanceCard");}catch(error){showError(error);}}
+
+/* SHOP AND INVENTORY */
+async function loadShop(){const catalog=await api("/api/catalog");const names={house:"Дома",car:"Машины",watch:"Часы",painting:"Картины",yacht:"Яхты",island:"Острова"};document.getElementById("shop").innerHTML=Object.entries(catalog).map(([category,items])=>`<h3>${names[category]||escapeHTML(category)}</h3>${items.map((item,index)=>`<div class="item">${escapeHTML(item.name)}<br><b>$${money(item.price)}</b><br><button onclick="buyItem('${category}',${index})">КУПИТЬ</button></div>`).join("")}`).join("");}
+async function buyItem(category,index){try{await api("/api/shop/buy",{method:"POST",body:JSON.stringify({category,index})});await loadState();showToast("Покупка успешна!");pulseBalance("usdBalanceCard");}catch(error){showError(error);}}
+async function sellItem(itemId){try{await api("/api/shop/sell",{method:"POST",body:JSON.stringify({itemId})});await loadState();showToast("Предмет продан!");pulseBalance("usdBalanceCard");}catch(error){showError(error);}}
+async function dailyReward(){try{await api("/api/daily",{method:"POST"});await loadState();showToast("Ты получил $1 000!");pulseBalance("usdBalanceCard");}catch(error){showError(error);}}
+async function loadLeaderboard(){try{const players=await api("/api/leaderboard");document.getElementById("leaderboard").innerHTML=players.length?players.map((p,i)=>`<div class="item">${i+1}. ${escapeHTML(p.username||"Игрок")} — $${money(p.balance)}</div>`).join(""):"Пока нет игроков";}catch(error){document.getElementById("leaderboard").textContent=error.message;}}
 
 /* BUSINESSES */
+async function loadBusinessCatalog(){businessCatalog=await api("/api/businesses/catalog");renderBusinessCatalog();}
+async function buyBusiness(key){try{await api("/api/businesses/buy",{method:"POST",body:JSON.stringify({key})});await loadState();showToast("Бизнес успешно куплен!");pulseBalance("usdBalanceCard");}catch(error){showError(error);}}
+async function sellBusiness(businessId){if(!confirm("Продать этот бизнес за 70% первоначальной цены?"))return;try{const data=await api("/api/businesses/sell",{method:"POST",body:JSON.stringify({businessId})});await loadState();showToast("Бизнес продан! Получено: $"+money(data.refund));pulseBalance("usdBalanceCard");}catch(error){showError(error);}}
+async function withdrawBusiness(destination){try{const amount=Number(document.getElementById("withdrawAmount").value);if(!Number.isSafeInteger(amount)||amount<=0)throw new Error("Введи целую положительную сумму в долларах");if(destination==="gramm"&&amount%10!==0)throw new Error("Для обмена на GRAMM сумма должна делиться на 10");await api("/api/businesses/withdraw",{method:"POST",body:JSON.stringify({destination,amount})});document.getElementById("withdrawAmount").value="";await loadState();showToast(destination==="gramm"?"Перевод выполнен! Получено "+money(amount/10)+" GRAMM":"Деньги переведены на основной баланс!");pulseBalance("usdBalanceCard");pulseBalance("grammBalanceCard");}catch(error){showError(error);}}
 
-async function loadBusinessCatalog(){
- businessCatalog=await api("/api/businesses/catalog");
- renderBusinessCatalog();
-}
-
-async function buyBusiness(key){
+/* TYCOON CRYPTOCURRENCY FARM */
+async function loadBitcoinFarm(){
  try{
-  await api("/api/businesses/buy",{
-   method:"POST",
-   body:JSON.stringify({key})
-  });
-
-  await loadState();
-  showToast("Бизнес успешно куплен!");
-  pulseBalance("usdBalanceCard");
-
- }catch(error){
-  showError(error);
- }
+  const data=await api("/api/bitcoin-farm/state");bitcoinFarmState=data;
+  document.getElementById("farmCash").textContent=money(data.farmCash);
+  document.getElementById("farmBtcBalance").textContent=formatBTC(data.btcBalance)+" BTC";
+  document.getElementById("farmHourlyRate").textContent=formatBTC(data.hourlyRate)+" BTC / HOUR";
+  const equipment=data.equipment||[],catalog=data.catalog||[];
+  document.getElementById("farmEquipmentCount").textContent=equipment.length;
+  document.getElementById("farmOwnedEquipment").innerHTML=equipment.length?equipment.map(item=>`<div class="farm-equipment"><h3>${escapeHTML(item.name||item.equipment_name||item.key||"Mining equipment")}</h3><p>Скорость: <span class="farm-rate">${formatBTC(item.hourlyRate??item.hourly_rate??0)} BTC / час</span></p><span class="farm-badge">УСТАНОВЛЕНО</span></div>`).join(""):'<p class="muted">У тебя пока нет оборудования</p>';
+  document.getElementById("farmCatalog").innerHTML=catalog.length?catalog.map(item=>`<div class="farm-equipment"><h3>${escapeHTML(item.name)}</h3><p>Стоимость: <b>$${money(item.price)}</b></p><p class="farm-rate">Добыча: ${formatBTC(item.hourlyRate??item.rate??0)} BTC / час</p><button onclick="buyFarmEquipment('${escapeHTML(item.key)}')" ${Number(data.farmCash)<Number(item.price)?"disabled":""}>КУПИТЬ</button></div>`).join(""):'<p class="muted">Каталог оборудования недоступен</p>';
+ }catch(error){showError(error);document.getElementById("farmCatalog").textContent="Не удалось загрузить ферму";}
 }
-
-async function sellBusiness(businessId){
- if(!confirm("Продать этот бизнес за 70% первоначальной цены?"))return;
-
+async function buyFarmEquipment(key){try{await api("/api/bitcoin-farm/buy",{method:"POST",body:JSON.stringify({key})});await loadBitcoinFarm();showToast("Оборудование успешно куплено!");}catch(error){showError(error);await loadBitcoinFarm();}}
+async function exchangeFarmBTC(currency){
  try{
-  const data=await api("/api/businesses/sell",{
-   method:"POST",
-   body:JSON.stringify({businessId})
-  });
-
-  await loadState();
-  showToast("Бизнес продан! Получено: $"+money(data.refund));
-  pulseBalance("usdBalanceCard");
-
- }catch(error){
-  showError(error);
- }
-}
-
-async function withdrawBusiness(destination){
- try{
-  const amount=Number(document.getElementById("withdrawAmount").value);
-
-  if(!Number.isSafeInteger(amount)||amount<=0){
-   throw new Error("Введи целую положительную сумму в долларах");
-  }
-
-  if(destination==="gramm"&&amount%10!==0){
-   throw new Error("Для обмена на GRAMM сумма должна делиться на 10");
-  }
-
-  await api("/api/businesses/withdraw",{
-   method:"POST",
-   body:JSON.stringify({destination,amount})
-  });
-
-  document.getElementById("withdrawAmount").value="";
-  await loadState();
-
-  if(destination==="gramm"){
-   showToast("Перевод выполнен! Получено "+money(amount/10)+" GRAMM");
-  }else{
-   showToast("Деньги переведены на основной баланс!");
-  }
-
-  pulseBalance("usdBalanceCard");
-  pulseBalance("grammBalanceCard");
-
- }catch(error){
-  showError(error);
- }
+  const amount=document.getElementById("farmExchangeAmount").value;
+  if(!amount||!Number.isFinite(Number(amount))||Number(amount)<=0)throw new Error("Введи корректное количество BTC");
+  const result=await api("/api/bitcoin-farm/exchange",{method:"POST",body:JSON.stringify({currency,amountBtc:String(amount)})});
+  document.getElementById("farmExchangeAmount").value="";
+  await Promise.all([loadBitcoinFarm(),loadState()]);
+  const payout=result.payout??result.received??result.amount??0;
+  showToast(currency==="usd"?"Получено $"+money(payout):"Получено "+money(payout)+" GRAMM");
+  pulseBalance("usdBalanceCard");pulseBalance("grammBalanceCard");
+ }catch(error){showError(error);}
 }
 
 /* BATTLE PASS */
+async function loadBattlePass(){const tasks=document.getElementById("bpTasks"),rewards=document.getElementById("bpRewards");tasks.textContent="Загрузка заданий...";rewards.textContent="Загрузка наград...";try{bpState=await api("/api/battle-pass/state");renderBattlePass();}catch(error){tasks.textContent="Не удалось загрузить задания: "+error.message;rewards.textContent="Не удалось загрузить награды";}}
+function bpIsClaimed(level,track){return !!(bpState&&Array.isArray(bpState.claimed)&&bpState.claimed.some(item=>Number(item.level)===Number(level)&&item.track===track));}
+function renderBattlePass(){if(!bpState)return;const level=Number(bpState.level||1),xp=Number(bpState.xp||0),progress=Number(bpState.xpProgress!==undefined?bpState.xpProgress:xp%200),perLevel=Number(bpState.xpPerLevel||200),maxLevel=Number(bpState.maxLevel||100),premium=Boolean(bpState.premium);document.getElementById("bpLevel").textContent=level;document.getElementById("bpXP").textContent=money(progress);document.getElementById("bpNextXP").textContent=perLevel;document.getElementById("bpProgressFill").style.width=(level>=maxLevel?100:Math.min(100,progress/perLevel*100))+"%";const season=bpState.season||{};let text="Сезон активен";if(season.endsAt){const remaining=Math.max(0,Math.ceil((new Date(season.endsAt)-Date.now())/86400000));text="До конца сезона: "+remaining+" дн.";}document.getElementById("bpSeasonDates").textContent=text;document.getElementById("bpPremiumStatus").textContent=premium?"PREMIUM PASS АКТИВЕН":"FREE PASS";document.getElementById("bpBuyUsd").disabled=premium;document.getElementById("bpBuyGramm").disabled=premium;renderBPTasks();renderBPRewards();}
+function renderBPTasks(){const c=document.getElementById("bpTasks"),tasks=bpState.tasks||[];if(!tasks.length){c.textContent="Задания пока не найдены";return;}c.innerHTML=tasks.map(task=>{const target=Math.max(1,Number(task.target||1)),progress=Math.min(target,Number(task.progress||0)),percent=Math.min(100,progress/target*100);return `<div class="bp-task"><div class="bp-task-title">${escapeHTML(task.title)}</div><p class="small">Прогресс: ${money(progress)} / ${money(target)}</p><div class="bp-task-progress"><div class="bp-task-fill" style="width:${percent}%"></div></div><div><span class="bp-tag">+${money(task.xpReward)} BP XP</span>${task.completed?'<span class="bp-claimed">ВЫПОЛНЕНО ✓</span>':'<span class="bp-locked">В процессе</span>'}</div></div>`;}).join("");}
+function renderBPRewards(){const c=document.getElementById("bpRewards"),current=Number(bpState.level||1),premium=Boolean(bpState.premium);let html="";for(let level=1;level<=100;level++){const freeClaimed=bpIsClaimed(level,"free"),premiumClaimed=bpIsClaimed(level,"premium"),unlocked=level<=current;html+=`<div class="bp-reward"><div class="bp-level-number">УРОВЕНЬ ${level}</div><div class="bp-columns"><div class="bp-reward free"><div class="bp-reward-title">FREE</div><div class="bp-reward-value">$${money(level*1000)}<br>${money(level*10)} GRAMM</div>${freeClaimed?'<p class="bp-claimed">ПОЛУЧЕНО ✓</p>':unlocked?`<button onclick="claimBPReward(${level},'free')">Забрать</button>`:'<p class="bp-locked">Закрыто</p>'}</div><div class="bp-reward premium"><div class="bp-reward-title">PREMIUM</div><div class="bp-reward-value">$${money(level*2000)}<br>${money(level*20)} GRAMM</div>${premiumClaimed?'<p class="bp-claimed">ПОЛУЧЕНО ✓</p>':!premium?'<p class="bp-locked">Нужен Premium</p>':unlocked?`<button onclick="claimBPReward(${level},'premium')">Забрать</button>`:'<p class="bp-locked">Закрыто</p>'}</div></div></div>`;}c.innerHTML=html;}
+async function buyBPPremium(currency){if(!confirm(currency==="usd"?"Купить Premium Pass за $300 000?":"Купить Premium Pass за 30 000 GRAMM?"))return;try{await api("/api/battle-pass/buy-premium",{method:"POST",body:JSON.stringify({currency})});await loadState();await loadBattlePass();showToast("PREMIUM PASS успешно активирован!");pulseBalance("usdBalanceCard");pulseBalance("grammBalanceCard");}catch(error){showError(error);}}
+async function claimBPReward(level,track){try{await api("/api/battle-pass/claim",{method:"POST",body:JSON.stringify({level,track})});await loadState();await loadBattlePass();showToast("Награда Battle Pass получена!");pulseBalance("usdBalanceCard");pulseBalance("grammBalanceCard");}catch(error){showError(error);}}
 
-async function loadBattlePass(){
- const tasks=document.getElementById("bpTasks");
- const rewards=document.getElementById("bpRewards");
-
- tasks.textContent="Загрузка заданий...";
- rewards.textContent="Загрузка наград...";
-
- try{
-  bpState=await api("/api/battle-pass/state");
-  renderBattlePass();
-
- }catch(error){
-  tasks.textContent="Не удалось загрузить задания: "+error.message;
-  rewards.textContent="Не удалось загрузить награды";
- }
-}
-
-function bpIsClaimed(level,track){
- if(!bpState||!Array.isArray(bpState.claimed))return false;
-
- return bpState.claimed.some(item=>
-  Number(item.level)===Number(level)&&item.track===track
- );
-}
-
-function renderBattlePass(){
- if(!bpState)return;
-
- const level=Number(bpState.level||1);
- const xp=Number(bpState.xp||0);
-
- const xpProgress=Number(
-  bpState.xpProgress!==undefined
-   ?bpState.xpProgress
-   :xp%200
- );
-
- const xpPerLevel=Number(bpState.xpPerLevel||200);
- const maxLevel=Number(bpState.maxLevel||100);
- const premium=Boolean(bpState.premium);
-
- document.getElementById("bpLevel").textContent=level;
- document.getElementById("bpXP").textContent=money(xpProgress);
- document.getElementById("bpNextXP").textContent=xpPerLevel;
-
- const percent=level>=maxLevel
-  ?100
-  :Math.min(100,(xpProgress/xpPerLevel)*100);
-
- document.getElementById("bpProgressFill").style.width=percent+"%";
-
- const season=bpState.season||{};
- let seasonText="Сезон активен";
-
- if(season.endsAt){
-  const end=new Date(season.endsAt);
-  const remaining=Math.max(0,Math.ceil((end-Date.now())/86400000));
-  seasonText="До конца сезона: "+remaining+" дн.";
- }
-
- document.getElementById("bpSeasonDates").textContent=seasonText;
-
- document.getElementById("bpPremiumStatus").textContent=
-  premium?"PREMIUM PASS АКТИВЕН":"FREE PASS";
-
- document.getElementById("bpBuyUsd").disabled=premium;
- document.getElementById("bpBuyGramm").disabled=premium;
-
- renderBPTasks();
- renderBPRewards();
-}
-
-function renderBPTasks(){
- const container=document.getElementById("bpTasks");
- const tasks=bpState.tasks||[];
-
- if(!tasks.length){
-  container.textContent="Задания пока не найдены";
-  return;
- }
-
- container.innerHTML=tasks.map(task=>{
-  const target=Math.max(1,Number(task.target||1));
-  const progress=Math.min(target,Number(task.progress||0));
-  const completed=Boolean(task.completed);
-  const percent=Math.min(100,(progress/target)*100);
-
-  return `
-   <div class="bp-task">
-    <div class="bp-task-title">${escapeHTML(task.title)}</div>
-    <p class="small">Прогресс: ${money(progress)} / ${money(target)}</p>
-    <div class="bp-task-progress">
-     <div class="bp-task-fill" style="width:${percent}%"></div>
-    </div>
-    <div>
-     <span class="bp-tag">+${money(task.xpReward)} BP XP</span>
-     ${completed
-      ?'<span class="bp-claimed">ВЫПОЛНЕНО ✓</span>'
-      :'<span class="bp-locked">В процессе</span>'}
-    </div>
-   </div>
-  `;
- }).join("");
-}
-
-function renderBPRewards(){
- const container=document.getElementById("bpRewards");
- const currentLevel=Number(bpState.level||1);
- const premium=Boolean(bpState.premium);
-
- let html="";
-
- for(let level=1;level<=100;level++){
-  const freeDollars=level*1000;
-  const freeGramm=level*10;
-  const premiumDollars=level*2000;
-  const premiumGramm=level*20;
-
-  const freeClaimed=bpIsClaimed(level,"free");
-  const premiumClaimed=bpIsClaimed(level,"premium");
-  const unlocked=level<=currentLevel;
-
-  html+=`
-   <div class="bp-reward">
-    <div class="bp-level-number">УРОВЕНЬ ${level}</div>
-    <div class="bp-columns">
-     <div class="bp-reward free">
-      <div class="bp-reward-title">FREE</div>
-      <div class="bp-reward-value">
-       $${money(freeDollars)}<br>
-       ${money(freeGramm)} GRAMM
-      </div>
-      ${freeClaimed
-       ?'<p class="bp-claimed">ПОЛУЧЕНО ✓</p>'
-       :unlocked
-        ?`<button onclick="claimBPReward(${level},'free')">Забрать</button>`
-        :'<p class="bp-locked">Закрыто</p>'}
-     </div>
-     <div class="bp-reward premium">
-      <div class="bp-reward-title">PREMIUM</div>
-      <div class="bp-reward-value">
-       $${money(premiumDollars)}<br>
-       ${money(premiumGramm)} GRAMM
-      </div>
-      ${premiumClaimed
-       ?'<p class="bp-claimed">ПОЛУЧЕНО ✓</p>'
-       :!premium
-        ?'<p class="bp-locked">Нужен Premium</p>'
-        :unlocked
-         ?`<button onclick="claimBPReward(${level},'premium')">Забрать</button>`
-         :'<p class="bp-locked">Закрыто</p>'}
-     </div>
-    </div>
-   </div>
-  `;
- }
-
- container.innerHTML=html;
-}
-
-async function buyBPPremium(currency){
- if(!confirm(
-  currency==="usd"
-   ?"Купить Premium Pass за $300 000?"
-   :"Купить Premium Pass за 30 000 GRAMM?"
- ))return;
-
- try{
-  await api("/api/battle-pass/buy-premium",{
-   method:"POST",
-   body:JSON.stringify({currency})
-  });
-
-  await loadState();
-  await loadBattlePass();
-
-  showToast("PREMIUM PASS успешно активирован!");
-  pulseBalance("usdBalanceCard");
-  pulseBalance("grammBalanceCard");
-
- }catch(error){
-  showError(error);
- }
-}
-
-async function claimBPReward(level,track){
- try{
-  await api("/api/battle-pass/claim",{
-   method:"POST",
-   body:JSON.stringify({level,track})
-  });
-
-  await loadState();
-  await loadBattlePass();
-
-  showToast("Награда Battle Pass получена!");
-  pulseBalance("usdBalanceCard");
-  pulseBalance("grammBalanceCard");
-
- }catch(error){
-  showError(error);
- }
-}
-
-/* ERRORS */
-
-function showError(error){
- const message=error?.message||"Произошла неизвестная ошибка";
- document.getElementById("status").textContent=message;
- showToast(message,"error");
-}
-
-/* EVENTS */
-
-document.getElementById("coin").addEventListener("click",clickCoin);
-document.getElementById("grammCoin").addEventListener("click",clickGramm);
-document.getElementById("daily").addEventListener("click",dailyReward);
-
-/* START */
-
-async function start(){
- try{
-  if(!initData){
-   throw new Error("Открой игру через Telegram-бота");
-  }
-
-  await loadState();
-  await loadClickUpgrades();
-  await loadShop();
-  await loadLeaderboard();
-  await loadBusinessCatalog();
-  await loadBattlePass();
-
-  document.getElementById("status").textContent="UGLY CLICKER подключён";
-  showToast("Добро пожаловать в UGLY CLICKER 2.0","success");
-
- }catch(error){
-  showError(error);
- }
-}
-
+/* ERRORS AND START */
+function showError(error){const message=error?.message||"Произошла неизвестная ошибка";document.getElementById("status").textContent=message;showToast(message,"error");}
+document.getElementById("coin").addEventListener("click",clickCoin);document.getElementById("grammCoin").addEventListener("click",clickGramm);document.getElementById("daily").addEventListener("click",dailyReward);
+async function start(){try{if(!initData)throw new Error("Открой игру через Telegram-бота");await loadState();await loadClickUpgrades();await loadShop();await loadLeaderboard();await loadBusinessCatalog();await loadBattlePass();await loadBitcoinFarm();document.getElementById("status").textContent="UGLY CLICKER подключён";showToast("Добро пожаловать в UGLY CLICKER 2.0");}catch(error){showError(error);}}
 start();
-
-/* TIMERS */
-
-setInterval(()=>{
- const b=state.bonuses;
- if(!b)return;
-
- if(b.x2Seconds>0){
-  b.x2Seconds=Math.max(0,Number(b.x2Seconds)-1);
- }
-
- if(b.x4Seconds>0){
-  b.x4Seconds=Math.max(0,Number(b.x4Seconds)-1);
- }
-
- b.x2Active=Boolean(b.x2Seconds>0);
- b.x4Active=Boolean(b.x4Seconds>0);
-
- const timedMultiplier=
-  b.x4Active?4:
-  b.x2Active?2:1;
-
- const permanentMultiplier=b.x10Unlocked?10:1;
-
- state.multiplier=timedMultiplier*permanentMultiplier;
- state.clickReward=state.clickBase*state.multiplier;
-
- render();
-},1000);
-
-/* Периодическая синхронизация состояния с сервером */
-
-setInterval(async()=>{
- if(!initData||document.visibilityState==="hidden")return;
-
- try{
-  await loadState();
- }catch(error){
-  console.warn("State synchronization:",error);
- }
-},30000);
-
+setInterval(()=>{const b=state.bonuses;if(!b)return;if(b.x2Seconds>0)b.x2Seconds=Math.max(0,Number(b.x2Seconds)-1);if(b.x4Seconds>0)b.x4Seconds=Math.max(0,Number(b.x4Seconds)-1);b.x2Active=Boolean(b.x2Seconds>0);b.x4Active=Boolean(b.x4Seconds>0);const timed=b.x4Active?4:b.x2Active?2:1,permanent=b.x10Unlocked?10:1;state.multiplier=timed*permanent;state.clickReward=state.clickBase*state.multiplier;render();},1000);
+setInterval(async()=>{if(!initData||document.visibilityState==="hidden")return;try{await loadState();}catch(error){console.warn("State synchronization:",error);}},30000);
+setInterval(async()=>{if(!initData||document.visibilityState==="hidden")return;try{await loadBitcoinFarm();}catch(error){console.warn("Farm synchronization:",error);}},60000);
 </script>
 </body>
 </html>
