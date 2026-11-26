@@ -9,7 +9,7 @@ let yaw = 0, moveX = 0, moveY = 0, activeObject = null, actionBusy = false;
 let joyPointer = null, lookPointer = null, lookLastX = 0, joyCenter = { x: 0, y: 0 };
 let joystickRadius = 48, cameraDistance = 5.8, cameraHeight = 3.2;
 const interactables = [], animated = [], keys = Object.create(null);
-const stationGroups=[], clubNPCs=[];let statePollTimer=0, receptionGuestId=null, receptionDuration=180;
+const stationGroups=[],consoleGroups=[], clubNPCs=[];let statePollTimer=0, receptionGuestId=null, receptionDuration=180;
 const tempForward = new THREE.Vector3(), tempRight = new THREE.Vector3(), tempMove = new THREE.Vector3();
 const _v = new THREE.Vector3();
 
@@ -246,7 +246,7 @@ function makeConsoleStation(x,z,index,data){
  box(g,1.85,.12,.62,0,.22,-.82,mat("#202a3b",.35,.45));box(g,1.62,1,.12,0,1.65,-.9,mat("#20252e",.25,.4));box(g,1.48,.82,.025,0,1.66,-.825,mat("#fff",.2,.08,{emissive:["#17324b","#12445a","#164a39","#38224f"][tv-1],emissiveIntensity:.5+tv*.12}));box(g,1.55,.045,.04,0,2.19,-.79,mat(colors[tv-1],.25,.35,{emissive:colors[tv-1],emissiveIntensity:.7}),false);
  box(g,.58,.13,.36,0,.43,-.22,mat(["#202b3a","#184d68","#18513f","#49315f"][con-1],.3,.5));box(g,.46,.045,.28,0,.52,-.22,mat(colors[con-1],.25,.35,{emissive:colors[con-1],emissiveIntensity:.45}),false);
  box(g,1.95,.3,.82,0,.48,.92,fabric);box(g,2,.72,.2,0,.88,1.27,fabric);for(const sx of [-.91,.91])box(g,.18,.62,.82,sx,.73,.92,fabric);for(const sx of [-.58,0,.58])box(g,.58,.12,.12,sx,.68,.49,mat(colors[sofa-1],.5,.08),false);
- makeLabel(g,"CONSOLE "+String(index+1).padStart(2,"0"),0,2.55,-.92,1.8,.32);g.userData={consoleIndex:index};stationGroups.push(g);
+ makeLabel(g,"CONSOLE "+String(index+1).padStart(2,"0"),0,2.55,-.92,1.8,.32);g.userData={consoleIndex:index};consoleGroups.push(g);
  for(const key of ["tv","console","sofa"])interactables.push({position:new THREE.Vector3(x+(key==="tv"?-.65:key==="console"?.65:0),0,z+(key==="sofa"?1.2:-.8)),name:({tv:"Телевизор",console:"Приставка",sofa:"Диван"})[key],hint:"КОНСОЛЬНАЯ ЗОНА · "+({tv:"ТЕЛЕВИЗОР",console:"ПРИСТАВКА",sofa:"ДИВАН"})[key]+" · НАЖМИ ДЛЯ УЛУЧШЕНИЯ",action:"upgrade_console_component",station:index,component:key,radius:1.8});
 }
 function buildStore(){
@@ -499,7 +499,7 @@ function animate() {
   }
   for(let i=clubNPCs.length-1;i>=0;i--){if(clubNPCs[i].mode==="exit"&&clubNPCs[i].mesh.position.z>8.25){scene.remove(clubNPCs[i].mesh);const ai=animated.findIndex(a=>a.root===clubNPCs[i].mesh);if(ai>=0)animated.splice(ai,1);clubNPCs.splice(i,1);}}
 
-  stationGroups.forEach((g,i)=>g.visible=i<(state.stations||4)+(state.clubData.consoleStations||[]).length);
+  stationGroups.forEach((g,i)=>g.visible=i<(state.stations||4));consoleGroups.forEach((g,i)=>g.visible=i<(state.clubData.consoleStations||[]).length);
   updateCamera(dt);
   activeObject = findInteractable();
   $("simHint").textContent = activeObject ? activeObject.hint : "Двигайся по клубу. Подойди к ресепшену или игровому месту.";
@@ -560,11 +560,11 @@ function renderReceptionModal(){
  select.innerHTML="";
  stations.forEach((st,i)=>{if(busy.has(i))return;const c=st.components||{},tier=Math.max(1,Math.min(4,...["gpu","cpu","ram","monitor","keyboard","mouse","chair","desk"].map(k=>Number(c[k]||st.tier||1))));const paymentRange=[null,[500,1000],[2000,4000],[5000,7000],[10000,15000]][tier];const opt=document.createElement("option");opt.value=i;const quotedReward=paymentRange[0]+Math.floor(Math.random()*(paymentRange[1]-paymentRange[0]+1));opt.dataset.reward=quotedReward;opt.textContent="ПК №"+(i+1)+" · оплата $"+quotedReward.toLocaleString("ru-RU");select.appendChild(opt);});
  (state.clubData.consoleStations||[]).forEach((st,i)=>{if((state.clubData.consoleSessions||[]).some(x=>Number(x.station)===i))return;const opt=document.createElement("option");opt.value="console:"+i;const range=[650,950],quoted=range[0]+Math.floor(Math.random()*(range[1]-range[0]+1));opt.dataset.reward=quoted;opt.textContent=(st.name||"Консоль")+" №"+(i+1)+" · 1 час · оплата $"+quoted.toLocaleString("ru-RU");select.appendChild(opt);});
- const update=()=>{const opt=select.selectedOptions[0],reward=Number(opt?.dataset.reward||0);$("simReceptionPrice").textContent=opt?"$"+reward.toLocaleString("ru-RU"):"—";$("simReceptionConfirm").disabled=!opt;$("simReceptionHint").textContent=opt?"Выдай посетителю свободный ПК. Оплата поступит в кассу после окончания сессии.":"Свободных ПК нет — дождись освобождения места.";};select.onchange=update;update();
+ const update=()=>{const opt=select.selectedOptions[0],isConsole=String(opt?.value||"").startsWith("console:"),mins=Number($("simConsoleMinutes")?.value||60);if($("simConsoleMinutes"))$("simConsoleMinutes").style.display=isConsole?"block":"none";let reward=Number(opt?.dataset.reward||0);if(isConsole){const ranges={30:[350,550],60:[650,950],120:[1200,1800],180:[1700,2600]},r=ranges[mins]||ranges[60];reward=r[0]+Math.floor(Math.random()*(r[1]-r[0]+1));if(opt)opt.dataset.reward=reward;}$("simReceptionPrice").textContent=opt?"$"+reward.toLocaleString("ru-RU"):"—";$("simReceptionConfirm").disabled=!opt;$("simReceptionHint").textContent=isConsole?"Выбрано консольное место. Оплата поступит в кассу после окончания сессии.":opt?"Выдай посетителю свободный ПК. Оплата поступит в кассу после завершения сессии.":"Свободных мест нет — дождись освобождения.";};select.onchange=update;$("simConsoleMinutes")?.addEventListener("change",update);update();
 }
 function rebuildClubScene(){
  const position=player?player.position.clone():new THREE.Vector3(0,0,7.7),rotation=player?player.rotation.y:0;
- interactables.length=0;animated.length=0;stationGroups.length=0;clubNPCs.length=0;
+ interactables.length=0;animated.length=0;stationGroups.length=0;consoleGroups.length=0;clubNPCs.length=0;
  buildStore();player.position.copy(position);player.rotation.y=rotation;resize();
 }
 function updateHUD() {
@@ -637,7 +637,7 @@ function bindControls() {
   $("simAction").addEventListener("click",()=>{if(!activeObject)return;if(activeObject.action==="open_reception"){openReception();return;}doAction(activeObject.action||"upgrade_station",{station:activeObject.station??activeObject.index,component:activeObject.component});});
   $("simReceptionClose")?.addEventListener("click",closeReception);
   $("simReceptionModal")?.addEventListener("click",e=>{if(e.target===$("simReceptionModal"))closeReception();});
-  $("simReceptionConfirm")?.addEventListener("click",()=>{const select=$("simReceptionStation");if(receptionGuestId&&select?.value!=="")doAction("start_session",{queueId:receptionGuestId,station:Number(select.value),duration:receptionDuration,expectedReward:Number(select.selectedOptions[0]?.dataset.reward||0)});});
+  $("simReceptionConfirm")?.addEventListener("click",()=>{const select=$("simReceptionStation");if(receptionGuestId&&select?.value!==""){const isConsole=String(select.value).startsWith("console:");doAction("start_session",{queueId:receptionGuestId,station:isConsole?select.value:Number(select.value),duration:receptionDuration,minutes:Number($("simConsoleMinutes")?.value||60),expectedReward:Number(select.selectedOptions[0]?.dataset.reward||0)});}});
   $("simTapButton")?.addEventListener("click",tapClub);
   $("simQueue")?.addEventListener("click",event=>{const b=event.target.closest("[data-confirm-guest]");if(!b)return;const id=b.dataset.confirmGuest,sel=$("simQueue").querySelector('[data-station-for="'+id+'"]');if(sel)doAction("start_session",{queueId:id,station:Number(sel.value)});});
   $("simUpgradePanel")?.addEventListener("click",event=>{const b=event.target.closest("[data-upgrade-component]");if(!b)return;doAction("upgrade_component",{station:Number(b.dataset.upgradeStation),component:b.dataset.upgradeComponent});});
