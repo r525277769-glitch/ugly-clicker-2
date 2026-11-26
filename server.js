@@ -2350,7 +2350,7 @@ async function getClub(client,id,lock=false){
  const d=r.club_data||{stations:[{tier:1},{tier:1},{tier:1},{tier:1}],adLevel:0};
  d.stations=Array.isArray(d.stations)&&d.stations.length?d.stations:[{tier:1},{tier:1},{tier:1},{tier:1}];
  d.stations=d.stations.slice(0,8).map(st=>({...st,components:{...CLUB_COMPONENT_DEFAULTS,...(st.components||Object.fromEntries(CLUB_COMPONENTS.map(k=>[k,Number(st.tier)||1])))}}));
- d.adLevel=Number(d.adLevel||0);d.adminEnabled=Boolean(d.adminEnabled);d.queue=Array.isArray(d.queue)?d.queue:[];d.sessions=Array.isArray(d.sessions)?d.sessions:[];
+ d.adLevel=Number(d.adLevel||0);d.adminEnabled=Boolean(d.adminEnabled);d.queue=Array.isArray(d.queue)?d.queue:[];d.consoleQueue=Array.isArray(d.consoleQueue)?d.consoleQueue:[];d.sessions=Array.isArray(d.sessions)?d.sessions:[];
  d.consoleStations=Array.isArray(d.consoleStations)?d.consoleStations:[{tv:1,console:1,sofa:1},{tv:1,console:1,sofa:1}];
  d.consoleStations=d.consoleStations.slice(0,8).map((st,i)=>({tv:1,console:1,sofa:1,...st,name:st.name||CONSOLE_NAMES[i%2]}));
  d.consoleSessions=Array.isArray(d.consoleSessions)?d.consoleSessions:[];
@@ -2362,15 +2362,12 @@ async function getClub(client,id,lock=false){
   d.consoleSessions=d.consoleSessions.filter(x=>new Date(x.endsAt).getTime()>now);dirty=true;
  }
  if(!d.nextArrivalAt){d.nextArrivalAt=new Date(now+8000).toISOString();dirty=true;}
- const free=clubFreeStations(d);
- if(now>=new Date(d.nextArrivalAt).getTime()&&d.queue.length<Math.min(5,free.length+2)){
-  d.queue.push({id:require("crypto").randomBytes(6).toString("hex"),name:CLUB_NAMES[Math.floor(Math.random()*CLUB_NAMES.length)],arrivedAt:new Date(now).toISOString()});
-  const delay=Math.max(12000,42000-d.adLevel*2500);
-  d.nextArrivalAt=new Date(now+delay+Math.floor(Math.random()*10000)).toISOString();dirty=true;
- }
- // PC and console receptions have independent administrators.
- if(d.adminEnabled){let freeNow=clubFreeStations(d);while(d.queue.length&&freeNow.length){const leaveForConsole=d.consoleAdminEnabled&&consoleFreeStations(d).length?1:0;if(d.queue.length<=leaveForConsole)break;const guest=d.queue.shift(),station=freeNow.shift(),tier=clubStationLevel(d.stations[station]),range=CLUB_CUSTOMER_PAYMENT[tier],duration=120+Math.floor(Math.random()*181),reward=range[0]+Math.floor(Math.random()*(range[1]-range[0]+1)),startedAt=new Date(now).toISOString();d.sessions.push({id:guest.id,name:guest.name,station,duration,reward,startedAt,endsAt:new Date(now+duration*1000).toISOString(),autoReception:true});xp+=5;dirty=true;}}
- if(d.consoleAdminEnabled){let freeConsole=consoleFreeStations(d);while(d.queue.length&&freeConsole.length){const guest=d.queue.shift(),station=freeConsole.shift(),tier=consoleStationLevel(d.consoleStations[station]),range=CONSOLE_SESSION_PRICES[tier]||CONSOLE_SESSION_PRICES[1],duration=240,reward=range[0]+Math.floor(Math.random()*(range[1]-range[0]+1));d.consoleSessions.push({id:guest.id,name:guest.name,station,minutes:4,duration,reward,startedAt:new Date(now).toISOString(),endsAt:new Date(now+duration*1000).toISOString(),autoReception:true});xp+=5;dirty=true;}}
+ if(!d.nextConsoleArrivalAt){d.nextConsoleArrivalAt=new Date(now+14000).toISOString();dirty=true;}
+ const free=clubFreeStations(d),freeConsole=consoleFreeStations(d);
+ if(now>=new Date(d.nextArrivalAt).getTime()&&d.queue.length<Math.min(5,free.length+2)){d.queue.push({id:require("crypto").randomBytes(6).toString("hex"),name:CLUB_NAMES[Math.floor(Math.random()*CLUB_NAMES.length)],arrivedAt:new Date(now).toISOString(),area:"pc"});const delay=Math.max(12000,42000-d.adLevel*2500);d.nextArrivalAt=new Date(now+delay+Math.floor(Math.random()*10000)).toISOString();dirty=true;}
+ if(now>=new Date(d.nextConsoleArrivalAt).getTime()&&d.consoleQueue.length<Math.min(5,freeConsole.length+2)){d.consoleQueue.push({id:require("crypto").randomBytes(6).toString("hex"),name:CLUB_NAMES[Math.floor(Math.random()*CLUB_NAMES.length)],arrivedAt:new Date(now).toISOString(),area:"console"});d.nextConsoleArrivalAt=new Date(now+26000+Math.floor(Math.random()*18000)).toISOString();dirty=true;}
+ if(d.adminEnabled){let freeNow=clubFreeStations(d);while(d.queue.length&&freeNow.length){const guest=d.queue.shift(),station=freeNow.shift(),tier=clubStationLevel(d.stations[station]),range=CLUB_CUSTOMER_PAYMENT[tier],duration=120+Math.floor(Math.random()*181),reward=range[0]+Math.floor(Math.random()*(range[1]-range[0]+1)),startedAt=new Date(now).toISOString();d.sessions.push({id:guest.id,name:guest.name,station,duration,reward,startedAt,endsAt:new Date(now+duration*1000).toISOString(),autoReception:true});xp+=5;dirty=true;}}
+ if(d.consoleAdminEnabled){let freeNow=consoleFreeStations(d);while(d.consoleQueue.length&&freeNow.length){const guest=d.consoleQueue.shift(),station=freeNow.shift(),tier=consoleStationLevel(d.consoleStations[station]),range=CONSOLE_SESSION_PRICES[tier]||CONSOLE_SESSION_PRICES[1],duration=240,reward=range[0]+Math.floor(Math.random()*(range[1]-range[0]+1));d.consoleSessions.push({id:guest.id,name:guest.name,station,minutes:4,duration,reward,startedAt:new Date(now).toISOString(),endsAt:new Date(now+duration*1000).toISOString(),autoReception:true});xp+=5;dirty=true;}}
  const hourly=Math.round(d.stations.reduce((n,st)=>n+CLUB_TIER_RATE[clubStationLevel(st)],0)*(1+d.adLevel*.12)+d.consoleStations.reduce((n,st)=>n+[0,12,25,45,75][consoleStationLevel(st)],0));
  if(dirty||cash!==Number(r.shop_cash)||xp!==Number(r.shop_xp)||customers!==Number(r.customers_served)){
   await client.query("UPDATE ugly_simulator_players SET shop_cash=$1,shop_xp=$2,customers_served=$3,club_data=$4::jsonb,updated_at=NOW() WHERE telegram_id=$5",[cash,xp,customers,JSON.stringify(d),id]);
@@ -2400,14 +2397,14 @@ app.post("/api/simulator/action",auth,async(req,res)=>{
   await c.query("BEGIN");
   let s=await getClub(c,req.player.id,true),d=s.clubData,msg="",a=req.body.action;
   if(a==="start_session"){
-   const queueId=String(req.body.queueId||""),guest=d.queue.find(x=>x.id===queueId);
-   if(!guest)throw Error("Этот посетитель уже ушёл из очереди");
-   if(String(req.body.station||"").startsWith("console:")){
+   const queueId=String(req.body.queueId||""),isConsole=String(req.body.station||"").startsWith("console:"),queue=isConsole?d.consoleQueue:d.queue,guest=queue.find(x=>x.id===queueId);
+   if(!guest)throw Error("Этот посетитель уже ушёл из своей очереди");
+   if(isConsole){
     const ci=Number(String(req.body.station).split(":")[1]),st=d.consoleStations[ci];
     if(!Number.isInteger(ci)||!st)throw Error("Консольное место не найдено");
     if((d.consoleSessions||[]).some(x=>Number(x.station)===ci))throw Error("Консольное место уже занято");
     const minutes=[3,4,5].includes(Number(req.body.minutes))?Number(req.body.minutes):4,tier=consoleStationLevel(st),range=CONSOLE_SESSION_PRICES[tier]||CONSOLE_SESSION_PRICES[1],quoted=Number(req.body.expectedReward),reward=Number.isInteger(quoted)&&quoted>=range[0]&&quoted<=range[1]?quoted:range[0]+Math.floor(Math.random()*(range[1]-range[0]+1)),duration=minutes*60;
-    d.queue=d.queue.filter(x=>x.id!==queueId);
+    d.consoleQueue=d.consoleQueue.filter(x=>x.id!==queueId);
     d.consoleSessions.push({id:queueId,name:guest.name,station:ci,minutes,duration,reward,startedAt:new Date().toISOString(),endsAt:new Date(Date.now()+duration*1000).toISOString()});
     msg=guest.name+" оформлен на консоль №"+(ci+1)+" на "+minutes+" мин.";
    }else{
