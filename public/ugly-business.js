@@ -30,13 +30,11 @@ function mat(color, roughness = .75, metalness = 0, extra = {}) {
   return new THREE.MeshStandardMaterial({ color, roughness, metalness, ...extra });
 }
 const M = {
-  wall: mat("#d9d3c8"), wallDark: mat("#a8a398"), floor: mat("#aaa79f", .9),
-  grout: mat("#77766f"), dark: mat("#25292c", .45), metal: mat("#879197", .32, .72),
-  steel: mat("#c3c9c9", .25, .8), wood: mat("#805632"), woodLight: mat("#bd8b50"),
-  gold: mat("#c89a42", .35, .55), glass: mat("#9cc5d1", .15, .2, { transparent: true, opacity: .42 }),
-  green: mat("#47734c"), red: mat("#a84235"), cream: mat("#eee9df"),
-  skin: mat("#c9906d"), shirtBlue: mat("#304d70"), shirtGreen: mat("#49634a"),
-  shirtRust: mat("#86523b"), pants: mat("#292c32"), shoe: mat("#17191c")
+  dark: mat("#25292c", .45),
+  metal: mat("#879197", .32, .72),
+  steel: mat("#c3c9c9", .25, .8),
+  woodLight: mat("#bd8b50"),
+  gold: mat("#c89a42", .35, .55)
 };
 function addMesh(parent, geometry, material, position, cast = true, receive = true) {
   const mesh = new THREE.Mesh(geometry, material);
@@ -322,19 +320,18 @@ function buildStore(){
  const roomSize=18+Number(state.clubData.roomLevel||0)*4,roomHalf=roomSize/2;
  box(scene,roomSize,.35,roomSize,0,-.18,0,surfaceMat("#ffffff","floor",.32,.18));
   // Apply wall texture directly to the room-facing faces of each solid wall mesh.
-  const wallSkin=surfaceMat("#ffffff","wall",.82,.02),wallBase=mat("#14243a",.86,.02);
-  const wallBox=(w,h,d,x,y,z,faces=[])=>{
-    const mats=Array.from({length:6},(_,i)=>faces.includes(i)?wallSkin:wallBase);
+  const wallSkin=surfaceMat("#ffffff","wall",.82,.02);
+  const wallBox=(w,h,d,x,y,z)=>{
+    const mats=Array.from({length:6},()=>wallSkin);
     const mesh=addMesh(scene,new THREE.BoxGeometry(w,h,d),mats,[x,y,z],true,true);
     return mesh;
   };
-  // BoxGeometry material slots: +X, -X, +Y, -Y, +Z, -Z.
-  wallBox(roomSize,5,.32,0,2.35,-roomHalf,[4]);       // rear wall, inside face
-  wallBox(.32,5,roomSize,-roomHalf,2.35,0,[0]);       // left wall, inside face
+  wallBox(roomSize,5,.32,0,2.35,-roomHalf);       // rear wall, inside face
+  wallBox(.32,5,roomSize,-roomHalf,2.35,0);       // left wall, inside face
   // Partition between PC and console rooms: both sides are textured, doorway stays open.
   const doorwayHalf=1.7,segment=roomHalf-doorwayHalf,segmentCenter=(roomHalf+doorwayHalf)/2;
   for(const side of [-1,1]){
-    wallBox(.32,5,segment,roomHalf,2.35,side*segmentCenter,[0,1]);
+    wallBox(.32,5,segment,roomHalf,2.35,side*segmentCenter);
   }
   box(scene,.34,.28,doorwayHalf*2+.22,roomHalf,4.72,0,surfaceMat("#172a43","metal",.34,.62));
   for(const side of [-1,1]){
@@ -345,9 +342,9 @@ function buildStore(){
   const wingX=roomHalf+4.75;
   const consoleRoomLevel=Number(state.clubData.consoleRoomLevel||0),consoleDepth=22+consoleRoomLevel*4,consoleCenterZ=consoleRoomLevel*2;
   box(scene,9.5,.3,consoleDepth,wingX,-.18,consoleCenterZ,surfaceMat("#ffffff","floor",.32,.18));
-  wallBox(9.5,5,.3,wingX,2.35,-11,[4]); // console room rear wall
-  wallBox(9.5,5,.3,wingX,2.35,11+consoleRoomLevel*4,[5]); // console room front wall
-  wallBox(.3,5,consoleDepth,roomHalf+9.5,2.35,consoleCenterZ,[1]); // console room outer side wall
+  wallBox(9.5,5,.3,wingX,2.35,-11); // console room rear wall
+  wallBox(9.5,5,.3,wingX,2.35,11+consoleRoomLevel*4); // console room front wall
+  wallBox(.3,5,consoleDepth,roomHalf+9.5,2.35,consoleCenterZ); // console room outer side wall
   box(scene,9.5,.25,consoleDepth,wingX,5,consoleCenterZ,surfaceMat("#ffffff","ceiling",.82,.08));
  box(scene,.12,3.5,.18,roomHalf+.08,2.1,-2.3,mat("#21cfff",.2,.3,{emissive:"#087fa8",emissiveIntensity:1}),false);box(scene,.12,3.5,.18,roomHalf+.08,2.1,2.3,mat("#a55cff",.2,.3,{emissive:"#4a138c",emissiveIntensity:1}),false);
  const wingSign=new THREE.Mesh(new THREE.PlaneGeometry(3.4,.65),signMaterial("CONSOLE LOUNGE","PLAYSTATION • XBOX"));wingSign.position.set(roomHalf+4.75,3.7,-10.78);scene.add(wingSign);
