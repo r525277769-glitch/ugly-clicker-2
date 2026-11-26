@@ -266,9 +266,33 @@ function makeConsoleStation(x,z,index,data){
  box(g,1.62,.9,.12,0,1.37,-.92,mat("#101722",.22,.55));
  box(g,1.49,.76,.025,0,1.39,-.852,mat("#fff",.18,.08,{emissive:["#17324b","#12445a","#164a39","#38224f"][tv-1],emissiveIntensity:.5+tv*.12}));
  box(g,1.55,.045,.04,0,1.86,-.84,mat(tvGlow,.25,.35,{emissive:tvGlow,emissiveIntensity:.7}),false);
- // Console device rests on the same table beside the TV.
- box(g,.42,.11,.28,.58,.84,-.55,mat(["#202b3a","#184d68","#18513f","#49315f"][con-1],.3,.5));
- box(g,.32,.025,.2,.58,.91,-.55,mat(colors[con-1],.25,.35,{emissive:colors[con-1],emissiveIntensity:.45}),false);
+ // Brand-specific console models: PlayStation has the recognizable white split
+ // shell and black center; Xbox is a compact upright black tower with green vent.
+ const device=new THREE.Group();device.position.set(.58,.84,-.55);g.add(device);
+ const isXbox=String(data.name||"").toLowerCase().includes("xbox");
+ const shell=mat(isXbox?"#171b20":"#e8edf2",.28,.62),dark=mat("#090d13",.22,.72);
+ const accent=mat(isXbox?"#35d66f":"#20bfff",.22,.28,{emissive:isXbox?"#159b45":"#0879bd",emissiveIntensity:.75});
+ if(isXbox){
+   // Xbox Series-style upright monolithic tower.
+   box(device,.3,.43,.29,0,.215,0,dark);
+   box(device,.27,.035,.26,0,.43,0,mat("#252b31",.25,.55));
+   box(device,.018,.31,.012,.151,.22,-.08,accent,false);
+   cylinder(device,.075,.075,.012,0,.451,0,accent,24);
+   for(let n=-2;n<=2;n++)box(device,.012,.012,.16,n*.035,.454,0,dark,false);
+   makeLabel(device,"XBOX",0,.22,.151,.24,.09);
+ }else{
+   // PlayStation 5-style horizontal chassis with two white side plates.
+   box(device,.43,.105,.29,0,.055,0,dark);
+   box(device,.105,.19,.3,-.145,.105,0,shell);
+   box(device,.105,.19,.3,.145,.105,0,shell);
+   box(device,.205,.145,.275,0,.11,0,dark);
+   box(device,.012,.105,.012,-.045,.11,-.146,accent,false);
+   box(device,.012,.105,.012,.045,.11,-.146,accent,false);
+   box(device,.055,.012,.035,0,.202,.075,mat("#303a46",.3,.6),false);
+   makeLabel(device,"PS5",0,.11,.151,.22,.09);
+ }
+ // Upgrade levels keep their own colored status indicator.
+ box(device,.12,.018,.018,0,isXbox?.475:.018,.158,mat(colors[con-1],.22,.28,{emissive:colors[con-1],emissiveIntensity:.5}),false);
  // Sofa is grounded on the floor with short feet, seat, back and armrests.
  for(const sx of [-.82,.82])for(const sz of [.63,1.18])box(g,.09,.16,.09,sx,.08,sz,mat("#202a38",.38,.55));
  box(g,1.95,.22,.82,0,.22,.92,fabric);
