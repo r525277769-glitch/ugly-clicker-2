@@ -6,6 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>UGLY CLICKER 2.0</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
 <style>
 *{box-sizing:border-box}
 body{margin:0;background:#090909;color:#f5d77a;font-family:Arial,sans-serif;text-align:center;padding:15px}
@@ -27,6 +28,42 @@ input{background:#090909;border:1px solid #92702a;border-radius:9px;padding:12px
 .small{font-size:13px;color:#aaa}
 .business-number{font-size:25px;font-weight:bold;color:#f5d77a}
 .business-card{border:1px solid #51401e;border-radius:12px;padding:12px;margin:12px 0;background:#111}
+
+/* ПОСТОЯННЫЕ УЛУЧШЕНИЯ КЛИКА */
+.click-upgrade-card{
+ background:#111;
+ border:1px solid #51401e;
+ border-radius:12px;
+ padding:14px;
+ margin:12px 0;
+}
+.click-upgrade-card.owned{
+ border-color:#55a86b;
+}
+.click-upgrade-card h3{
+ margin:5px 0 10px;
+}
+.click-upgrade-bonus{
+ color:#f5d77a;
+ font-size:19px;
+ font-weight:bold;
+}
+.click-upgrade-price{
+ color:#aaa;
+ margin:8px 0;
+}
+.click-upgrade-owned{
+ color:#8bd49b;
+ font-weight:bold;
+ margin:10px 0;
+}
+.click-reward-info{
+ background:#111;
+ border:1px solid #92702a;
+ border-radius:12px;
+ padding:13px;
+ margin:12px 0;
+}
 
 /* BATTLE PASS */
 .bp-header{background:linear-gradient(145deg,#30220b,#171717 65%);border:1px solid #d9ad3e}
@@ -51,12 +88,14 @@ input{background:#090909;border:1px solid #92702a;border-radius:9px;padding:12px
 .bp-reward-value{font-size:13px;line-height:1.7}
 .bp-buy-buttons{display:flex;flex-wrap:wrap;justify-content:center}
 .bp-buy-buttons button{flex:1;min-width:130px}
+
 @media(max-width:360px){
  .nav button{min-width:105px;padding:10px}
  .bp-columns{grid-template-columns:1fr}
 }
 </style>
 </head>
+
 <body>
 
 <h1>UGLY CLICKER</h1>
@@ -69,7 +108,10 @@ input{background:#090909;border:1px solid #92702a;border-radius:9px;padding:12px
 <button onclick="showPage('battlepass')">BATTLE PASS</button>
 </div>
 
+<!-- ОСНОВНОЙ КЛИКЕР -->
+
 <section id="main" class="page active">
+
 <div class="panel">
 <div class="muted">ТВОЙ БАЛАНС</div>
 <div class="balance">$<span id="balance">0</span></div>
@@ -81,6 +123,12 @@ input{background:#090909;border:1px solid #92702a;border-radius:9px;padding:12px
 <div class="coin" id="coin">U</div>
 <p>Нажимай, чтобы зарабатывать</p>
 
+<div class="click-reward-info">
+<div class="muted">ТВОЯ НАГРАДА ЗА ОДИН КЛИК</div>
+<div class="balance">$<span id="clickReward">1</span></div>
+<p class="small">С учётом постоянных и временных улучшений</p>
+</div>
+
 <div class="panel">
 <h2>Ежедневная награда</h2>
 <button id="daily">Получить $1 000</button>
@@ -88,6 +136,7 @@ input{background:#090909;border:1px solid #92702a;border-radius:9px;padding:12px
 
 <div class="panel">
 <h2>Улучшения</h2>
+
 <div class="item">
 <b>Бонус x2</b>
 <p>Цена: $5 000</p>
@@ -95,6 +144,7 @@ input{background:#090909;border:1px solid #92702a;border-radius:9px;padding:12px
 <p id="x2status">Не активен</p>
 <button onclick="buyUpgrade('x2')">Купить x2</button>
 </div>
+
 <div class="item">
 <b>Бонус x4</b>
 <p>Цена: $12 000</p>
@@ -102,12 +152,33 @@ input{background:#090909;border:1px solid #92702a;border-radius:9px;padding:12px
 <p id="x4status">Не активен</p>
 <button onclick="buyUpgrade('x4')">Купить x4</button>
 </div>
+
 <div class="item">
 <b>Постоянное улучшение x10</b>
 <p>Цена: $2 000 000</p>
 <p class="small">Остаётся навсегда</p>
 <p id="x10status">Не куплено</p>
 <button id="x10button" onclick="buyUpgrade('x10')">Купить x10</button>
+</div>
+</div>
+
+<!-- НОВЫЕ ПОСТОЯННЫЕ УЛУЧШЕНИЯ КЛИКА -->
+
+<div class="panel">
+<h2>⚡ ПОСТОЯННЫЕ УЛУЧШЕНИЯ КЛИКА</h2>
+
+<p class="small">
+Покупай улучшения, чтобы навсегда увеличить доход за каждый клик.
+</p>
+
+<div class="click-reward-info">
+<div class="muted">ТВОЯ БАЗОВАЯ НАГРАДА</div>
+<div class="balance">$<span id="clickBase">1</span></div>
+<p class="small">Без временных множителей</p>
+</div>
+
+<div id="clickUpgradeList">
+<p class="muted">Загрузка улучшений...</p>
 </div>
 </div>
 
@@ -125,9 +196,13 @@ input{background:#090909;border:1px solid #92702a;border-radius:9px;padding:12px
 <h2>Топ игроков</h2>
 <div id="leaderboard">Загрузка...</div>
 </div>
+
 </section>
 
+<!-- GRAMM CLICKER -->
+
 <section id="gramm" class="page">
+
 <div class="panel">
 <h2>GRAMM CLICKER</h2>
 <div class="muted">ТВОЙ БАЛАНС GRAMM</div>
@@ -141,17 +216,24 @@ input{background:#090909;border:1px solid #92702a;border-radius:9px;padding:12px
 <h2>Обмен валюты</h2>
 <p>Курс: 1 GRAMM = $10</p>
 <input id="exchangeAmount" type="number" min="1" step="1" placeholder="Количество">
+
 <div>
 <button onclick="exchange('toGramm')">Доллары → GRAMM</button>
 </div>
+
 <div>
 <button onclick="exchange('toDollars')">GRAMM → Доллары</button>
 </div>
+
 <p class="small">Обмен действует только внутри игры.</p>
 </div>
+
 </section>
 
+<!-- БИЗНЕСЫ -->
+
 <section id="businesses" class="page">
+
 <div class="panel">
 <h2>МОИ БИЗНЕСЫ</h2>
 <p class="muted">ОТДЕЛЬНЫЙ БИЗНЕС-СЧЁТ</p>
@@ -166,12 +248,15 @@ input{background:#090909;border:1px solid #92702a;border-radius:9px;padding:12px
 <p>Перевод с бизнес-счёта</p>
 <input id="withdrawAmount" type="number" min="1" step="1" placeholder="Сумма в долларах">
 <p class="small">Для перевода в GRAMM сумма должна делиться на 10</p>
+
 <div>
 <button onclick="withdrawBusiness('usd')">На долларовый баланс</button>
 </div>
+
 <div>
 <button onclick="withdrawBusiness('gramm')">Обменять на GRAMM</button>
 </div>
+
 <p class="small">Курс: 1 GRAMM = $10</p>
 </div>
 
@@ -184,18 +269,22 @@ input{background:#090909;border:1px solid #92702a;border-radius:9px;padding:12px
 <h2>КАТАЛОГ БИЗНЕСОВ</h2>
 <div id="businessCatalog">Загрузка бизнеса...</div>
 </div>
+
 </section>
 
 <!-- BATTLE PASS -->
+
 <section id="battlepass" class="page">
 
 <div class="panel bp-header">
 <h2>UGLY BATTLE PASS</h2>
 <p class="muted">СЕЗОННЫЙ ПРОПУСК</p>
 <div class="bp-level">УРОВЕНЬ <span id="bpLevel">1</span> / 100</div>
+
 <div class="bp-progress">
 <div class="bp-progress-fill" id="bpProgressFill"></div>
 </div>
+
 <p><span id="bpXP">0</span> / <span id="bpNextXP">200</span> BP XP</p>
 <p id="bpSeasonDates" class="small">Загрузка сезона...</p>
 <p id="bpPremiumStatus" class="bp-tag">FREE PASS</p>
@@ -207,6 +296,7 @@ input{background:#090909;border:1px solid #92702a;border-radius:9px;padding:12px
 <p>Открой премиальную дорожку наград!</p>
 <p><b>$300 000</b> или <b>30 000 GRAMM</b></p>
 <p class="small">Покупка Premium открывает премиальные награды сезона.</p>
+
 <div class="bp-buy-buttons">
 <button id="bpBuyUsd" onclick="buyBPPremium('usd')">Купить за $300 000</button>
 <button id="bpBuyGramm" onclick="buyBPPremium('gramm')">Купить за 30 000 GRAMM</button>
@@ -253,11 +343,16 @@ const state={
   x4Seconds:0,
   x10Unlocked:false
  },
- multiplier:1
+ multiplier:1,
+ clickUpgradeBonus:0,
+ clickBase:1,
+ clickReward:1,
+ ownedClickUpgrades:[]
 };
 
 let businessCatalog=[];
 let bpState=null;
+let clickUpgradeData=[];
 
 const money=n=>Number(n||0).toLocaleString("ru-RU");
 
@@ -280,8 +375,13 @@ async function api(path,options={}){
    ...(options.headers||{})
   }
  });
+
  const data=await response.json();
- if(!response.ok) throw new Error(data.error||"Ошибка сервера");
+
+ if(!response.ok){
+  throw new Error(data.error||"Ошибка сервера");
+ }
+
  return data;
 }
 
@@ -291,6 +391,10 @@ function showPage(page){
 
  if(page==="battlepass"){
   loadBattlePass();
+ }
+
+ if(page==="main"){
+  loadClickUpgrades();
  }
 }
 
@@ -304,13 +408,20 @@ function render(){
  document.getElementById("multiplier").textContent=state.multiplier;
  document.getElementById("grammMultiplier").textContent=state.multiplier;
 
+ document.getElementById("clickBase").textContent=money(state.clickBase);
+ document.getElementById("clickReward").textContent=money(state.clickReward);
+
  const b=state.bonuses;
+
  document.getElementById("x2status").textContent=
   b.x2Active?"Активен: "+b.x2Seconds+" сек.":"Не активен";
+
  document.getElementById("x4status").textContent=
   b.x4Active?"Активен: "+b.x4Seconds+" сек.":"Не активен";
+
  document.getElementById("x10status").textContent=
   b.x10Unlocked?"Куплено навсегда":"Не куплено";
+
  document.getElementById("x10button").disabled=b.x10Unlocked;
 
  document.getElementById("inventory").innerHTML=
@@ -327,6 +438,7 @@ function render(){
   :"Пока пусто";
 
  renderOwnedBusinesses();
+ renderClickUpgrades();
 }
 
 function renderOwnedBusinesses(){
@@ -370,8 +482,11 @@ function renderBusinessCatalog(){
  `).join("");
 }
 
+/* ЗАГРУЗКА СОСТОЯНИЯ ИГРОКА */
+
 async function loadState(){
  const data=await api("/api/state");
+
  state.balance=data.balance;
  state.grammBalance=data.grammBalance;
  state.businessBalance=data.businessBalance||0;
@@ -379,31 +494,156 @@ async function loadState(){
  state.businesses=data.businesses||[];
  state.experience=data.experience;
  state.level=data.level;
- state.inventory=data.inventory;
+ state.inventory=data.inventory||[];
  state.bonuses=data.bonuses;
  state.multiplier=data.multiplier;
+
+ state.clickUpgradeBonus=Number(data.clickUpgradeBonus||0);
+ state.clickBase=Number(data.clickBase||1);
+ state.clickReward=Number(data.clickReward||state.clickBase*state.multiplier);
+ state.ownedClickUpgrades=data.ownedClickUpgrades||[];
+
  render();
 }
+
+/* ПОСТОЯННЫЕ УЛУЧШЕНИЯ КЛИКА */
+
+async function loadClickUpgrades(){
+ const container=document.getElementById("clickUpgradeList");
+
+ try{
+  const data=await api("/api/click-upgrades");
+
+  clickUpgradeData=data.upgrades||[];
+
+  if(Array.isArray(data.owned)){
+   state.ownedClickUpgrades=data.owned;
+  }
+
+  renderClickUpgrades();
+
+ }catch(error){
+  console.error("Click upgrades error:",error);
+
+  if(container){
+   container.innerHTML=
+    '<p class="muted">Не удалось загрузить улучшения. Попробуй обновить страницу.</p>';
+  }
+}
+
+}
+
+function renderClickUpgrades(){
+ const container=document.getElementById("clickUpgradeList");
+
+ if(!container) return;
+
+ if(!clickUpgradeData.length){
+  container.innerHTML='<p class="muted">Улучшения пока недоступны</p>';
+  return;
+ }
+
+ const ownedBonus=clickUpgradeData
+  .filter(item=>item.owned)
+  .reduce((sum,item)=>sum+Number(item.amount),0);
+
+ const baseReward=1+ownedBonus;
+
+ document.getElementById("clickBase").textContent=money(baseReward);
+
+ container.innerHTML=clickUpgradeData.map(item=>{
+  const owned=Boolean(item.owned);
+
+  return `
+   <div class="click-upgrade-card ${owned?"owned":""}">
+    <h3>${escapeHTML(item.name)}</h3>
+
+    <div class="click-upgrade-bonus">
+     +$${money(item.amount)} за каждый клик
+    </div>
+
+    <div class="click-upgrade-price">
+     Цена: $${money(item.price)}
+    </div>
+
+    ${
+     owned
+     ?'<div class="click-upgrade-owned">✓ КУПЛЕНО НАВСЕГДА</div>'
+     :`<button
+        onclick="buyClickUpgrade('${escapeHTML(item.key)}')"
+        ${Number(state.balance)<Number(item.price)?"disabled":""}>
+        КУПИТЬ ЗА $${money(item.price)}
+       </button>`
+    }
+   </div>
+  `;
+ }).join("");
+}
+
+async function buyClickUpgrade(key){
+ try{
+  const button=document.querySelector(
+   `button[onclick="buyClickUpgrade('${key}')"]`
+  );
+
+  if(button) button.disabled=true;
+
+  const data=await api("/api/click-upgrades/buy",{
+   method:"POST",
+   body:JSON.stringify({key})
+  });
+
+  await loadState();
+  await loadClickUpgrades();
+
+  alert(
+   "Улучшение успешно куплено!\n"+
+   "Твоя новая базовая награда: $"+
+   money(data.clickBase)+" за клик."
+  );
+
+ }catch(error){
+  showError(error);
+  await loadState();
+  await loadClickUpgrades();
+ }
+}
+
+/* ОСНОВНОЙ КЛИКЕР */
 
 async function clickCoin(){
  try{
   const data=await api("/api/click",{method:"POST"});
+
   state.balance=data.balance;
   state.experience=data.experience;
   state.level=data.level;
   state.multiplier=data.multiplier;
+
   await loadState();
- }catch(error){showError(error)}
+
+ }catch(error){
+  showError(error);
+ }
 }
+
+/* GRAMM CLICKER */
 
 async function clickGramm(){
  try{
   const data=await api("/api/gramm/click",{method:"POST"});
+
   state.grammBalance=data.grammBalance;
   state.multiplier=data.multiplier;
+
   render();
- }catch(error){showError(error)}
+
+ }catch(error){
+  showError(error);
+ }
 }
+
+/* СТАРЫЕ УЛУЧШЕНИЯ x2, x4, x10 */
 
 async function buyUpgrade(type){
  try{
@@ -411,29 +651,47 @@ async function buyUpgrade(type){
    method:"POST",
    body:JSON.stringify({type})
   });
+
   await loadState();
+
   alert("Улучшение успешно куплено!");
- }catch(error){showError(error)}
+
+ }catch(error){
+  showError(error);
+ }
 }
+
+/* ОБМЕН ВАЛЮТЫ */
 
 async function exchange(direction){
  try{
   const amount=Number(document.getElementById("exchangeAmount").value);
+
   if(!Number.isSafeInteger(amount)||amount<=0){
    throw new Error("Введи целое положительное число");
   }
+
   await api("/api/gramm/exchange",{
    method:"POST",
    body:JSON.stringify({direction,amount})
   });
+
   document.getElementById("exchangeAmount").value="";
+
   await loadState();
+
   alert("Обмен успешно выполнен!");
- }catch(error){showError(error)}
+
+ }catch(error){
+  showError(error);
+ }
 }
+
+/* МАГАЗИН */
 
 async function loadShop(){
  const catalog=await api("/api/catalog");
+
  const names={
   house:"Дома",
   car:"Машины",
@@ -446,6 +704,7 @@ async function loadShop(){
  document.getElementById("shop").innerHTML=
   Object.entries(catalog).map(([category,items])=>`
    <h3>${names[category]||escapeHTML(category)}</h3>
+
    ${items.map((item,index)=>`
     <div class="item">
      ${escapeHTML(item.name)}<br>
@@ -462,9 +721,14 @@ async function buyItem(category,index){
    method:"POST",
    body:JSON.stringify({category,index})
   });
+
   await loadState();
+
   alert("Покупка успешна!");
- }catch(error){showError(error)}
+
+ }catch(error){
+  showError(error);
+ }
 }
 
 async function sellItem(itemId){
@@ -473,23 +737,40 @@ async function sellItem(itemId){
    method:"POST",
    body:JSON.stringify({itemId})
   });
+
   await loadState();
+
   alert("Предмет продан!");
- }catch(error){showError(error)}
+
+ }catch(error){
+  showError(error);
+ }
 }
+
+/* ЕЖЕДНЕВНАЯ НАГРАДА */
 
 async function dailyReward(){
  try{
   const data=await api("/api/daily",{method:"POST"});
+
   state.balance=data.balance;
+
   render();
+  renderClickUpgrades();
+
   alert("Ты получил $1 000!");
- }catch(error){showError(error)}
+
+ }catch(error){
+  showError(error);
+ }
 }
+
+/* РЕЙТИНГ */
 
 async function loadLeaderboard(){
  try{
   const players=await api("/api/leaderboard");
+
   document.getElementById("leaderboard").innerHTML=
    players.length
    ?players.map((p,i)=>`
@@ -499,10 +780,13 @@ async function loadLeaderboard(){
     </div>
    `).join("")
    :"Пока нет игроков";
+
  }catch(error){
   document.getElementById("leaderboard").textContent=error.message;
  }
 }
+
+/* БИЗНЕСЫ */
 
 async function loadBusinessCatalog(){
  businessCatalog=await api("/api/businesses/catalog");
@@ -515,9 +799,14 @@ async function buyBusiness(key){
    method:"POST",
    body:JSON.stringify({key})
   });
+
   await loadState();
+
   alert("Бизнес успешно куплен!");
- }catch(error){showError(error)}
+
+ }catch(error){
+  showError(error);
+ }
 }
 
 async function sellBusiness(businessId){
@@ -528,9 +817,14 @@ async function sellBusiness(businessId){
    method:"POST",
    body:JSON.stringify({businessId})
   });
+
   await loadState();
+
   alert("Бизнес продан! Получено: $"+money(data.refund));
- }catch(error){showError(error)}
+
+ }catch(error){
+  showError(error);
+ }
 }
 
 async function withdrawBusiness(destination){
@@ -551,6 +845,7 @@ async function withdrawBusiness(destination){
   });
 
   document.getElementById("withdrawAmount").value="";
+
   await loadState();
 
   if(destination==="gramm"){
@@ -558,10 +853,13 @@ async function withdrawBusiness(destination){
   }else{
    alert("Деньги переведены на основной баланс!");
   }
- }catch(error){showError(error)}
+
+ }catch(error){
+  showError(error);
+ }
 }
 
-/* BATTLE PASS FUNCTIONS */
+/* BATTLE PASS */
 
 async function loadBattlePass(){
  const tasks=document.getElementById("bpTasks");
@@ -573,6 +871,7 @@ async function loadBattlePass(){
  try{
   bpState=await api("/api/battle-pass/state");
   renderBattlePass();
+
  }catch(error){
   tasks.textContent="Не удалось загрузить задания: "+error.message;
   rewards.textContent="Не удалось загрузить награды";
@@ -581,6 +880,7 @@ async function loadBattlePass(){
 
 function bpIsClaimed(level,track){
  if(!bpState||!Array.isArray(bpState.claimed)) return false;
+
  return bpState.claimed.some(item=>
   Number(item.level)===Number(level)&&item.track===track
  );
@@ -591,11 +891,13 @@ function renderBattlePass(){
 
  const level=Number(bpState.level||1);
  const xp=Number(bpState.xp||0);
+
  const xpProgress=Number(
   bpState.xpProgress!==undefined
    ?bpState.xpProgress
    :xp%200
  );
+
  const xpPerLevel=Number(bpState.xpPerLevel||200);
  const maxLevel=Number(bpState.maxLevel||100);
  const premium=Boolean(bpState.premium);
@@ -604,12 +906,14 @@ function renderBattlePass(){
  document.getElementById("bpXP").textContent=money(xpProgress);
  document.getElementById("bpNextXP").textContent=xpPerLevel;
 
- const percent=level>=maxLevel?100:
-  Math.min(100,(xpProgress/xpPerLevel)*100);
+ const percent=level>=maxLevel
+  ?100
+  :Math.min(100,(xpProgress/xpPerLevel)*100);
 
  document.getElementById("bpProgressFill").style.width=percent+"%";
 
  const season=bpState.season||{};
+
  let seasonText="Сезон активен";
 
  if(season.endsAt){
@@ -649,9 +953,11 @@ function renderBPTasks(){
    <div class="bp-task">
     <div class="bp-task-title">${escapeHTML(task.title)}</div>
     <p class="small">Прогресс: ${money(progress)} / ${money(target)}</p>
+
     <div class="bp-task-progress">
      <div class="bp-task-fill" style="width:${percent}%"></div>
     </div>
+
     <div>
      <span class="bp-tag">+${money(task.xpReward)} BP XP</span>
      ${completed
@@ -685,12 +991,15 @@ function renderBPRewards(){
     <div class="bp-level-number">УРОВЕНЬ ${level}</div>
 
     <div class="bp-columns">
+
      <div class="bp-reward free">
       <div class="bp-reward-title">FREE</div>
+
       <div class="bp-reward-value">
        $${money(freeDollars)}<br>
        ${money(freeGramm)} GRAMM
       </div>
+
       ${freeClaimed
        ?'<p class="bp-claimed">ПОЛУЧЕНО ✓</p>'
        :unlocked
@@ -700,10 +1009,12 @@ function renderBPRewards(){
 
      <div class="bp-reward premium">
       <div class="bp-reward-title">PREMIUM</div>
+
       <div class="bp-reward-value">
        $${money(premiumDollars)}<br>
        ${money(premiumGramm)} GRAMM
       </div>
+
       ${premiumClaimed
        ?'<p class="bp-claimed">ПОЛУЧЕНО ✓</p>'
        :!premium
@@ -712,6 +1023,7 @@ function renderBPRewards(){
          ?`<button onclick="claimBPReward(${level},'premium')">Забрать</button>`
          :'<p class="bp-locked">Закрыто</p>'}
      </div>
+
     </div>
    </div>
   `;
@@ -735,7 +1047,9 @@ async function buyBPPremium(currency){
 
   await loadState();
   await loadBattlePass();
+
   alert("PREMIUM PASS успешно активирован!");
+
  }catch(error){
   showError(error);
  }
@@ -750,47 +1064,86 @@ async function claimBPReward(level,track){
 
   await loadState();
   await loadBattlePass();
+
   alert("Награда Battle Pass получена!");
+
  }catch(error){
   showError(error);
  }
 }
+
+/* ОШИБКИ */
 
 function showError(error){
  document.getElementById("status").textContent=error.message;
  alert(error.message);
 }
 
+/* СОБЫТИЯ */
+
 document.getElementById("coin").addEventListener("click",clickCoin);
 document.getElementById("grammCoin").addEventListener("click",clickGramm);
 document.getElementById("daily").addEventListener("click",dailyReward);
 
+/* ЗАПУСК ИГРЫ */
+
 async function start(){
  try{
-  if(!initData) throw new Error("Открой игру через Telegram-бота");
+  if(!initData){
+   throw new Error("Открой игру через Telegram-бота");
+  }
 
   await loadState();
+
+  await loadClickUpgrades();
+
   await loadShop();
+
   await loadLeaderboard();
+
   await loadBusinessCatalog();
+
   await loadBattlePass();
 
-  document.getElementById("status").textContent="UGLY CLICKER подключён";
- }catch(error){showError(error)}
+  document.getElementById("status").textContent=
+   "UGLY CLICKER подключён";
+
+ }catch(error){
+  showError(error);
+ }
 }
 
 start();
+
+/* ОБНОВЛЕНИЕ ТАЙМЕРОВ */
 
 setInterval(()=>{
  if(state.bonuses.x2Seconds>0){
   state.bonuses.x2Seconds--;
  }
+
  if(state.bonuses.x4Seconds>0){
   state.bonuses.x4Seconds--;
  }
+
+ const timedMultiplier=
+  state.bonuses.x4Active&&state.bonuses.x4Seconds>0
+   ?4
+   :state.bonuses.x2Active&&state.bonuses.x2Seconds>0
+    ?2
+    :1;
+
+ const permanentMultiplier=
+  state.bonuses.x10Unlocked?10:1;
+
+ state.multiplier=timedMultiplier*permanentMultiplier;
+
+ state.clickReward=state.clickBase*state.multiplier;
+
  render();
+
 },1000);
+
 </script>
 </body>
 </html>
-
