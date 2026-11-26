@@ -1,4 +1,3 @@
-```html
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -215,10 +214,20 @@ async function loadBitcoinFarm(){
   const equipment=data.equipment||[],catalog=data.catalog||[];
   document.getElementById("farmEquipmentCount").textContent=equipment.length;
   document.getElementById("farmOwnedEquipment").innerHTML=equipment.length?equipment.map(item=>`<div class="farm-equipment"><h3>${escapeHTML(item.name||item.equipment_name||item.key||"Mining equipment")}</h3><p>Скорость: <span class="farm-rate">${formatBTC(item.hourlyRate??item.hourly_rate??0)} BTC / час</span></p><span class="farm-badge">УСТАНОВЛЕНО</span></div>`).join(""):'<p class="muted">У тебя пока нет оборудования</p>';
-  document.getElementById("farmCatalog").innerHTML=catalog.length?catalog.map(item=>`<div class="farm-equipment"><h3>${escapeHTML(item.name)}</h3><p>Стоимость: <b>$${money(item.price)}</b></p><p class="farm-rate">Добыча: ${formatBTC(item.hourlyRate??item.rate??0)} BTC / час</p><button onclick="buyFarmEquipment('${escapeHTML(item.key)}')" ${Number(data.farmCash)<Number(item.price)?"disabled":""}>КУПИТЬ</button></div>`).join(""):'<p class="muted">Каталог оборудования недоступен</p>';
+  document.getElementById("farmCatalog").innerHTML=catalog.length?catalog.map(item=>`<div class="farm-equipment"><h3>${escapeHTML(item.name)}</h3><p>Стоимость: <b>$${money(item.price)}</b></p><p class="farm-rate">Добыча: ${formatBTC(item.hourlyRate??item.rate??0)} BTC / час</p><button onclick="buyFarmEquipment('${escapeHTML(item.key)}')" ${Number(state.balance)<Number(item.price)?"disabled":""}>КУПИТЬ ЗА ОСНОВНЫЕ USD</button></div>`).join(""):'<p class="muted">Каталог оборудования недоступен</p>';
  }catch(error){showError(error);document.getElementById("farmCatalog").textContent="Не удалось загрузить ферму";}
 }
-async function buyFarmEquipment(key){try{await api("/api/bitcoin-farm/buy",{method:"POST",body:JSON.stringify({key})});await loadBitcoinFarm();showToast("Оборудование успешно куплено!");}catch(error){showError(error);await loadBitcoinFarm();}}
+async function buyFarmEquipment(key){
+ try{
+  const data=await api("/api/bitcoin-farm/buy",{method:"POST",body:JSON.stringify({key})});
+  await Promise.all([loadState(),loadBitcoinFarm()]);
+  showToast(data.message||"Оборудование успешно куплено!");
+  pulseBalance("usdBalanceCard");
+ }catch(error){
+  showError(error);
+  await Promise.all([loadState(),loadBitcoinFarm()]);
+ }
+}
 async function exchangeFarmBTC(currency){
  try{
   const amount=document.getElementById("farmExchangeAmount").value;
