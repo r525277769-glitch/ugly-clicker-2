@@ -270,12 +270,12 @@ function animate() {
   const now = performance.now();
   for (const npc of clubNPCs) {
     const qi=(state.clubData?.queue||[]).findIndex(q=>q.id===npc.id),session=(state.clubData?.sessions||[]).find(q=>q.id===npc.id);let dest;
-    if(session){const spots=[[-5.1,-3.4],[-1.8,-3.4],[1.8,-3.4],[5.1,-3.4],[-5.1,2],[-1.8,2],[1.8,2],[5.1,2]],p=spots[session.station]||spots[0];dest=new THREE.Vector3(p[0],0,p[1]+1.05);if(npc.mode!=="play")npc.mode="toSeat";}
+    if(session){const spots=[[-5.1,-3.4],[-1.8,-3.4],[1.8,-3.4],[5.1,-3.4],[-5.1,2],[-1.8,2],[1.8,2],[5.1,2]],p=spots[session.station]||spots[0];dest=new THREE.Vector3(p[0],npc.mode==="play"?.25:0,p[1]+1.05);if(npc.mode!=="play")npc.mode="toSeat";}
     else if(qi>=0){dest=new THREE.Vector3(-.85+(qi%3)*.85,0,5.45+Math.floor(qi/3)*.48);npc.mode="queue";}
     else{npc.mode="exit";dest=new THREE.Vector3(0,0,8.5);}
     const delta=dest.clone().sub(npc.mesh.position),distance=delta.length();
     if(distance>.09){const target=Math.atan2(-delta.x,-delta.z);let turn=Math.atan2(Math.sin(target-npc.mesh.rotation.y),Math.cos(target-npc.mesh.rotation.y));npc.mesh.rotation.y+=turn*Math.min(1,dt*7);npc.mesh.position.addScaledVector(delta.normalize(),Math.min(distance,dt*1.5));}
-    else if(session){npc.mode="play";npc.mesh.rotation.y=0;npc.mesh.scale.y=.82;const a=animated.find(x=>x.root===npc.mesh);if(a)a.limbs.forEach(l=>{l.arm.rotation.x=-.72;l.leg.rotation.x=.9;});}
+    else if(session){npc.mode="play";npc.mesh.position.y=.25;npc.mesh.rotation.y=0;npc.mesh.scale.y=.82;const a=animated.find(x=>x.root===npc.mesh);if(a)a.limbs.forEach(l=>{l.arm.rotation.x=-.72;l.leg.rotation.x=.9;});}
     else if(npc.mode==="queue")npc.mesh.position.y=Math.sin(now*.004+npc.phase)*.018;
   }
   for(let i=clubNPCs.length-1;i>=0;i--){if(clubNPCs[i].mode==="exit"&&clubNPCs[i].mesh.position.z>8.25){scene.remove(clubNPCs[i].mesh);const ai=animated.findIndex(a=>a.root===clubNPCs[i].mesh);if(ai>=0)animated.splice(ai,1);clubNPCs.splice(i,1);}}
