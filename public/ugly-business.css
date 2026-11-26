@@ -20,3 +20,4 @@
 .sim-progress-track>div{height:100%;width:0;background:linear-gradient(90deg,#986a1d,#ffdf91);transition:width .3s}
 @media(max-width:390px){.sim-stage{min-height:410px;height:64vh}.sim-joystick{width:120px;height:120px;left:11px;bottom:12px}.sim-stick{width:50px;height:50px}.sim-action{right:10px;bottom:19px;width:137px;min-height:54px;font-size:9px}.sim-hint{font-size:10px}}
 @media(orientation:landscape) and (max-height:520px){.sim-stage{height:76vh;min-height:270px}.sim-joystick{width:100px;height:100px}.sim-stick{width:44px;height:44px}}
+.sim-management{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0}.sim-management button{min-height:46px;border:1px solid #367ca5;border-radius:11px;background:linear-gradient(145deg,#172e41,#0b1520);color:#c9edff;font-size:10px;font-weight:800;padding:9px}.sim-management button:active{transform:scale(.98)}@media(max-width:390px){.sim-hud strong{font-size:13px}}
