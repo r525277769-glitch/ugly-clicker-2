@@ -62,9 +62,7 @@ button:disabled{
  gap:10px;
 }
 
-.brand{
- text-align:left;
-}
+.brand{text-align:left}
 
 .brand-name{
  font-size:21px;
@@ -113,6 +111,17 @@ button:disabled{
  background:linear-gradient(145deg,#19150d,#101010 75%);
  box-shadow:0 8px 25px #0008;
  min-width:0;
+ transition:transform .2s,border-color .2s;
+}
+
+.balance-card.pulse{
+ animation:balancePulse .5s ease;
+}
+
+@keyframes balancePulse{
+ 0%{transform:scale(1);border-color:var(--border)}
+ 45%{transform:scale(1.035);border-color:var(--gold2);box-shadow:0 0 22px #e9bd5940}
+ 100%{transform:scale(1);border-color:var(--border)}
 }
 
 .balance-label{
@@ -212,6 +221,17 @@ button:disabled{
  padding:17px;
  margin:13px 0;
  box-shadow:0 8px 25px #0005;
+ transition:border-color .2s,transform .2s,box-shadow .2s;
+}
+
+.panel.purchase-flash{
+ animation:purchaseFlash .65s ease;
+}
+
+@keyframes purchaseFlash{
+ 0%{border-color:var(--border);box-shadow:0 8px 25px #0005}
+ 40%{border-color:var(--gold2);box-shadow:0 0 25px #e9bd5950}
+ 100%{border-color:var(--border);box-shadow:0 8px 25px #0005}
 }
 
 .panel h2{
@@ -221,17 +241,9 @@ button:disabled{
  margin:2px 0 15px;
 }
 
-.muted,.small{
- color:var(--muted);
-}
-
+.muted,.small{color:var(--muted)}
 .small{font-size:11px;line-height:1.6}
-
-.balance{
- color:var(--gold2);
- font-size:29px;
- font-weight:900;
-}
+.balance{color:var(--gold2);font-size:29px;font-weight:900}
 
 /* MAIN CLICKER */
 
@@ -276,11 +288,23 @@ button:disabled{
  0 0 40px rgba(220,166,60,.3),
  inset 0 5px 12px #fff8;
  transition:transform .09s,filter .1s;
+ position:relative;
+ z-index:2;
 }
 
 .coin:active{
  transform:scale(.93);
  filter:brightness(1.2);
+}
+
+.coin.coin-hit{
+ animation:coinHit .22s ease;
+}
+
+@keyframes coinHit{
+ 0%{transform:scale(1)}
+ 45%{transform:scale(.91) rotate(-3deg);filter:brightness(1.35)}
+ 100%{transform:scale(1)}
 }
 
 .coin-caption{
@@ -302,6 +326,102 @@ button:disabled{
  margin:7px 0;
 }
 
+/* CLICK EFFECTS */
+
+#fxLayer{
+ position:fixed;
+ inset:0;
+ z-index:500;
+ pointer-events:none;
+ overflow:hidden;
+}
+
+.float-reward{
+ position:fixed;
+ z-index:501;
+ color:var(--gold2);
+ font-size:21px;
+ font-weight:1000;
+ text-shadow:0 2px 8px #000,0 0 14px #e9bd59;
+ pointer-events:none;
+ white-space:nowrap;
+ animation:floatReward .85s ease-out forwards;
+}
+
+.float-reward.gramm{
+ color:#a9e7ce;
+ text-shadow:0 2px 8px #000,0 0 14px #65d7a0;
+}
+
+@keyframes floatReward{
+ 0%{opacity:0;transform:translate(-50%,10px) scale(.7)}
+ 15%{opacity:1;transform:translate(-50%,0) scale(1.12)}
+ 100%{opacity:0;transform:translate(-50%,-85px) scale(.9)}
+}
+
+.coin-particle{
+ position:fixed;
+ z-index:500;
+ width:7px;
+ height:7px;
+ border-radius:50%;
+ background:radial-gradient(circle,#fff5bd,#e9bd59 65%,#8b5c12);
+ box-shadow:0 0 10px #e9bd59;
+ pointer-events:none;
+ animation:particleFly .65s ease-out forwards;
+}
+
+@keyframes particleFly{
+ 0%{opacity:1;transform:translate(0,0) scale(1)}
+ 100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(.1)}
+}
+
+/* TOASTS */
+
+.toast-stack{
+ position:fixed;
+ top:calc(12px + env(safe-area-inset-top));
+ left:50%;
+ transform:translateX(-50%);
+ width:min(92%,420px);
+ z-index:1000;
+ display:flex;
+ flex-direction:column;
+ gap:8px;
+ pointer-events:none;
+}
+
+.toast{
+ display:flex;
+ align-items:center;
+ gap:10px;
+ text-align:left;
+ padding:13px 15px;
+ border-radius:14px;
+ background:linear-gradient(145deg,#211b10,#111);
+ border:1px solid var(--gold-dark);
+ color:var(--gold2);
+ box-shadow:0 8px 28px #000b;
+ font-size:13px;
+ font-weight:bold;
+ animation:toastIn .25s ease both;
+}
+
+.toast.error{border-color:#9b443a;color:#ffc1ad}
+.toast.success{border-color:#92702a}
+.toast.info{border-color:#555;color:#eee}
+.toast-icon{font-size:18px}
+.toast.removing{animation:toastOut .22s ease forwards}
+
+@keyframes toastIn{
+ from{opacity:0;transform:translateY(-12px) scale(.96)}
+ to{opacity:1;transform:translateY(0) scale(1)}
+}
+
+@keyframes toastOut{
+ to{opacity:0;transform:translateY(-10px) scale(.96)}
+}
+
 /* BUTTONS */
 
 button{
@@ -314,10 +434,17 @@ button{
  font-weight:900;
  font-size:12px;
  box-shadow:0 4px 12px #0005;
- transition:transform .12s,filter .12s;
+ transition:transform .12s,filter .12s,box-shadow .12s;
 }
 
 button:active{transform:scale(.97);filter:brightness(1.1)}
+button.button-success{animation:buttonSuccess .45s ease}
+
+@keyframes buttonSuccess{
+ 0%{box-shadow:0 4px 12px #0005}
+ 50%{box-shadow:0 0 22px #e9bd5970}
+ 100%{box-shadow:0 4px 12px #0005}
+}
 
 .button-secondary{
  background:#211b10;
@@ -331,10 +458,7 @@ button:active{transform:scale(.97);filter:brightness(1.1)}
  border:1px solid #72382e;
 }
 
-.button-full{
- width:100%;
- margin:8px 0 0;
-}
+.button-full{width:100%;margin:8px 0 0}
 
 /* ITEMS */
 
@@ -359,8 +483,10 @@ button:active{transform:scale(.97);filter:brightness(1.1)}
  margin:12px 0;
  background:linear-gradient(145deg,#1b1811,#111);
  text-align:left;
+ transition:border-color .2s,transform .2s;
 }
 
+.business-card:active{transform:scale(.99)}
 .business-card b{color:var(--gold2)}
 
 input{
@@ -387,33 +513,14 @@ input:focus{border-color:var(--gold2)}
  border-radius:15px;
  padding:16px;
  margin:12px 0;
+ transition:border-color .2s,transform .2s;
 }
 
 .click-upgrade-card.owned{border-color:#477a51}
-
-.click-upgrade-card h3{
- color:var(--gold2);
- margin:5px 0 12px;
-}
-
-.click-upgrade-bonus{
- color:var(--gold2);
- font-size:19px;
- font-weight:bold;
-}
-
-.click-upgrade-price{
- color:var(--muted);
- margin:10px 0;
- font-size:12px;
-}
-
-.click-upgrade-owned{
- color:var(--green);
- font-weight:bold;
- margin:10px 0;
- font-size:12px;
-}
+.click-upgrade-card h3{color:var(--gold2);margin:5px 0 12px}
+.click-upgrade-bonus{color:var(--gold2);font-size:19px;font-weight:bold}
+.click-upgrade-price{color:var(--muted);margin:10px 0;font-size:12px}
+.click-upgrade-owned{color:var(--green);font-weight:bold;margin:10px 0;font-size:12px}
 
 /* GRAMM */
 
@@ -424,6 +531,17 @@ input:focus{border-color:var(--gold2)}
  padding:20px 15px;
 }
 
+/* BOOST STATUS */
+
+.boost-active{
+ color:var(--green)!important;
+ font-weight:bold;
+ text-shadow:0 0 10px #77d69a40;
+}
+
+.boost-inactive{color:var(--muted)}
+.boost-permanent{color:var(--gold2)!important;font-weight:bold}
+
 /* BATTLE PASS */
 
 .bp-header{
@@ -433,12 +551,7 @@ input:focus{border-color:var(--gold2)}
  border:1px solid #9e772e;
 }
 
-.bp-level{
- font-size:35px;
- font-weight:900;
- color:var(--gold2);
- margin:14px 0;
-}
+.bp-level{font-size:35px;font-weight:900;color:var(--gold2);margin:14px 0}
 
 .bp-progress{
  height:13px;
@@ -466,10 +579,7 @@ input:focus{border-color:var(--gold2)}
  text-align:left;
 }
 
-.bp-task-title{
- font-weight:bold;
- color:var(--gold2);
-}
+.bp-task-title{font-weight:bold;color:var(--gold2)}
 
 .bp-task-progress{
  height:7px;
@@ -499,25 +609,9 @@ input:focus{border-color:var(--gold2)}
  background:linear-gradient(120deg,#211a0d,#111);
 }
 
-.bp-reward-title{
- font-weight:bold;
- margin-bottom:7px;
- color:var(--gold2);
-}
-
-.bp-columns{
- display:grid;
- grid-template-columns:1fr 1fr;
- gap:8px;
-}
-
-.bp-columns button{
- width:100%;
- margin:5px 0;
- padding:10px 5px;
- font-size:11px;
-}
-
+.bp-reward-title{font-weight:bold;margin-bottom:7px;color:var(--gold2)}
+.bp-columns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.bp-columns button{width:100%;margin:5px 0;padding:10px 5px;font-size:11px}
 .bp-tag{
  display:inline-block;
  padding:6px 10px;
@@ -527,20 +621,12 @@ input:focus{border-color:var(--gold2)}
  font-size:11px;
  margin:3px;
 }
-
 .bp-claimed{color:var(--green);font-weight:bold}
 .bp-locked{color:#777}
 .bp-level-number{font-size:19px;color:var(--gold2);font-weight:bold}
 .bp-reward-value{font-size:12px;line-height:1.8}
 .bp-section-title{margin-top:20px}
-
-.bp-buy-buttons{
- display:flex;
- flex-wrap:wrap;
- justify-content:center;
- gap:5px;
-}
-
+.bp-buy-buttons{display:flex;flex-wrap:wrap;justify-content:center;gap:5px}
 .bp-buy-buttons button{flex:1;min-width:125px}
 
 /* BOTTOM NAVIGATION */
@@ -580,10 +666,7 @@ input:focus{border-color:var(--gold2)}
  letter-spacing:.3px;
 }
 
-.nav-icon{
- font-size:20px;
- line-height:1;
-}
+.nav-icon{font-size:20px;line-height:1}
 
 .nav-button.active{
  color:var(--gold2);
@@ -607,52 +690,51 @@ input:focus{border-color:var(--gold2)}
  .brand-name{font-size:18px}
 }
 
+@media(prefers-reduced-motion:reduce){
+ *,*::before,*::after{
+  animation-duration:.01ms!important;
+  animation-iteration-count:1!important;
+  scroll-behavior:auto!important;
+ }
+}
 </style>
 </head>
 
 <body>
 
-<div id="app">
+<div id="fxLayer"></div>
+<div id="toastStack" class="toast-stack" aria-live="polite"></div>
 
-<!-- HEADER -->
+<div id="app">
 
 <header class="top-header">
  <div class="brand">
   <div class="brand-name">UGLY CLICKER</div>
   <div class="brand-sub">PREMIUM GOLD EDITION</div>
  </div>
-
  <button class="profile-button" onclick="showPage('main')" aria-label="Профиль">♛</button>
 </header>
 
 <div class="gold-line"></div>
 
-<!-- БАЛАНСЫ -->
-
 <div class="balance-grid">
-
- <div class="balance-card">
+ <div class="balance-card" id="usdBalanceCard">
   <div class="balance-label">USD BALANCE</div>
   <div class="balance-value">$<span id="balance">0</span></div>
   <div class="balance-symbol">◆ DOLLAR ACCOUNT</div>
  </div>
-
- <div class="balance-card">
+ <div class="balance-card" id="grammBalanceCard">
   <div class="balance-label">GRAMM BALANCE</div>
   <div class="balance-value"><span id="grammBalance">0</span></div>
   <div class="balance-symbol">◆ GRAMM ACCOUNT</div>
  </div>
-
 </div>
-
-<!-- УРОВЕНЬ -->
 
 <div class="player-info">
  <div class="player-level">
   PLAYER LEVEL
   <strong>LVL <span id="level">1</span></strong>
  </div>
-
  <div class="player-xp">
   EXPERIENCE
   <strong><span id="experience">0</span> XP</strong>
@@ -665,11 +747,8 @@ input:focus{border-color:var(--gold2)}
 
  <div class="clicker-hero">
   <div class="hero-label">YOUR PERSONAL MONEY MACHINE</div>
-
   <div class="coin" id="coin">U</div>
-
   <div class="coin-caption">TAP TO EARN MONEY</div>
-
   <div class="click-reward-info">
    <div class="balance-label">REWARD PER CLICK</div>
    <div class="balance">$<span id="clickReward">1</span></div>
@@ -700,7 +779,7 @@ input:focus{border-color:var(--gold2)}
    <b>⚡ Бонус x2</b>
    <p>Цена: $5 000</p>
    <p class="small">Действует 3 минуты</p>
-   <p id="x2status">Не активен</p>
+   <p id="x2status" class="boost-inactive">Не активен</p>
    <button onclick="buyUpgrade('x2')">АКТИВИРОВАТЬ x2</button>
   </div>
 
@@ -708,7 +787,7 @@ input:focus{border-color:var(--gold2)}
    <b>⚡ Бонус x4</b>
    <p>Цена: $12 000</p>
    <p class="small">Действует 3 минуты</p>
-   <p id="x4status">Не активен</p>
+   <p id="x4status" class="boost-inactive">Не активен</p>
    <button onclick="buyUpgrade('x4')">АКТИВИРОВАТЬ x4</button>
   </div>
 
@@ -716,21 +795,18 @@ input:focus{border-color:var(--gold2)}
    <b>♛ Постоянное улучшение x10</b>
    <p>Цена: $2 000 000</p>
    <p class="small">Остаётся навсегда</p>
-   <p id="x10status">Не куплено</p>
+   <p id="x10status" class="boost-inactive">Не куплено</p>
    <button id="x10button" onclick="buyUpgrade('x10')">КУПИТЬ x10</button>
   </div>
  </div>
 
  <div class="panel">
   <h2>⚡ ПОСТОЯННЫЕ УЛУЧШЕНИЯ</h2>
-
   <p class="small">Увеличивай базовую награду за каждый клик навсегда.</p>
-
   <div class="click-reward-info">
    <div class="balance-label">BASE CLICK REWARD</div>
    <div class="balance">$<span id="clickBase">1</span></div>
   </div>
-
   <div id="clickUpgradeList">
    <p class="muted">Загрузка улучшений...</p>
   </div>
@@ -761,7 +837,6 @@ input:focus{border-color:var(--gold2)}
 <!-- GRAMM -->
 
 <section id="gramm" class="page">
-
  <div class="section-heading">
   <h2>GRAMM CLICKER</h2>
   <p>ОТДЕЛЬНАЯ ИГРОВАЯ ВАЛЮТА</p>
@@ -772,11 +847,8 @@ input:focus{border-color:var(--gold2)}
   <div class="balance" style="margin:12px 0">
    <span id="grammBalanceMirror">0</span> GRAMM
   </div>
-
   <div class="coin" id="grammCoin">G</div>
-
   <div class="coin-caption">TAP TO EARN GRAMM</div>
-
   <p class="small">Множитель: x<span id="grammMultiplier">1</span></p>
  </div>
 
@@ -787,28 +859,17 @@ input:focus{border-color:var(--gold2)}
 
  <div class="panel">
   <h2>ОБМЕН ВАЛЮТЫ</h2>
-
   <div class="balance">$10 = 1 GRAMM</div>
-
   <input id="exchangeAmount" type="number" min="1" step="1" placeholder="Количество">
-
-  <button class="button-full" onclick="exchange('toGramm')">
-   USD → GRAMM
-  </button>
-
-  <button class="button-full button-secondary" onclick="exchange('toDollars')">
-   GRAMM → USD
-  </button>
-
+  <button class="button-full" onclick="exchange('toGramm')">USD → GRAMM</button>
+  <button class="button-full button-secondary" onclick="exchange('toDollars')">GRAMM → USD</button>
   <p class="small">Курс: 1 GRAMM = $10</p>
  </div>
-
 </section>
 
 <!-- BUSINESSES -->
 
 <section id="businesses" class="page">
-
  <div class="section-heading">
   <h2>BUSINESS EMPIRE</h2>
   <p>ТВОЯ БИЗНЕС-ИМПЕРИЯ</p>
@@ -816,33 +877,20 @@ input:focus{border-color:var(--gold2)}
 
  <div class="panel">
   <h2>BUSINESS ACCOUNT</h2>
-
   <div class="balance-label">БИЗНЕС-БАЛАНС</div>
   <div class="business-number">$<span id="businessBalance">0</span></div>
-
   <div class="gold-line" style="margin:15px 0"></div>
-
   <p class="muted">ПАССИВНЫЙ ДОХОД В ЧАС</p>
   <div class="business-number">$<span id="businessIncome">0</span></div>
-
   <p class="small">Предприятия приносят прибыль автоматически 24/7.</p>
  </div>
 
  <div class="panel">
   <h2>WITHDRAW PROFITS</h2>
-
   <p class="small">Перевод средств с бизнес-счёта</p>
-
   <input id="withdrawAmount" type="number" min="1" step="1" placeholder="Сумма в долларах">
-
-  <button class="button-full" onclick="withdrawBusiness('usd')">
-   ПЕРЕВЕСТИ В USD
-  </button>
-
-  <button class="button-full button-secondary" onclick="withdrawBusiness('gramm')">
-   ОБМЕНЯТЬ НА GRAMM
-  </button>
-
+  <button class="button-full" onclick="withdrawBusiness('usd')">ПЕРЕВЕСТИ В USD</button>
+  <button class="button-full button-secondary" onclick="withdrawBusiness('gramm')">ОБМЕНЯТЬ НА GRAMM</button>
   <p class="small">Курс: 1 GRAMM = $10</p>
  </div>
 
@@ -855,13 +903,11 @@ input:focus{border-color:var(--gold2)}
   <h2>BUSINESS CATALOG</h2>
   <div id="businessCatalog">Загрузка бизнеса...</div>
  </div>
-
 </section>
 
 <!-- BATTLE PASS -->
 
 <section id="battlepass" class="page">
-
  <div class="section-heading">
   <h2>UGLY BATTLE PASS</h2>
   <p>SEASONAL REWARDS</p>
@@ -869,46 +915,25 @@ input:focus{border-color:var(--gold2)}
 
  <div class="panel bp-header">
   <div class="bp-tag">SEASON 01</div>
-
-  <div class="bp-level">
-   LEVEL <span id="bpLevel">1</span> / 100
-  </div>
-
+  <div class="bp-level">LEVEL <span id="bpLevel">1</span> / 100</div>
   <div class="bp-progress">
    <div class="bp-progress-fill" id="bpProgressFill"></div>
   </div>
-
-  <p>
-   <span id="bpXP">0</span> /
-   <span id="bpNextXP">200</span> BP XP
-  </p>
-
+  <p><span id="bpXP">0</span> / <span id="bpNextXP">200</span> BP XP</p>
   <p id="bpSeasonDates" class="small">Загрузка сезона...</p>
-
   <p id="bpPremiumStatus" class="bp-tag">FREE PASS</p>
-
-  <button class="button-full" onclick="loadBattlePass()">
-   ОБНОВИТЬ PASS
-  </button>
+  <button class="button-full" onclick="loadBattlePass()">ОБНОВИТЬ PASS</button>
  </div>
 
  <div class="panel">
   <h2>♛ PREMIUM PASS</h2>
-
   <p class="small">ОТКРОЙ ПРЕМИАЛЬНУЮ ДОРОЖКУ НАГРАД</p>
-
   <div class="balance">$300 000</div>
   <p class="muted">ИЛИ</p>
   <div class="balance">30 000 GRAMM</div>
-
   <div class="bp-buy-buttons">
-   <button id="bpBuyUsd" onclick="buyBPPremium('usd')">
-    BUY USD
-   </button>
-
-   <button id="bpBuyGramm" onclick="buyBPPremium('gramm')">
-    BUY GRAMM
-   </button>
+   <button id="bpBuyUsd" onclick="buyBPPremium('usd')">BUY USD</button>
+   <button id="bpBuyGramm" onclick="buyBPPremium('gramm')">BUY GRAMM</button>
   </div>
  </div>
 
@@ -921,43 +946,29 @@ input:focus{border-color:var(--gold2)}
  <div class="panel">
   <h2>REWARD TRACK</h2>
   <p class="small">100 УРОВНЕЙ НАГРАД</p>
-  <p>
-   <span class="bp-tag">FREE</span>
-   <span class="bp-tag">PREMIUM x2</span>
-  </p>
+  <p><span class="bp-tag">FREE</span><span class="bp-tag">PREMIUM x2</span></p>
   <div id="bpRewards">Загрузка наград...</div>
  </div>
-
 </section>
 
 <p id="status">Подключение...</p>
-
 </div>
 
 <!-- BOTTOM NAV -->
 
 <nav class="bottom-nav">
-
  <button class="nav-button active" data-page="main" onclick="showPage('main')">
-  <span class="nav-icon">◈</span>
-  <span>ГЛАВНАЯ</span>
+  <span class="nav-icon">◈</span><span>ГЛАВНАЯ</span>
  </button>
-
  <button class="nav-button" data-page="gramm" onclick="showPage('gramm')">
-  <span class="nav-icon">◎</span>
-  <span>GRAMM</span>
+  <span class="nav-icon">◎</span><span>GRAMM</span>
  </button>
-
  <button class="nav-button" data-page="businesses" onclick="showPage('businesses')">
-  <span class="nav-icon">♜</span>
-  <span>БИЗНЕС</span>
+  <span class="nav-icon">♜</span><span>БИЗНЕС</span>
  </button>
-
  <button class="nav-button" data-page="battlepass" onclick="showPage('battlepass')">
-  <span class="nav-icon">♛</span>
-  <span>BATTLE PASS</span>
+  <span class="nav-icon">♛</span><span>BATTLE PASS</span>
  </button>
-
 </nav>
 
 <script>
@@ -1006,6 +1017,99 @@ function escapeHTML(value){
  }[char]));
 }
 
+/* NOTIFICATIONS AND EFFECTS */
+
+function showToast(message,type="success"){
+ const stack=document.getElementById("toastStack");
+ if(!stack)return;
+
+ const toast=document.createElement("div");
+ toast.className="toast "+type;
+
+ const icon=type==="error"?"⚠":type==="info"?"ℹ":"✦";
+ const text=document.createElement("span");
+ text.textContent=String(message);
+
+ const iconElement=document.createElement("span");
+ iconElement.className="toast-icon";
+ iconElement.textContent=icon;
+
+ toast.append(iconElement,text);
+ stack.appendChild(toast);
+
+ while(stack.children.length>4){
+  stack.firstElementChild.remove();
+ }
+
+ setTimeout(()=>{
+  toast.classList.add("removing");
+  setTimeout(()=>toast.remove(),240);
+ },2800);
+}
+
+/* Перехватываем стандартные alert, чтобы все старые уведомления
+   автоматически отображались в новом стиле. */
+window.alert=function(message){
+ const value=String(message||"");
+ const isError=/ошиб|не удалось|недостаточно|неверн|нельзя|открой игру/i.test(value);
+ showToast(value,isError?"error":"success");
+};
+
+function spawnClickEffect(element,label,isGramm=false){
+ if(!element)return;
+
+ const rect=element.getBoundingClientRect();
+ const x=rect.left+rect.width/2;
+ const y=rect.top+rect.height/2;
+
+ const reward=document.createElement("div");
+ reward.className="float-reward"+(isGramm?" gramm":"");
+ reward.textContent=label;
+ reward.style.left=x+"px";
+ reward.style.top=(y-25)+"px";
+ document.getElementById("fxLayer").appendChild(reward);
+
+ setTimeout(()=>reward.remove(),900);
+
+ for(let i=0;i<9;i++){
+  const particle=document.createElement("div");
+  particle.className="coin-particle";
+
+  const angle=(Math.PI*2*i)/9+(Math.random()*.3);
+  const distance=35+Math.random()*55;
+
+  particle.style.left=x+"px";
+  particle.style.top=y+"px";
+  particle.style.setProperty("--dx",Math.cos(angle)*distance+"px");
+  particle.style.setProperty("--dy",Math.sin(angle)*distance+"px");
+
+  document.getElementById("fxLayer").appendChild(particle);
+  setTimeout(()=>particle.remove(),700);
+ }
+
+ element.classList.remove("coin-hit");
+ void element.offsetWidth;
+ element.classList.add("coin-hit");
+ setTimeout(()=>element.classList.remove("coin-hit"),250);
+}
+
+function pulseElement(element){
+ if(!element)return;
+ element.classList.remove("purchase-flash","pulse","button-success");
+ void element.offsetWidth;
+ element.classList.add(
+  element.classList.contains("balance-card")?"pulse":
+  element.tagName==="BUTTON"?"button-success":"purchase-flash"
+ );
+ setTimeout(()=>{
+  element.classList.remove("purchase-flash","pulse","button-success");
+ },750);
+}
+
+function pulseBalance(id){
+ pulseElement(document.getElementById(id));
+}
+
 async function api(path,options={}){
  const response=await fetch(path,{
   ...options,
@@ -1016,7 +1120,13 @@ async function api(path,options={}){
   }
  });
 
- const data=await response.json();
+ let data;
+
+ try{
+  data=await response.json();
+ }catch{
+  throw new Error("Сервер вернул некорректный ответ");
+ }
 
  if(!response.ok){
   throw new Error(data.error||"Ошибка сервера");
@@ -1028,11 +1138,14 @@ async function api(path,options={}){
 /* NAVIGATION */
 
 function showPage(page){
+ const target=document.getElementById(page);
+ if(!target)return;
+
  document.querySelectorAll(".page").forEach(el=>{
   el.classList.remove("active");
  });
 
- document.getElementById(page).classList.add("active");
+ target.classList.add("active");
 
  document.querySelectorAll(".nav-button").forEach(button=>{
   button.classList.toggle("active",button.dataset.page===page);
@@ -1040,13 +1153,8 @@ function showPage(page){
 
  window.scrollTo({top:0,behavior:"smooth"});
 
- if(page==="battlepass"){
-  loadBattlePass();
- }
-
- if(page==="main"){
-  loadClickUpgrades();
- }
+ if(page==="battlepass")loadBattlePass();
+ if(page==="main")loadClickUpgrades();
 }
 
 /* RENDER */
@@ -1056,9 +1164,7 @@ function render(){
  document.getElementById("grammBalance").textContent=money(state.grammBalance);
 
  const grammMirror=document.getElementById("grammBalanceMirror");
- if(grammMirror){
-  grammMirror.textContent=money(state.grammBalance);
- }
+ if(grammMirror)grammMirror.textContent=money(state.grammBalance);
 
  document.getElementById("businessBalance").textContent=money(state.businessBalance);
  document.getElementById("businessIncome").textContent=money(state.businessIncomePerHour);
@@ -1070,18 +1176,27 @@ function render(){
  document.getElementById("clickBase").textContent=money(state.clickBase);
  document.getElementById("clickReward").textContent=money(state.clickReward);
 
- const b=state.bonuses;
+ const b=state.bonuses||{};
 
- document.getElementById("x2status").textContent=
-  b.x2Active?"Активен: "+b.x2Seconds+" сек.":"Не активен";
+ const x2=document.getElementById("x2status");
+ const x4=document.getElementById("x4status");
+ const x10=document.getElementById("x10status");
 
- document.getElementById("x4status").textContent=
-  b.x4Active?"Активен: "+b.x4Seconds+" сек.":"Не активен";
+ x2.textContent=b.x2Active&&b.x2Seconds>0
+  ?"Активен: "+b.x2Seconds+" сек."
+  :"Не активен";
 
- document.getElementById("x10status").textContent=
-  b.x10Unlocked?"Куплено навсегда":"Не куплено";
+ x4.textContent=b.x4Active&&b.x4Seconds>0
+  ?"Активен: "+b.x4Seconds+" сек."
+  :"Не активен";
 
- document.getElementById("x10button").disabled=b.x10Unlocked;
+ x10.textContent=b.x10Unlocked?"Куплено навсегда":"Не куплено";
+
+ x2.className=b.x2Active&&b.x2Seconds>0?"boost-active":"boost-inactive";
+ x4.className=b.x4Active&&b.x4Seconds>0?"boost-active":"boost-inactive";
+ x10.className=b.x10Unlocked?"boost-permanent":"boost-inactive";
+
+ document.getElementById("x10button").disabled=Boolean(b.x10Unlocked);
 
  document.getElementById("inventory").innerHTML=
   state.inventory.length
@@ -1146,17 +1261,22 @@ function renderBusinessCatalog(){
 async function loadState(){
  const data=await api("/api/state");
 
- state.balance=data.balance;
- state.grammBalance=data.grammBalance;
- state.businessBalance=data.businessBalance||0;
- state.businessIncomePerHour=data.businessIncomePerHour||0;
+ state.balance=Number(data.balance||0);
+ state.grammBalance=Number(data.grammBalance||0);
+ state.businessBalance=Number(data.businessBalance||0);
+ state.businessIncomePerHour=Number(data.businessIncomePerHour||0);
  state.businesses=data.businesses||[];
- state.experience=data.experience;
- state.level=data.level;
+ state.experience=Number(data.experience||0);
+ state.level=Number(data.level||1);
  state.inventory=data.inventory||[];
- state.bonuses=data.bonuses;
- state.multiplier=data.multiplier;
 
+ state.bonuses=data.bonuses||{
+  x2Active:false,x2Seconds:0,
+  x4Active:false,x4Seconds:0,
+  x10Unlocked:false
+ };
+
+ state.multiplier=Number(data.multiplier||1);
  state.clickUpgradeBonus=Number(data.clickUpgradeBonus||0);
  state.clickBase=Number(data.clickBase||1);
  state.clickReward=Number(data.clickReward||state.clickBase*state.multiplier);
@@ -1172,7 +1292,6 @@ async function loadClickUpgrades(){
 
  try{
   const data=await api("/api/click-upgrades");
-
   clickUpgradeData=data.upgrades||[];
 
   if(Array.isArray(data.owned)){
@@ -1193,7 +1312,6 @@ async function loadClickUpgrades(){
 
 function renderClickUpgrades(){
  const container=document.getElementById("clickUpgradeList");
-
  if(!container)return;
 
  if(!clickUpgradeData.length){
@@ -1206,7 +1324,6 @@ function renderClickUpgrades(){
   .reduce((sum,item)=>sum+Number(item.amount),0);
 
  const baseReward=1+ownedBonus;
-
  document.getElementById("clickBase").textContent=money(baseReward);
 
  container.innerHTML=clickUpgradeData.map(item=>{
@@ -1215,15 +1332,8 @@ function renderClickUpgrades(){
   return `
    <div class="click-upgrade-card ${owned?"owned":""}">
     <h3>${escapeHTML(item.name)}</h3>
-
-    <div class="click-upgrade-bonus">
-     +$${money(item.amount)} за каждый клик
-    </div>
-
-    <div class="click-upgrade-price">
-     Цена: $${money(item.price)}
-    </div>
-
+    <div class="click-upgrade-bonus">+$${money(item.amount)} за каждый клик</div>
+    <div class="click-upgrade-price">Цена: $${money(item.price)}</div>
     ${
      owned
      ?'<div class="click-upgrade-owned">✓ КУПЛЕНО НАВСЕГДА</div>'
@@ -1243,7 +1353,6 @@ async function buyClickUpgrade(key){
   const button=document.querySelector(
    `button[onclick="buyClickUpgrade('${key}')"]`
   );
-
   if(button)button.disabled=true;
 
   const data=await api("/api/click-upgrades/buy",{
@@ -1254,11 +1363,12 @@ async function buyClickUpgrade(key){
   await loadState();
   await loadClickUpgrades();
 
-  alert(
-   "Улучшение успешно куплено!\n"+
-   "Твоя новая базовая награда: $"+
-   money(data.clickBase)+" за клик."
+  showToast(
+   "Улучшение куплено! Новая базовая награда: $"+money(data.clickBase),
+   "success"
   );
+
+  pulseBalance("usdBalanceCard");
 
  }catch(error){
   showError(error);
@@ -1273,12 +1383,23 @@ async function clickCoin(){
  try{
   const data=await api("/api/click",{method:"POST"});
 
-  state.balance=data.balance;
-  state.experience=data.experience;
-  state.level=data.level;
-  state.multiplier=data.multiplier;
+  state.balance=Number(data.balance||0);
+  state.experience=Number(data.experience||0);
+  state.level=Number(data.level||1);
+  state.multiplier=Number(data.multiplier||1);
+  state.clickBase=Number(data.clickBase||state.clickBase);
+  state.clickReward=Number(data.clickReward||state.clickBase*state.multiplier);
+  state.clickUpgradeBonus=Number(data.clickUpgradeBonus||state.clickUpgradeBonus);
 
-  await loadState();
+  render();
+
+  spawnClickEffect(
+   document.getElementById("coin"),
+   "+$"+money(data.clickReward||state.clickReward),
+   false
+  );
+
+  pulseBalance("usdBalanceCard");
 
  }catch(error){
   showError(error);
@@ -1291,10 +1412,18 @@ async function clickGramm(){
  try{
   const data=await api("/api/gramm/click",{method:"POST"});
 
-  state.grammBalance=data.grammBalance;
-  state.multiplier=data.multiplier;
+  state.grammBalance=Number(data.grammBalance||0);
+  state.multiplier=Number(data.multiplier||1);
 
   render();
+
+  spawnClickEffect(
+   document.getElementById("grammCoin"),
+   "+"+money(data.multiplier||1)+" GRAMM",
+   true
+  );
+
+  pulseBalance("grammBalanceCard");
 
  }catch(error){
   showError(error);
@@ -1305,14 +1434,18 @@ async function clickGramm(){
 
 async function buyUpgrade(type){
  try{
-  await api("/api/upgrades/buy",{
+  const data=await api("/api/upgrades/buy",{
    method:"POST",
    body:JSON.stringify({type})
   });
 
+  if(data.balance!==undefined)state.balance=Number(data.balance);
+
   await loadState();
 
-  alert("Улучшение успешно куплено!");
+  const names={x2:"Бонус x2 активирован",x4:"Бонус x4 активирован",x10:"Постоянное улучшение x10 куплено"};
+  showToast(names[type]||"Улучшение успешно куплено","success");
+  pulseBalance("usdBalanceCard");
 
  }catch(error){
   showError(error);
@@ -1335,10 +1468,11 @@ async function exchange(direction){
   });
 
   document.getElementById("exchangeAmount").value="";
-
   await loadState();
 
-  alert("Обмен успешно выполнен!");
+  showToast("Обмен успешно выполнен!");
+  pulseBalance("usdBalanceCard");
+  pulseBalance("grammBalanceCard");
 
  }catch(error){
   showError(error);
@@ -1362,7 +1496,6 @@ async function loadShop(){
  document.getElementById("shop").innerHTML=
   Object.entries(catalog).map(([category,items])=>`
    <h3>${names[category]||escapeHTML(category)}</h3>
-
    ${items.map((item,index)=>`
     <div class="item">
      ${escapeHTML(item.name)}<br>
@@ -1381,8 +1514,8 @@ async function buyItem(category,index){
   });
 
   await loadState();
-
-  alert("Покупка успешна!");
+  showToast("Покупка успешна!");
+  pulseBalance("usdBalanceCard");
 
  }catch(error){
   showError(error);
@@ -1397,8 +1530,8 @@ async function sellItem(itemId){
   });
 
   await loadState();
-
-  alert("Предмет продан!");
+  showToast("Предмет продан!");
+  pulseBalance("usdBalanceCard");
 
  }catch(error){
   showError(error);
@@ -1411,12 +1544,11 @@ async function dailyReward(){
  try{
   const data=await api("/api/daily",{method:"POST"});
 
-  state.balance=data.balance;
+  state.balance=Number(data.balance||state.balance);
+  await loadState();
 
-  render();
-  renderClickUpgrades();
-
-  alert("Ты получил $1 000!");
+  showToast("Ты получил $1 000!");
+  pulseBalance("usdBalanceCard");
 
  }catch(error){
   showError(error);
@@ -1433,8 +1565,7 @@ async function loadLeaderboard(){
    players.length
    ?players.map((p,i)=>`
     <div class="item">
-     ${i+1}. ${escapeHTML(p.username||"Игрок")} —
-     $${money(p.balance)}
+     ${i+1}. ${escapeHTML(p.username||"Игрок")} — $${money(p.balance)}
     </div>
    `).join("")
    :"Пока нет игроков";
@@ -1459,8 +1590,8 @@ async function buyBusiness(key){
   });
 
   await loadState();
-
-  alert("Бизнес успешно куплен!");
+  showToast("Бизнес успешно куплен!");
+  pulseBalance("usdBalanceCard");
 
  }catch(error){
   showError(error);
@@ -1477,8 +1608,8 @@ async function sellBusiness(businessId){
   });
 
   await loadState();
-
-  alert("Бизнес продан! Получено: $"+money(data.refund));
+  showToast("Бизнес продан! Получено: $"+money(data.refund));
+  pulseBalance("usdBalanceCard");
 
  }catch(error){
   showError(error);
@@ -1497,20 +1628,22 @@ async function withdrawBusiness(destination){
    throw new Error("Для обмена на GRAMM сумма должна делиться на 10");
   }
 
-  const data=await api("/api/businesses/withdraw",{
+  await api("/api/businesses/withdraw",{
    method:"POST",
    body:JSON.stringify({destination,amount})
   });
 
   document.getElementById("withdrawAmount").value="";
-
   await loadState();
 
   if(destination==="gramm"){
-   alert("Перевод выполнен! Получено "+money(amount/10)+" GRAMM");
+   showToast("Перевод выполнен! Получено "+money(amount/10)+" GRAMM");
   }else{
-   alert("Деньги переведены на основной баланс!");
+   showToast("Деньги переведены на основной баланс!");
   }
+
+  pulseBalance("usdBalanceCard");
+  pulseBalance("grammBalanceCard");
 
  }catch(error){
   showError(error);
@@ -1571,7 +1704,6 @@ function renderBattlePass(){
  document.getElementById("bpProgressFill").style.width=percent+"%";
 
  const season=bpState.season||{};
-
  let seasonText="Сезон активен";
 
  if(season.endsAt){
@@ -1611,11 +1743,9 @@ function renderBPTasks(){
    <div class="bp-task">
     <div class="bp-task-title">${escapeHTML(task.title)}</div>
     <p class="small">Прогресс: ${money(progress)} / ${money(target)}</p>
-
     <div class="bp-task-progress">
      <div class="bp-task-fill" style="width:${percent}%"></div>
     </div>
-
     <div>
      <span class="bp-tag">+${money(task.xpReward)} BP XP</span>
      ${completed
@@ -1647,32 +1777,25 @@ function renderBPRewards(){
   html+=`
    <div class="bp-reward">
     <div class="bp-level-number">УРОВЕНЬ ${level}</div>
-
     <div class="bp-columns">
-
      <div class="bp-reward free">
       <div class="bp-reward-title">FREE</div>
-
       <div class="bp-reward-value">
        $${money(freeDollars)}<br>
        ${money(freeGramm)} GRAMM
       </div>
-
       ${freeClaimed
        ?'<p class="bp-claimed">ПОЛУЧЕНО ✓</p>'
        :unlocked
         ?`<button onclick="claimBPReward(${level},'free')">Забрать</button>`
         :'<p class="bp-locked">Закрыто</p>'}
      </div>
-
      <div class="bp-reward premium">
       <div class="bp-reward-title">PREMIUM</div>
-
       <div class="bp-reward-value">
        $${money(premiumDollars)}<br>
        ${money(premiumGramm)} GRAMM
       </div>
-
       ${premiumClaimed
        ?'<p class="bp-claimed">ПОЛУЧЕНО ✓</p>'
        :!premium
@@ -1681,7 +1804,6 @@ function renderBPRewards(){
          ?`<button onclick="claimBPReward(${level},'premium')">Забрать</button>`
          :'<p class="bp-locked">Закрыто</p>'}
      </div>
-
     </div>
    </div>
   `;
@@ -1706,7 +1828,9 @@ async function buyBPPremium(currency){
   await loadState();
   await loadBattlePass();
 
-  alert("PREMIUM PASS успешно активирован!");
+  showToast("PREMIUM PASS успешно активирован!");
+  pulseBalance("usdBalanceCard");
+  pulseBalance("grammBalanceCard");
 
  }catch(error){
   showError(error);
@@ -1723,7 +1847,9 @@ async function claimBPReward(level,track){
   await loadState();
   await loadBattlePass();
 
-  alert("Награда Battle Pass получена!");
+  showToast("Награда Battle Pass получена!");
+  pulseBalance("usdBalanceCard");
+  pulseBalance("grammBalanceCard");
 
  }catch(error){
   showError(error);
@@ -1733,8 +1859,9 @@ async function claimBPReward(level,track){
 /* ERRORS */
 
 function showError(error){
- document.getElementById("status").textContent=error.message;
- alert(error.message);
+ const message=error?.message||"Произошла неизвестная ошибка";
+ document.getElementById("status").textContent=message;
+ showToast(message,"error");
 }
 
 /* EVENTS */
@@ -1752,19 +1879,14 @@ async function start(){
   }
 
   await loadState();
-
   await loadClickUpgrades();
-
   await loadShop();
-
   await loadLeaderboard();
-
   await loadBusinessCatalog();
-
   await loadBattlePass();
 
-  document.getElementById("status").textContent=
-   "UGLY CLICKER подключён";
+  document.getElementById("status").textContent="UGLY CLICKER подключён";
+  showToast("Добро пожаловать в UGLY CLICKER 2.0","success");
 
  }catch(error){
   showError(error);
@@ -1773,34 +1895,49 @@ async function start(){
 
 start();
 
-/* TIMERS */
+/* TIMERS
+   Таймеры здесь отвечают только за отображение.
+   Сервер остаётся источником истины для расчёта наград. */
 
 setInterval(()=>{
- if(state.bonuses.x2Seconds>0){
-  state.bonuses.x2Seconds--;
+ const b=state.bonuses;
+ if(!b)return;
+
+ if(b.x2Seconds>0){
+  b.x2Seconds=Math.max(0,Number(b.x2Seconds)-1);
  }
 
- if(state.bonuses.x4Seconds>0){
-  state.bonuses.x4Seconds--;
+ if(b.x4Seconds>0){
+  b.x4Seconds=Math.max(0,Number(b.x4Seconds)-1);
  }
+
+ b.x2Active=Boolean(b.x2Seconds>0);
+ b.x4Active=Boolean(b.x4Seconds>0);
 
  const timedMultiplier=
-  state.bonuses.x4Active&&state.bonuses.x4Seconds>0
-   ?4
-   :state.bonuses.x2Active&&state.bonuses.x2Seconds>0
-    ?2
-    :1;
+  b.x4Active?4:
+  b.x2Active?2:1;
 
- const permanentMultiplier=
-  state.bonuses.x10Unlocked?10:1;
+ const permanentMultiplier=b.x10Unlocked?10:1;
 
  state.multiplier=timedMultiplier*permanentMultiplier;
-
  state.clickReward=state.clickBase*state.multiplier;
 
  render();
-
 },1000);
+
+/* Периодическая синхронизация состояния с сервером.
+   Не меняет данные игрока — только загружает актуальное состояние. */
+
+setInterval(async()=>{
+ if(!initData||document.visibilityState==="hidden")return;
+
+ try{
+  await loadState();
+ }catch(error){
+  console.warn("State synchronization:",error);
+ }
+},30000);
 
 </script>
 </body>
