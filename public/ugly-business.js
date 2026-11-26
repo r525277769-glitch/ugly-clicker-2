@@ -336,7 +336,6 @@ function buildStore(){
   box(scene,.34,.28,doorwayHalf*2+.22,roomHalf,4.72,0,surfaceMat("#172a43","metal",.34,.62));
   for(const side of [-1,1]){
     box(scene,.34,4.65,.14,roomHalf,2.34,side*(doorwayHalf+.035),surfaceMat("#172a43","metal",.34,.62));
-    box(scene,.38,.07,.2,roomHalf,4.68,side*(doorwayHalf+.035),mat(side<0?"#21cfff":"#a56cff",.22,.35,{emissive:side<0?"#087fa8":"#4a138c",emissiveIntensity:.85}),false);
   }
   box(scene,roomSize,.25,roomSize,0,5,0,surfaceMat("#ffffff","ceiling",.82,.08));
   const wingX=roomHalf+4.75;
@@ -349,9 +348,7 @@ function buildStore(){
  box(scene,.12,3.5,.18,roomHalf+.08,2.1,-2.3,mat("#21cfff",.2,.3,{emissive:"#087fa8",emissiveIntensity:1}),false);box(scene,.12,3.5,.18,roomHalf+.08,2.1,2.3,mat("#a55cff",.2,.3,{emissive:"#4a138c",emissiveIntensity:1}),false);
  const wingSign=new THREE.Mesh(new THREE.PlaneGeometry(3.4,.65),signMaterial("CONSOLE LOUNGE","PLAYSTATION • XBOX"));wingSign.position.set(roomHalf+4.75,3.7,-10.78);scene.add(wingSign);
  box(scene,.12,2.5,3.2,-2.45,1.25,6.0,surfaceMat("#263d58","plastic",.35,.3));box(scene,.12,2.5,3.2,2.45,1.25,6.0,surfaceMat("#263d58","plastic",.35,.3));// Keep the entrance-to-club passage open: rear reception partition removed.
- for(let i=0;i<7;i++){const p=box(scene,.12,3.6,.08,-7.2+i*2.4,2.25,-8.78,mat(i%2?"#1bd5ff":"#a56cff",.32,.25,{emissive:i%2?"#087a9d":"#4d1684",emissiveIntensity:.55}),false);p.rotation.z=i%2?.18:-.18;}
  box(scene,7,.95,.22,0,4.12,-8.72,mat("#121d31",.3,.3));const sign=new THREE.Mesh(new THREE.PlaneGeometry(6.5,.72),signMaterial("UGLY CYBER CLUB","PLAY • COMPETE • LEVEL UP"));sign.position.set(0,4.12,-8.57);scene.add(sign);
- for(const z of [-6,-1,4]){box(scene,17,.08,.16,0,3.45,z,mat("#20cfff",.28,.4,{emissive:"#087fa8",emissiveIntensity:.9}),false);box(scene,17,.06,.14,0,3.28,z+.12,mat("#a55cff",.28,.4,{emissive:"#4a138c",emissiveIntensity:.75}),false);}
  // Wall art: custom cyber-club posters with distinct graphics and slogans.
  const poster=(x,y,z,title,subtitle,accent,variant=0)=>{
    const tex=canvasTexture((ctx,w,h)=>{
@@ -496,9 +493,6 @@ function buildStore(){
  box(consoleDesk,3.35,.14,.9,0,1.02,0,surfaceMat("#263d58","wood",.3,.24));box(consoleDesk,3.12,.68,.12,0,.58,-.37,surfaceMat("#14243a","plastic",.32,.38));box(consoleDesk,3.2,.045,.05,0,.91,-.31,mat("#25dfff",.2,.3,{emissive:"#0788aa",emissiveIntensity:1.15}),false);
  box(consoleDesk,.72,.045,.48,-.55,1.12,-.02,surfaceMat("#8798aa","metal",.25,.72));box(consoleDesk,.66,.36,.035,-.55,1.31,-.22,mat("#202b3a",.2,.55));const consoleAdminScreen=new THREE.Mesh(new THREE.PlaneGeometry(.58,.25),signMaterial("CONSOLE ADMIN","PLAYSTATION • XBOX"));consoleAdminScreen.material.side=THREE.DoubleSide;consoleAdminScreen.material.needsUpdate=true;consoleAdminScreen.position.set(-.55,1.32,-.195);consoleDesk.add(consoleAdminScreen);
  makeLabel(scene,"CONSOLE RECEPTION",roomHalf+4.75,2.05,8.92+consoleRoomLevel*4,2.9,.34);interactables.push({position:new THREE.Vector3(roomHalf+4.75,0,8.25+consoleRoomLevel*4),name:"Ресепшен консольной зоны",hint:"КОНСОЛЬНЫЙ РЕСЕПШЕН · ОФОРМИТЬ ИГРОКА НА PLAYSTATION / XBOX",action:"open_console_reception",radius:2.35});
- for(const x of [-7,-3,3,7]){box(scene,.13,4.5,.13,x,2.5,-5.2,mat("#71849a",.28,.65));box(scene,1.8,.07,.3,x,4.55,-5.2,mat("#f2f7ff",.2,.1,{emissive:"#cceeff",emissiveIntensity:1.2}),false);}
- for(const x of [-6,0,6])for(const z of [-6,0,6]){box(scene,1.8,.07,.38,x,4.65,z,mat("#dcecff",.2,.1,{emissive:"#8bdcff",emissiveIntensity:1}),false);const l=new THREE.PointLight("#77bfff",28,8);l.position.set(x,4.05,z);scene.add(l);}
- for(const x of [-7.8,7.8]){box(scene,.05,2.4,4.4,x,2.25,-1,mat("#12253b",.25,.25));for(let i=0;i<5;i++)box(scene,.035,.12,.55,x+(x<0?.04:-.04),1.4+i*.35,-1.8+i*.75,mat(i%2?"#21d5ff":"#b66cff",.22,.3,{emissive:i%2?"#0780a5":"#6125a0",emissiveIntensity:.9}),false);}
  player=makePerson(0,7.7,"#2877c9",true,0);makeLabel(scene,"YOU",0,2.3,7.7,1,.28);
  syncClubNPCs();
 }
