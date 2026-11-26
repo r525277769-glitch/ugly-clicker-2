@@ -272,7 +272,7 @@ function animate() {
   for (const npc of clubNPCs) {
     npc.timer -= dt;
     if (npc.mode === "walk") {
-      const spots = [[-5.1,-2.2],[-1.8,-2.2],[1.8,-2.2],[5.1,-2.2]];
+      const spots = [[-5.1,-2.2],[-1.8,-2.2],[1.8,-2.2],[5.1,-2.2],[-5.1,3.2],[-1.8,3.2],[1.8,3.2],[5.1,3.2]];
       const p = spots[npc.station % spots.length], dest = new THREE.Vector3(p[0],0,p[1]);
       npc.mesh.position.lerp(dest, Math.min(1,dt*1.15));
       if (npc.mesh.position.distanceTo(dest) < .35) { npc.mode="play"; npc.timer=120+Math.random()*180; }
