@@ -91,12 +91,18 @@ function surfaceTexture(kind) {
       for(let y=0;y<h;y+=tile)for(let x=0;x<w;x+=tile){
         const g=ctx.createLinearGradient(x,y,x+tile,y+tile);g.addColorStop(0,"#52657a");g.addColorStop(1,"#2d3e53");
         ctx.fillStyle=g;ctx.fillRect(x+3,y+3,tile-6,tile-6);
-        ctx.strokeStyle="rgba(5,12,22,.72)";ctx.lineWidth=5;ctx.strokeRect(x+3,y+3,tile-6,tile-6);
-        ctx.strokeStyle="rgba(190,218,239,.12)";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x+12,y+12);ctx.lineTo(x+tile-12,y+12);ctx.stroke();
+        ctx.strokeStyle="rgba(5,12,22,.88)";ctx.lineWidth=7;ctx.strokeRect(x+3,y+3,tile-6,tile-6);
+        ctx.strokeStyle="rgba(190,218,239,.2)";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x+12,y+12);ctx.lineTo(x+tile-12,y+12);ctx.stroke();
+        ctx.strokeStyle="rgba(255,255,255,.08)";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(x+14,y+tile-18);ctx.lineTo(x+tile-14,y+tile-18);ctx.stroke();
+        for(let n=0;n<90;n++){const px=x+8+Math.random()*(tile-16),py=y+8+Math.random()*(tile-16);ctx.fillStyle=Math.random()>.5?"rgba(255,255,255,.045)":"rgba(0,0,0,.055)";ctx.fillRect(px,py,1.5,1.5);}
       }
     } else if(kind==="wood"){
       for(let i=0;i<150;i++){const y=(i/150)*h,alpha=.035+Math.random()*.11;ctx.strokeStyle="rgba(24,10,4,"+alpha+")";ctx.lineWidth=1+Math.random()*4;ctx.beginPath();ctx.moveTo(0,y);ctx.bezierCurveTo(w*.28,y-8,w*.66,y+9,w,y+(Math.random()-.5)*14);ctx.stroke();}
       for(let i=0;i<18;i++){ctx.strokeStyle="rgba(220,174,119,.12)";ctx.beginPath();ctx.ellipse(Math.random()*w,Math.random()*h,12+Math.random()*34,3+Math.random()*7,0,0,Math.PI*2);ctx.stroke();}
+    } else if(kind==="plastic"){
+      const sheen=ctx.createLinearGradient(0,0,w,h);sheen.addColorStop(0,"rgba(255,255,255,.12)");sheen.addColorStop(.22,"rgba(255,255,255,.015)");sheen.addColorStop(.7,"rgba(0,0,0,.12)");sheen.addColorStop(1,"rgba(255,255,255,.06)");ctx.fillStyle=sheen;ctx.fillRect(0,0,w,h);
+      for(let y=0;y<h;y+=12){ctx.strokeStyle="rgba(180,220,255,.035)";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke();}
+      for(let i=0;i<2600;i++){const a=Math.random()*.045;ctx.fillStyle=Math.random()>.5?"rgba(255,255,255,"+a+")":"rgba(0,0,0,"+a+")";ctx.fillRect(Math.random()*w,Math.random()*h,1,1);}
     } else if(kind==="metal"){
       for(let i=0;i<900;i++){const y=Math.random()*h;ctx.fillStyle="rgba(255,255,255,"+(Math.random()*.09)+")";ctx.fillRect(0,y,w,1);}
       for(let i=0;i<260;i++){ctx.fillStyle="rgba(5,15,25,"+(Math.random()*.07)+")";ctx.fillRect(Math.random()*w,Math.random()*h,1,2);}
@@ -118,20 +124,25 @@ function surfaceTexture(kind) {
       ctx.fillStyle="rgba(20,210,255,.22)";ctx.fillRect(0,0,w,7);ctx.fillStyle="rgba(155,91,255,.2)";ctx.fillRect(0,h-7,w,7);
       for(let i=0;i<1800;i++){const a=Math.random()*.045;ctx.fillStyle=Math.random()>.5?"rgba(255,255,255,"+a+")":"rgba(0,0,0,"+a+")";ctx.fillRect(Math.random()*w,Math.random()*h,1,1);}
     } else if(kind==="ceiling"){
-      for(let i=0;i<5200;i++){const v=Math.random(),a=.025+Math.random()*.07;ctx.fillStyle=v>.5?"rgba(255,255,255,"+a+")":"rgba(0,0,0,"+a+")";ctx.fillRect(Math.random()*w,Math.random()*h,1+Math.random()*2,1+Math.random()*2);}
+      const panel=ctx.createLinearGradient(0,0,w,h);panel.addColorStop(0,"rgba(130,175,220,.13)");panel.addColorStop(.5,"rgba(0,0,0,.04)");panel.addColorStop(1,"rgba(130,175,220,.1)");ctx.fillStyle=panel;ctx.fillRect(0,0,w,h);
+      for(let x=0;x<w;x+=128){ctx.fillStyle="rgba(0,0,0,.2)";ctx.fillRect(x,0,4,h);ctx.fillStyle="rgba(140,205,245,.1)";ctx.fillRect(x+5,0,2,h);}
+      for(let y=0;y<h;y+=128){ctx.fillStyle="rgba(0,0,0,.16)";ctx.fillRect(0,y,w,4);ctx.fillStyle="rgba(140,205,245,.08)";ctx.fillRect(0,y+5,w,2);}
+      for(let i=0;i<3600;i++){const v=Math.random(),a=.018+Math.random()*.045;ctx.fillStyle=v>.5?"rgba(255,255,255,"+a+")":"rgba(0,0,0,"+a+")";ctx.fillRect(Math.random()*w,Math.random()*h,1+Math.random()*2,1+Math.random()*2);}
     } else {
       for(let i=0;i<4200;i++){const a=Math.random()*.08;ctx.fillStyle=Math.random()>.5?"rgba(255,255,255,"+a+")":"rgba(0,0,0,"+a+")";ctx.fillRect(Math.random()*w,Math.random()*h,1+Math.random()*2,1+Math.random()*2);}
     }
-  },512,512);
+  },1024,1024);
   texture.wrapS=texture.wrapT=THREE.RepeatWrapping;
-  texture.repeat.set(kind==="floor"?2:1,kind==="floor"?2:1);
+  texture.repeat.set(kind==="floor"?2.5:kind==="wall"?1.35:1,kind==="floor"?2.5:kind==="wall"?1.35:1);
   texture.anisotropy=renderer?.capabilities?.getMaxAnisotropy?.()||8;
   surfaceMaps[kind]=texture;return texture;
 }
 function surfaceMat(color,kind,roughness=.65,metalness=0,extra={}) {
   const map=surfaceTexture(kind);
-  const scale=kind==="metal"?.018:kind==="fabric"?.045:kind==="wall"?.025:kind==="wood"?.035:.018;
-  return mat(color,roughness,metalness,{map,bumpMap:map,bumpScale:scale,...extra});
+  const scale=kind==="metal"?.012:kind==="fabric"?.035:kind==="wall"?.04:kind==="wood"?.028:kind==="floor"?.022:.012;
+  const material=mat(color,roughness,metalness,{map,bumpMap:map,bumpScale:scale,...extra});
+  material.envMapIntensity=kind==="metal"?.9:kind==="plastic"?.55:.35;
+  return material;
 }
 function makeLabel(parent, text, x, y, z, width = 2.2, height = .65) {
   const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: canvasTexture((ctx, w, h) => {
@@ -310,7 +321,16 @@ function buildStore(){
  for(const [color,intensity,pos] of [["#21cfff",70,[-5,3,-4]],["#9c4dff",65,[6,3,2]],["#ff4e9b",35,[0,3,7]]]){const l=new THREE.PointLight(color,intensity,20,2);l.position.set(...pos);scene.add(l);}
  const roomSize=18+Number(state.clubData.roomLevel||0)*4,roomHalf=roomSize/2;
  box(scene,roomSize,.35,roomSize,0,-.18,0,surfaceMat("#ffffff","floor",.32,.18));
- box(scene,roomSize,5,.32,0,2.35,-roomHalf,surfaceMat("#ffffff","wall",.88,0));box(scene,.32,5,roomSize,-roomHalf,2.35,0,surfaceMat("#ffffff","wall",.88,0));box(scene,.32,5,roomHalf-2.5,roomHalf,2.35,-(roomHalf+2.5)/2,surfaceMat("#ffffff","wall",.88,0));box(scene,.32,5,roomHalf-2.5,roomHalf,2.35,(roomHalf+2.5)/2,surfaceMat("#ffffff","wall",.88,0));box(scene,roomSize,.25,roomSize,0,5,0,surfaceMat("#ffffff","ceiling",.82,.08));
+ box(scene,roomSize,5,.32,0,2.35,-roomHalf,surfaceMat("#ffffff","wall",.88,0));box(scene,.32,5,roomSize,-roomHalf,2.35,0,surfaceMat("#ffffff","wall",.88,0));
+  // Solid partition between PC and console rooms; keep only a narrow, framed doorway.
+  const doorwayHalf=1.7,partitionMat=surfaceMat("#ffffff","wall",.78,.02);
+  box(scene,.32,5,roomHalf-doorwayHalf,roomHalf,2.35,-(roomHalf+doorwayHalf)/2,partitionMat);
+  box(scene,.32,5,roomHalf-doorwayHalf,roomHalf,2.35,(roomHalf+doorwayHalf)/2,partitionMat);
+  box(scene,.34,.28,doorwayHalf*2+.22,roomHalf,4.72,0,surfaceMat("#172a43","metal",.34,.62));
+  for(const side of [-1,1]){
+    box(scene,.34,4.65,.14,roomHalf,2.34,side*(doorwayHalf+.035),surfaceMat("#172a43","metal",.34,.62));
+    box(scene,.38,.07,.2,roomHalf,4.68,side*(doorwayHalf+.035),mat(side<0?"#21cfff":"#a56cff",.22,.35,{emissive:side<0?"#087fa8":"#4a138c",emissiveIntensity:.85}),false);
+  }box(scene,roomSize,.25,roomSize,0,5,0,surfaceMat("#ffffff","ceiling",.82,.08));
  const wingX=roomHalf+4.75;
  const consoleRoomLevel=Number(state.clubData.consoleRoomLevel||0),consoleDepth=22+consoleRoomLevel*4,consoleCenterZ=consoleRoomLevel*2;
  box(scene,9.5,.3,consoleDepth,wingX,-.18,consoleCenterZ,surfaceMat("#ffffff","floor",.32,.18));
@@ -515,7 +535,12 @@ function animate() {
   tempMove.copy(tempForward).multiplyScalar(-input.y).addScaledVector(tempRight, input.x);
   if (tempMove.lengthSq() > .002) {
     tempMove.normalize();
-    player.position.addScaledVector(tempMove, dt * 3.65 * Math.max(.25, input.length));
+    const step=tempMove.clone().multiplyScalar(dt*3.65*Math.max(.25,input.length));
+    const roomHalfForCollision=(18+Number(state.clubData.roomLevel||0)*4)/2;
+    const nextX=player.position.x+step.x,nextZ=player.position.z+step.z;
+    const crossesPartition=(player.position.x<roomHalfForCollision&&nextX>=roomHalfForCollision)||(player.position.x>roomHalfForCollision&&nextX<=roomHalfForCollision);
+    if(crossesPartition&&Math.abs(nextZ)>1.34)step.x=0;
+    player.position.add(step);
     const targetYaw = Math.atan2(-tempMove.x, -tempMove.z);
     let diff = targetYaw - player.rotation.y;
     diff = Math.atan2(Math.sin(diff), Math.cos(diff));
