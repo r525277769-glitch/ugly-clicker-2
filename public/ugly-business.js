@@ -199,7 +199,7 @@ function buildStore(){
  for(let x=-8;x<=8;x+=2)for(let z=-8;z<=8;z+=2)box(scene,1.96,.018,1.96,x,.008,z,mat((x+z)%4?"#293b53":"#202f45",.68,.12),false);
  box(scene,roomSize,5,.32,0,2.35,-roomHalf,mat("#263b59"));box(scene,.32,5,roomSize,-roomHalf,2.35,0,mat("#263b59"));box(scene,.32,5,roomSize,roomHalf,2.35,0,mat("#263b59"));box(scene,roomSize,.25,roomSize,0,5,0,mat("#111a2b"));
  for(let i=0;i<7;i++){const p=box(scene,.12,3.6,.08,-7.2+i*2.4,2.25,-8.78,mat(i%2?"#1bd5ff":"#a56cff",.32,.25,{emissive:i%2?"#087a9d":"#4d1684",emissiveIntensity:.55}),false);p.rotation.z=i%2?.18:-.18;}
- box(scene,7,.95,.22,0,4.12,-8.72,mat("#121d31",.3,.3));const sign=new THREE.Mesh(new THREE.PlaneGeometry(6.5,.72),signMaterial("UGLY CYBER CLUB","PLAY • COMPETE • LEVEL UP"));sign.position.set(0,4.12,-8.57);scene.add(sign);
+ box(scene,7,.95,.22,0,4.12,-roomHalf+.28,mat("#121d31",.3,.3));const sign=new THREE.Mesh(new THREE.PlaneGeometry(6.5,.72),signMaterial("UGLY CYBER CLUB","PLAY • COMPETE • LEVEL UP"));sign.position.set(0,4.12,-roomHalf+.43);scene.add(sign);
  for(const z of [-6,-1,4]){box(scene,17,.08,.16,0,3.45,z,mat("#20cfff",.28,.4,{emissive:"#087fa8",emissiveIntensity:.9}),false);box(scene,17,.06,.14,0,3.28,z+.12,mat("#a55cff",.28,.4,{emissive:"#4a138c",emissiveIntensity:.75}),false);}
  box(scene,3.8,1.05,.85,0,.53,7.1,mat("#17283f",.34,.3));box(scene,3.9,.08,.92,0,1.1,7.1,mat("#22d6ff",.25,.4,{emissive:"#067c9d",emissiveIntensity:.7}),false);makeLabel(scene,"RECEPTION",0,2,6.45,2.5,.4);
  for(const x of [-1.35,1.35])box(scene,.06,2.3,.12,x,1.15,8.3,mat("#21cfff",.2,.45,{emissive:"#087d9d",emissiveIntensity:.8}),false);
@@ -315,7 +315,7 @@ async function loadState() {
     Object.assign(state, data.state || {}); updateHUD();
   } catch (error) { $("simHint").textContent = error.message; }
 }
-async function doAction(action,extra={}){if(actionBusy)return;actionBusy=true;$("simAction").disabled=true;try{const d=await api("/api/simulator/action",{method:"POST",body:JSON.stringify({action,...extra})});Object.assign(state,d.state||{});updateHUD();toast(d.message||"Готово");$("simHint").textContent=d.message||"Готово";}catch(e){toast(e.message,"error");}finally{actionBusy=false;$("simAction").disabled=!activeObject;}}
+async function doAction(action,extra={}){if(actionBusy)return;actionBusy=true;$("simAction").disabled=true;try{const d=await api("/api/simulator/action",{method:"POST",body:JSON.stringify({action,...extra})});Object.assign(state,d.state||{});updateHUD();if(action==="expand_room"&&scene){const oldPosition=player.position.clone(),oldRotation=player.rotation.y;interactables.length=0;animated.length=0;stationGroups.length=0;clubNPCs.length=0;buildStore();player.position.copy(oldPosition);player.rotation.y=oldRotation;resize();}toast(d.message||"Готово");$("simHint").textContent=d.message||"Готово";}catch(e){toast(e.message,"error");}finally{actionBusy=false;$("simAction").disabled=!activeObject;}}
 function joystickPoint(event) {
   const dx = event.clientX - joyCenter.x, dy = event.clientY - joyCenter.y;
   const length = Math.hypot(dx, dy), deadZone = 5;
