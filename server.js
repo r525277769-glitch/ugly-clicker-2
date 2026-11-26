@@ -2322,30 +2322,63 @@ app.post("/api/bitcoin-farm/exchange", auth, async (req, res) => {
 /* UGLY BUSINESS — COMPUTER CLUB */
 const CLUB_TIER_PRICE=[0,500,2500,11000,24000];
 const CLUB_TIER_RATE=[0,20,42,78,125];
+const CLUB_COMPONENTS=["gpu","cpu","ram","monitor","keyboard","mouse","chair"];
+const CLUB_NAMES=["Алекс","Макс","Даня","Марк","Илья","Никита","Саша","Рома","Егор","Тим"];
+const CLUB_COMPONENT_DEFAULTS={gpu:1,cpu:1,ram:1,monitor:1,keyboard:1,mouse:1,chair:1};
+function clubStationLevel(st){
+ const c=st.components||CLUB_COMPONENT_DEFAULTS;
+ return Math.max(1,Math.min(4,...CLUB_COMPONENTS.map(k=>Number(c[k]||st.tier||1))));
+}
+function clubFreeStations(d){
+ const busy=new Set((d.sessions||[]).map(x=>Number(x.station)));
+ return d.stations.map((_,i)=>i).filter(i=>!busy.has(i));
+}
 async function getClub(client,id,lock=false){
  await client.query("INSERT INTO ugly_simulator_players(telegram_id) VALUES($1) ON CONFLICT(telegram_id) DO NOTHING",[id]);
  const suffix=lock?" FOR UPDATE":"";
  const q=await client.query("SELECT shop_cash,shop_xp,customers_served,club_data,last_income_at FROM ugly_simulator_players WHERE telegram_id=$1"+suffix,[id]);
  const r=q.rows[0];
- if(Number(r.shop_cash)===0&&Number(r.shop_xp)===0&&Number(r.customers_served)===0){await client.query("UPDATE ugly_simulator_players SET shop_cash=5000 WHERE telegram_id=$1",[id]);r.shop_cash=5000;}
+ if(Number(r.shop_cash)===0&&Number(r.shop_xp)===0&&Number(r.customers_served)===0){
+  await client.query("UPDATE ugly_simulator_players SET shop_cash=5000 WHERE telegram_id=$1",[id]);r.shop_cash=5000;
+ }
  const d=r.club_data||{stations:[{tier:1},{tier:1},{tier:1},{tier:1}],adLevel:0};
  d.stations=Array.isArray(d.stations)&&d.stations.length?d.stations:[{tier:1},{tier:1},{tier:1},{tier:1}];
- const componentDefaults={gpu:1,cpu:1,ram:1,monitor:1,keyboard:1,mouse:1,chair:1};
- d.stations=d.stations.map(st=>{if(!st.components)st.components={...componentDefaults,...Object.fromEntries(Object.keys(componentDefaults).map(k=>[k,Number(st.tier)||1]))};return st;});
- d.adLevel=Number(d.adLevel||0);
- const hourly=Math.round(d.stations.reduce((n,s)=>{const c=s.components||{};const levels=Object.keys(c).length?Object.values(c).map(Number):[Number(s.tier)||1];return n+(CLUB_TIER_RATE[Math.min(...levels)]||20);},0)*(1+d.adLevel*.12));
- const elapsed=Math.max(0,(Date.now()-new Date(r.last_income_at).getTime())/3600000);
- const earned=Math.floor(hourly*elapsed);
- const visitors=Math.max(1,Math.floor(elapsed*d.stations.length*(1+d.adLevel*.25)*2));
- if(earned>0)await client.query("UPDATE ugly_simulator_players SET shop_cash=shop_cash+$1,customers_served=customers_served+$2,last_income_at=NOW() WHERE telegram_id=$3",[earned,visitors,id]);
- else if(elapsed>=1)await client.query("UPDATE ugly_simulator_players SET last_income_at=NOW() WHERE telegram_id=$1",[id]);
- const cash=earned?Number((await client.query("SELECT shop_cash FROM ugly_simulator_players WHERE telegram_id=$1",[id])).rows[0].shop_cash):Number(r.shop_cash);
- return {cash,xp:Number(r.shop_xp),level:Math.floor(Number(r.shop_xp)/100)+1,customers:Number(r.customers_served),stations:d.stations.length,adLevel:d.adLevel,hourlyIncome:hourly,clubData:d};
+ d.stations=d.stations.slice(0,8).map(st=>({...st,components:{...CLUB_COMPONENT_DEFAULTS,...(st.components||Object.fromEntries(CLUB_COMPONENTS.map(k=>[k,Number(st.tier)||1])))}}));
+ d.adLevel=Number(d.adLevel||0);d.queue=Array.isArray(d.queue)?d.queue:[];d.sessions=Array.isArray(d.sessions)?d.sessions:[];
+ const now=Date.now();let cash=Number(r.shop_cash),xp=Number(r.shop_xp),customers=Number(r.customers_served),dirty=false;
+ const finished=d.sessions.filter(x=>new Date(x.endsAt).getTime()<=now);
+ if(finished.length){
+  for(const session of finished){cash+=Number(session.reward||0);xp+=15;customers++;}
+  d.sessions=d.sessions.filter(x=>new Date(x.endsAt).getTime()>now);dirty=true;
+ }
+ if(!d.nextArrivalAt)d.nextArrivalAt=new Date(now+8000).toISOString();
+ const free=clubFreeStations(d);
+ if(now>=new Date(d.nextArrivalAt).getTime()&&d.queue.length<Math.min(5,free.length+2)){
+  d.queue.push({id:require("crypto").randomBytes(6).toString("hex"),name:CLUB_NAMES[Math.floor(Math.random()*CLUB_NAMES.length)],arrivedAt:new Date(now).toISOString()});
+  const delay=Math.max(12000,42000-d.adLevel*2500);
+  d.nextArrivalAt=new Date(now+delay+Math.floor(Math.random()*10000)).toISOString();dirty=true;
+ }
+ const hourly=Math.round(d.stations.reduce((n,st)=>n+CLUB_TIER_RATE[clubStationLevel(st)],0)*(1+d.adLevel*.12));
+ if(dirty||cash!==Number(r.shop_cash)||xp!==Number(r.shop_xp)||customers!==Number(r.customers_served)){
+  await client.query("UPDATE ugly_simulator_players SET shop_cash=$1,shop_xp=$2,customers_served=$3,club_data=$4::jsonb,updated_at=NOW() WHERE telegram_id=$5",[cash,xp,customers,JSON.stringify(d),id]);
+ }
+ return {cash,xp,level:Math.floor(xp/100)+1,customers,stations:d.stations.length,adLevel:d.adLevel,hourlyIncome:hourly,clubData:d};
 }
 app.get("/api/simulator/state",auth,async(req,res)=>{
  const c=await pool.connect();
- try{await c.query("BEGIN");const state=await getClub(c,req.player.id);await c.query("COMMIT");res.json({success:true,state});}
+ try{await c.query("BEGIN");const state=await getClub(c,req.player.id,true);await c.query("COMMIT");res.json({success:true,state});}
  catch(e){await c.query("ROLLBACK");res.status(500).json({error:"Не удалось загрузить компьютерный клуб"});}
+ finally{c.release();}
+});
+app.post("/api/simulator/tap",auth,async(req,res)=>{
+ const c=await pool.connect();
+ try{
+  await c.query("BEGIN");
+  await getClub(c,req.player.id,true);
+  await c.query("UPDATE ugly_simulator_players SET shop_cash=shop_cash+5,shop_xp=shop_xp+1,last_action_at=NOW(),updated_at=NOW() WHERE telegram_id=$1",[req.player.id]);
+  const state=await getClub(c,req.player.id,true);
+  await c.query("COMMIT");res.json({success:true,reward:5,state});
+ }catch(e){await c.query("ROLLBACK");res.status(400).json({error:e.message});}
  finally{c.release();}
 });
 app.post("/api/simulator/action",auth,async(req,res)=>{
@@ -2353,40 +2386,52 @@ app.post("/api/simulator/action",auth,async(req,res)=>{
  try{
   await c.query("BEGIN");
   let s=await getClub(c,req.player.id,true),d=s.clubData,msg="",a=req.body.action;
-  if(a==="buy_station"){
+  if(a==="start_session"){
+   const queueId=String(req.body.queueId||""),i=Number(req.body.station),guest=d.queue.find(x=>x.id===queueId);
+   if(!guest)throw Error("Этот посетитель уже ушёл из очереди");
+   if(!Number.isInteger(i)||!d.stations[i])throw Error("Игровое место не найдено");
+   if((d.sessions||[]).some(x=>Number(x.station)===i))throw Error("Это место уже занято");
+   const duration=120+Math.floor(Math.random()*181),tier=clubStationLevel(d.stations[i]);
+   const base=[0,25,55,100,180][tier],reward=Math.max(1,Math.round(base*duration/180*(1+d.adLevel*.025)));
+   d.queue=d.queue.filter(x=>x.id!==queueId);
+   d.sessions.push({id:queueId,name:guest.name,station:i,duration,reward,startedAt:new Date().toISOString(),endsAt:new Date(Date.now()+duration*1000).toISOString()});
+   await c.query("UPDATE ugly_simulator_players SET club_data=$1::jsonb,shop_xp=shop_xp+5,updated_at=NOW() WHERE telegram_id=$2",[JSON.stringify(d),req.player.id]);
+   msg=guest.name+" посажен за ПК №"+(i+1)+". Сессия "+Math.ceil(duration/60)+" мин.";
+  }else if(a==="buy_station"){
    if(d.stations.length>=8)throw Error("Уже установлено 8 игровых мест");
    if(s.cash<3500)throw Error("Нужно $3 500 на новое игровое место");
-   d.stations.push({tier:1});
+   d.stations.push({tier:1,components:{...CLUB_COMPONENT_DEFAULTS}});
    await c.query("UPDATE ugly_simulator_players SET shop_cash=shop_cash-3500,club_data=$1::jsonb,shop_xp=shop_xp+20 WHERE telegram_id=$2",[JSON.stringify(d),req.player.id]);
    msg="Новое игровое место установлено!";
   }else if(a==="upgrade_station"){
    const i=Number(req.body.station),st=d.stations[i];
    if(!Number.isInteger(i)||!st)throw Error("ПК не найден");
-   const t=Number(st.tier||1)+1;
+   const t=clubStationLevel(st)+1;
    if(t>4)throw Error("На этом ПК уже установлен премиум-комплект");
    const price=CLUB_TIER_PRICE[t];
    if(s.cash<price)throw Error("Нужно $"+price.toLocaleString("ru-RU")+" для улучшения");
-   st.tier=t;
+   st.components=Object.fromEntries(CLUB_COMPONENTS.map(k=>[k,t]));st.tier=t;
    await c.query("UPDATE ugly_simulator_players SET shop_cash=shop_cash-$1,club_data=$2::jsonb,shop_xp=shop_xp+35 WHERE telegram_id=$3",[price,JSON.stringify(d),req.player.id]);
-   msg="ПК №"+(i+1)+" улучшен: "+["","БЮДЖЕТ","СРЕДНИЙ","ВЫСОКИЙ","ПРЕМИУМ"][t];
+   msg="Комплект ПК №"+(i+1)+" улучшен до уровня "+["","БЮДЖЕТ","СРЕДНИЙ","ВЫСОКИЙ","ПРЕМИУМ"][t];
   }else if(a==="upgrade_component"){
-   const i=Number(req.body.station),key=String(req.body.component||""),st=d.stations[i],allowed=["gpu","cpu","ram","monitor","keyboard","mouse","chair"];
-   if(!Number.isInteger(i)||!st||!allowed.includes(key))throw Error("Компонент ПК не найден");
-   st.components=st.components||{gpu:st.tier||1,cpu:st.tier||1,ram:st.tier||1,monitor:st.tier||1,keyboard:st.tier||1,mouse:st.tier||1,chair:st.tier||1};
+   const i=Number(req.body.station),key=String(req.body.component||""),st=d.stations[i];
+   if(!Number.isInteger(i)||!st||!CLUB_COMPONENTS.includes(key))throw Error("Компонент ПК не найден");
+   st.components={...CLUB_COMPONENT_DEFAULTS,...(st.components||{})};
    const next=Number(st.components[key]||1)+1;if(next>4)throw Error("Этот компонент уже премиум-класса");
-   const price=CLUB_TIER_PRICE[next];if(s.cash<price)throw Error("Нужно $"+price.toLocaleString("ru-RU")+" для улучшения компонента");
-   st.components[key]=next;st.tier=Math.min(...Object.values(st.components).map(Number));
+   const price=CLUB_TIER_PRICE[next];
+   if(s.cash<price)throw Error("Нужно $"+price.toLocaleString("ru-RU")+" для улучшения компонента");
+   st.components[key]=next;st.tier=clubStationLevel(st);
    await c.query("UPDATE ugly_simulator_players SET shop_cash=shop_cash-$1,club_data=$2::jsonb,shop_xp=shop_xp+12 WHERE telegram_id=$3",[price,JSON.stringify(d),req.player.id]);
-   msg="Компонент "+key.toUpperCase()+" ПК №"+(i+1)+" улучшен до уровня "+next;
+   msg="Компонент ПК №"+(i+1)+" улучшен до уровня "+next;
   }else if(a==="advertise"){
    const price=500*(d.adLevel+1);
    if(d.adLevel>=10)throw Error("Реклама максимального уровня");
    if(s.cash<price)throw Error("Реклама стоит $"+price);
    d.adLevel++;
    await c.query("UPDATE ugly_simulator_players SET shop_cash=shop_cash-$1,club_data=$2::jsonb,shop_xp=shop_xp+25 WHERE telegram_id=$3",[price,JSON.stringify(d),req.player.id]);
-   msg="Реклама запущена! Поток посетителей увеличен.";
+   msg="Реклама запущена! Посетители приходят чаще.";
   }else throw Error("Неизвестное действие");
-  s=await getClub(c,req.player.id);
+  s=await getClub(c,req.player.id,true);
   await c.query("COMMIT");res.json({success:true,message:msg,state:s});
  }catch(e){await c.query("ROLLBACK");res.status(400).json({error:e.message});}
  finally{c.release();}
@@ -2401,7 +2446,7 @@ app.post("/api/simulator/exchange",auth,async(req,res)=>{
   const dollars=gramm*100;
   await c.query("UPDATE ugly_simulator_players SET shop_cash=shop_cash-$1 WHERE telegram_id=$2",[dollars,req.player.id]);
   await c.query("UPDATE players SET gramm_balance=gramm_balance+$1 WHERE telegram_id=$2",[gramm,req.player.id]);
-  const next=await getClub(c,req.player.id);
+  const next=await getClub(c,req.player.id,true);
   await c.query("COMMIT");res.json({success:true,gramm,dollars,state:next});
  }catch(e){await c.query("ROLLBACK");res.status(400).json({error:e.message});}
  finally{c.release();}
