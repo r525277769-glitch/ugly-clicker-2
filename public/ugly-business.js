@@ -488,8 +488,8 @@ function animate() {
   }
   const now = performance.now();
   for (const npc of clubNPCs) {
-    const qi=(state.clubData.queue||[]).findIndex(q=>q.id===npc.id),session=(state.clubData.sessions||[]).find(q=>q.id===npc.id);let dest;
-    if(session){const spots=[[-5.1,-3.4],[-1.8,-3.4],[1.8,-3.4],[5.1,-3.4],[-5.1,2],[-1.8,2],[1.8,2],[5.1,2]],p=spots[session.station]||spots[0];dest=new THREE.Vector3(p[0],npc.mode==="play"?.24:0,p[1]+1.05);if(npc.mode!=="play")npc.mode="toSeat";}
+    const qi=(state.clubData.queue||[]).findIndex(q=>q.id===npc.id),session=(state.clubData.sessions||[]).find(q=>q.id===npc.id),consoleSession=(state.clubData.consoleSessions||[]).find(q=>q.id===npc.id);let dest;
+    if(session||consoleSession){if(consoleSession){const ci=Number(consoleSession.station),x=9+Number(state.clubData.roomLevel||0)*2+2.5+(ci%2)*4.2,z=-2.5+Math.floor(ci/2)*5;dest=new THREE.Vector3(x,.24,z+.85);}else{const spots=[[-5.1,-3.4],[-1.8,-3.4],[1.8,-3.4],[5.1,-3.4],[-5.1,2],[-1.8,2],[1.8,2],[5.1,2]],p=spots[session.station]||spots[0];dest=new THREE.Vector3(p[0],npc.mode==="play"?.24:0,p[1]+1.05);}if(npc.mode!=="play")npc.mode="toSeat";}
     else if(qi>=0){dest=new THREE.Vector3(-.9+(qi%3)*.9,0,5.82+Math.floor(qi/3)*.42);if(npc.mode!=="queue")npc.mode="toQueue";}
     else{npc.mode="exit";dest=new THREE.Vector3(0,0,8.5);}
     const delta=dest.clone().sub(npc.mesh.position),distance=delta.length();
@@ -514,7 +514,7 @@ function animate() {
   if (renderer) renderer.render(scene, camera);
 }
 function syncClubNPCs(){
- const desired=(state.clubData.queue||[]).concat(state.clubData.sessions||[]);
+ const desired=(state.clubData.queue||[]).concat(state.clubData.sessions||[],state.clubData.consoleSessions||[]);
  for(const d of desired){
   if(clubNPCs.some(n=>n.id===d.id))continue;
   const colors=["#e45d48","#43a77b","#8357b9","#e2a33b","#347db7","#d65b9a"];
