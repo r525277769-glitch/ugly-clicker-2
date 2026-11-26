@@ -6,6 +6,9 @@
 <meta name="theme-color" content="#090909">
 <title>UGLY CLICKER 2.0</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="stylesheet" href="/ugly-business.css">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"}}</script>
 <style>
 :root{--bg:#080808;--surface:#111;--surface2:#171717;--gold:#e9bd59;--gold2:#ffdf91;--gold-dark:#805b1b;--text:#f5e5bd;--muted:#89847a;--green:#77d69a;--red:#d66b61;--border:rgba(220,174,75,.24)}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -58,7 +61,7 @@ input{background:#090909;border:1px solid var(--gold-dark);border-radius:11px;pa
 .bp-level{font-size:35px;font-weight:900;color:var(--gold2);margin:14px 0}.bp-progress{height:13px;background:#302a1e;border-radius:20px;overflow:hidden;margin:12px 0;border:1px solid #4d3a1d}.bp-progress-fill{height:100%;background:linear-gradient(90deg,#95681b,#ffdf91);width:0%;transition:width .3s;box-shadow:0 0 12px #e9bd59}
 .bp-task{background:#111;border:1px solid var(--border);border-radius:14px;padding:14px;margin:10px 0;text-align:left}.bp-task-title{font-weight:bold;color:var(--gold2)}.bp-task-progress{height:7px;background:#302a1e;border-radius:10px;margin:10px 0;overflow:hidden}.bp-task-fill{height:100%;background:linear-gradient(90deg,#a8791c,#f5d77a)}
 .bp-reward{background:#111;border:1px solid var(--border);border-radius:12px;padding:12px;margin:9px 0}.bp-reward.free{border-color:#92702a}.bp-reward.premium{border-color:#d9ad3e;background:linear-gradient(120deg,#211a0d,#111)}.bp-reward-title{font-weight:bold;margin-bottom:7px;color:var(--gold2)}.bp-columns{display:grid;grid-template-columns:1fr 1fr;gap:8px}.bp-columns button{width:100%;margin:5px 0;padding:10px 5px;font-size:11px}.bp-tag{display:inline-block;padding:6px 10px;border-radius:8px;background:#35280e;color:var(--gold2);font-size:11px;margin:3px}.bp-claimed{color:var(--green);font-weight:bold}.bp-locked{color:#777}.bp-level-number{font-size:19px;color:var(--gold2);font-weight:bold}.bp-reward-value{font-size:12px;line-height:1.8}.bp-section-title{margin-top:20px}.bp-buy-buttons{display:flex;flex-wrap:wrap;justify-content:center;gap:5px}.bp-buy-buttons button{flex:1;min-width:125px}
-.bottom-nav{position:fixed;bottom:0;left:0;right:0;z-index:100;padding:9px 7px calc(9px + env(safe-area-inset-bottom));background:rgba(10,10,10,.96);border-top:1px solid rgba(220,174,75,.3);backdrop-filter:blur(15px);display:grid;grid-template-columns:repeat(5,1fr);gap:3px;max-width:520px;margin:auto}
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;z-index:100;padding:9px 7px calc(9px + env(safe-area-inset-bottom));background:rgba(10,10,10,.96);border-top:1px solid rgba(220,174,75,.3);backdrop-filter:blur(15px);display:grid;grid-template-columns:repeat(6,1fr);gap:3px;max-width:520px;margin:auto}
 .nav-button{background:transparent;color:#777;border:0;box-shadow:none;border-radius:12px;padding:8px 2px;margin:0;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;font-size:9px;letter-spacing:.3px}.nav-icon{font-size:20px;line-height:1}.nav-button.active{color:var(--gold2);background:linear-gradient(145deg,#30230e,#17130b);border:1px solid rgba(220,174,75,.25)}
 #status{color:var(--muted);font-size:10px;padding:15px 5px}
 .farm-hero{background:radial-gradient(ellipse at center,rgba(233,189,89,.16),transparent 70%),linear-gradient(145deg,#211a0c,#101010);border:1px solid #a87926;border-radius:20px;padding:20px 15px;margin:13px 0}
@@ -141,6 +144,17 @@ input{background:#090909;border:1px solid var(--gold-dark);border-radius:11px;pa
  <div class="panel"><h2>DAILY MISSIONS</h2><p class="small">ВЫПОЛНЯЙ ЗАДАНИЯ И ПОЛУЧАЙ BP XP</p><div id="bpTasks">Загрузка заданий...</div></div>
  <div class="panel"><h2>REWARD TRACK</h2><p class="small">100 УРОВНЕЙ НАГРАД</p><p><span class="bp-tag">FREE</span><span class="bp-tag">PREMIUM x2</span></p><div id="bpRewards">Загрузка наград...</div></div>
 </section>
+<section id="simulator" class="page ugly-sim-page">
+ <div class="section-heading"><h2>UGLY BUSINESS</h2><p>3D STORE SIMULATOR · FIRST LOCATION</p></div>
+ <div class="sim-hud"><div><small>КАССА МАГАЗИНА</small><strong id="simCash">$0</strong></div><div><small>УРОВЕНЬ МАГАЗИНА</small><strong id="simLevel">1</strong></div><div><small>КЛИЕНТЫ</small><strong id="simCustomers">0</strong></div></div>
+ <div class="sim-stage"><canvas id="uglyBusinessCanvas" aria-label="3D магазин"></canvas><div class="sim-crosshair">+</div><div class="sim-hint" id="simHint">Подойди к кассе или товарным полкам</div>
+  <div class="sim-joystick" id="simJoystick"><div class="sim-stick" id="simStick"></div></div>
+  <button class="sim-action" id="simAction" type="button">ВЗАИМОДЕЙСТВОВАТЬ</button>
+ </div>
+ <div class="sim-controls-note">ДЖОЙСТИК — ДВИЖЕНИЕ · ПОВОРОТ КАМЕРЫ — СВАЙП ПО ПОЛЮ · КНОПКА — ДЕЙСТВИЕ</div>
+ <div class="sim-actions"><button type="button" data-sim-action="checkout">ОБСЛУЖИТЬ КЛИЕНТА</button><button type="button" data-sim-action="restock" class="button-secondary">ПОПОЛНИТЬ ПОЛКИ</button></div>
+ <div class="panel sim-progress"><h2>ПРОГРЕСС МАГАЗИНА</h2><div class="sim-progress-track"><div id="simXpFill"></div></div><p id="simXpText" class="small">0 / 100 опыта</p><p class="small">Пока это первая игровая версия: управление персонажем, 3D-помещение и сохранение прогресса на сервере.</p></div>
+</section>
 <p id="status">Подключение...</p>
 </div>
 
@@ -149,6 +163,7 @@ input{background:#090909;border:1px solid var(--gold-dark);border-radius:11px;pa
  <button class="nav-button" data-page="gramm" onclick="showPage('gramm')"><span class="nav-icon">◎</span><span>GRAMM</span></button>
  <button class="nav-button" data-page="businesses" onclick="showPage('businesses')"><span class="nav-icon">♜</span><span>БИЗНЕС</span></button>
  <button class="nav-button" data-page="game" onclick="showPage('game')"><span class="nav-icon">₿</span><span>GAME</span></button>
+  <button class="nav-button" data-page="simulator" onclick="showPage('simulator')"><span class="nav-icon">🏪</span><span>СИМУЛЯТОР</span></button>
  <button class="nav-button" data-page="battlepass" onclick="showPage('battlepass')"><span class="nav-icon">♛</span><span>PASS</span></button>
 </nav>
 
@@ -259,5 +274,6 @@ setInterval(()=>{const b=state.bonuses;if(!b)return;if(b.x2Seconds>0)b.x2Seconds
 setInterval(async()=>{if(!initData||document.visibilityState==="hidden")return;try{await loadState();}catch(error){console.warn("State synchronization:",error);}},30000);
 setInterval(async()=>{if(!initData||document.visibilityState==="hidden")return;try{await loadBitcoinFarm();}catch(error){console.warn("Farm synchronization:",error);}},60000);
 </script>
+<script type="module" src="/ugly-business.js"></script>
 </body>
 </html>
