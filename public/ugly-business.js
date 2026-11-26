@@ -256,7 +256,7 @@ function buildStore(){
  for(const [color,intensity,pos] of [["#21cfff",70,[-5,3,-4]],["#9c4dff",65,[6,3,2]],["#ff4e9b",35,[0,3,7]]]){const l=new THREE.PointLight(color,intensity,20,2);l.position.set(...pos);scene.add(l);}
  const roomSize=18+Number(state.clubData.roomLevel||0)*4,roomHalf=roomSize/2;
  box(scene,roomSize,.35,roomSize,0,-.18,0,surfaceMat("#ffffff","floor",.32,.18));
- box(scene,roomSize,5,.32,0,2.35,-roomHalf,surfaceMat("#ffffff","wall",.88,0));box(scene,.32,5,roomSize,-roomHalf,2.35,0,surfaceMat("#ffffff","wall",.88,0));box(scene,.32,5,roomHalf-2.5,roomHalf,2.35,-(roomHalf+2.5),surfaceMat("#ffffff","wall",.88,0));box(scene,.32,5,roomHalf-2.5,roomHalf,2.35,roomHalf+2.5,surfaceMat("#ffffff","wall",.88,0));box(scene,roomSize,.25,roomSize,0,5,0,surfaceMat("#ffffff","ceiling",.82,.08));
+ box(scene,roomSize,5,.32,0,2.35,-roomHalf,surfaceMat("#ffffff","wall",.88,0));box(scene,.32,5,roomSize,-roomHalf,2.35,0,surfaceMat("#ffffff","wall",.88,0));box(scene,.32,5,roomHalf-2.5,roomHalf,2.35,-(roomHalf+2.5)/2,surfaceMat("#ffffff","wall",.88,0));box(scene,.32,5,roomHalf-2.5,roomHalf,2.35,(roomHalf+2.5)/2,surfaceMat("#ffffff","wall",.88,0));box(scene,roomSize,.25,roomSize,0,5,0,surfaceMat("#ffffff","ceiling",.82,.08));
  const wingX=roomHalf+4.75;
  box(scene,9.5,.3,12,wingX,-.18,0,surfaceMat("#ffffff","floor",.32,.18));
  box(scene,9.5,5,.3,wingX,2.35,-6,surfaceMat("#ffffff","wall",.88,0));box(scene,9.5,5,.3,wingX,2.35,6,surfaceMat("#ffffff","wall",.88,0));box(scene,.3,5,12,roomHalf+9.5,2.35,0,surfaceMat("#ffffff","wall",.88,0));box(scene,9.5,.25,12,wingX,5,0,surfaceMat("#ffffff","ceiling",.82,.08));
