@@ -207,7 +207,7 @@ function makePerson(x,z,shirt,isPlayer=false,variant=0){
   const foot=new THREE.Group();foot.position.set(0,-.32,-.075);calf.add(foot);box(foot,.22,.13,.36,0,-.005,-.045,mat("#202633",.42,.08),false);box(foot,.225,.025,.35,0,-.073,-.045,accent,false);
   limbs.push({arm,forearm,leg,calf,foot,side});
  }
- animated.push({type:"character",root,torsoPivot,limbs,phase:variant*.71,isPlayer});return root;
+ animated.push({type:"character",root,torsoPivot,pelvis,head,limbs,phase:variant*.71,isPlayer});return root;
 }
 function makeGamingPC(parent,x,y,z,tier=1,cpuTier=1,ramTier=1){
  const g=new THREE.Group();g.position.set(x,y,z);parent.add(g);
@@ -486,6 +486,7 @@ function animate() {
       const npc=clubNPCs.find(n=>n.mesh===a.root);
       const walk=a.isPlayer?moving:!!npc&&(npc.mode==="toSeat"||npc.mode==="toQueue"||npc.mode==="exit");
       const seated=!a.isPlayer&&npc?.mode==="play";
+      const seatedConsole=seated&&npc?.queueType==="console";
       const speed=a.isPlayer?(moving?Math.max(.2,input.length)*3.65:0):(walk?1.5:0);
       a.gaitWeight??=0;
       const targetWeight=walk?1:0;
@@ -495,8 +496,10 @@ function animate() {
       if(weight>.001)a.phase=(a.phase+dt*Math.max(0.1,speed)*2.65)%(Math.PI*2);
       const phase=a.phase,cycle=Math.sin(phase),opposite=Math.sin(phase+Math.PI);
       const bob=Math.abs(Math.sin(phase*2))*.038*weight;
-      a.torsoPivot.position.y=1.12+bob+(1-weight)*Math.sin(performance.now()*.0017+a.phase)*.004;
-      a.torsoPivot.rotation.x=.035*weight;
+      a.pelvis.position.y+=((seatedConsole?.56:.91)-a.pelvis.position.y)*(1-Math.exp(-dt*9));
+      a.torsoPivot.position.y+=((seatedConsole?.77:1.12)+bob*(seated?0:1)-a.torsoPivot.position.y)*(1-Math.exp(-dt*9));
+      a.head.position.y+=((seatedConsole?1.38:1.76)-a.head.position.y)*(1-Math.exp(-dt*9));
+      a.torsoPivot.rotation.x+=((seatedConsole?-.08:.035*weight)-a.torsoPivot.rotation.x)*(1-Math.exp(-dt*9));
       a.torsoPivot.rotation.z=Math.sin(phase)*.025*weight;
       a.torsoPivot.rotation.y=Math.sin(phase)*.018*weight;
       a.limbs.forEach(l=>{
@@ -504,11 +507,12 @@ function animate() {
         const armWave=-legWave;
         const lift=Math.max(0,Math.cos(phase+(l.side<0?0:Math.PI)));
         if(seated){
-          l.leg.rotation.x+=( -.88-l.leg.rotation.x )*(1-Math.exp(-dt*8));
-          l.calf.rotation.x+=( .98-l.calf.rotation.x )*(1-Math.exp(-dt*8));
-          l.foot.rotation.x+=( -.08-l.foot.rotation.x )*(1-Math.exp(-dt*8));
-          l.arm.rotation.x+=( -.68-l.arm.rotation.x )*(1-Math.exp(-dt*8));
-          l.forearm.rotation.x+=( -.38-l.forearm.rotation.x )*(1-Math.exp(-dt*8));
+          const thigh=seatedConsole?1.12:-.88,knee=seatedConsole?-1.28:.98,armPose=seatedConsole?-1.05:-.68,forearmPose=seatedConsole?-.72:-.38;
+          l.leg.rotation.x+=(thigh-l.leg.rotation.x)*(1-Math.exp(-dt*8));
+          l.calf.rotation.x+=(knee-l.calf.rotation.x)*(1-Math.exp(-dt*8));
+          l.foot.rotation.x+=((seatedConsole?-.12:-.08)-l.foot.rotation.x)*(1-Math.exp(-dt*8));
+          l.arm.rotation.x+=(armPose-l.arm.rotation.x)*(1-Math.exp(-dt*8));
+          l.forearm.rotation.x+=(forearmPose-l.forearm.rotation.x)*(1-Math.exp(-dt*8));
         }else{
           const stride=legWave*.48*weight;
           const calfBend=lift*.58*weight;
@@ -525,7 +529,7 @@ function animate() {
   const now = performance.now();
   for (const npc of clubNPCs) {
     const qi=(npc.queueType==="console"?(state.clubData.consoleQueue||[]):(state.clubData.queue||[])).findIndex(q=>q.id===npc.id),session=(state.clubData.sessions||[]).find(q=>q.id===npc.id),consoleSession=(state.clubData.consoleSessions||[]).find(q=>q.id===npc.id);let dest;
-    if(session||consoleSession){if(consoleSession){const ci=Number(consoleSession.station),x=9+Number(state.clubData.roomLevel||0)*2+2.5+(ci%2)*4.2,z=-7.5+Math.floor(ci/2)*5;dest=new THREE.Vector3(x,.24,z+.85);}else{const spots=[[-5.1,-3.4],[-1.8,-3.4],[1.8,-3.4],[5.1,-3.4],[-5.1,2],[-1.8,2],[1.8,2],[5.1,2]],p=spots[session.station]||spots[0];dest=new THREE.Vector3(p[0],npc.mode==="play"?.24:0,p[1]+1.05);}if(npc.mode!=="play")npc.mode="toSeat";}
+    if(session||consoleSession){if(consoleSession){const ci=Number(consoleSession.station),x=9+Number(state.clubData.roomLevel||0)*2+2.5+(ci%2)*4.2,z=-7.5+Math.floor(ci/2)*5;dest=new THREE.Vector3(x,0,z+.58);}else{const spots=[[-5.1,-3.4],[-1.8,-3.4],[1.8,-3.4],[5.1,-3.4],[-5.1,2],[-1.8,2],[1.8,2],[5.1,2]],p=spots[session.station]||spots[0];dest=new THREE.Vector3(p[0],npc.mode==="play"?.24:0,p[1]+1.05);}if(npc.mode!=="play")npc.mode="toSeat";}
     else if(qi>=0){dest=npc.queueType==="console"?new THREE.Vector3(9+Number(state.clubData.roomLevel||0)*2+4.75,0,7.7+Number(state.clubData.consoleRoomLevel||0)*4+Math.floor(qi/3)*.42):new THREE.Vector3(-.9+(qi%3)*.9,0,5.82+Math.floor(qi/3)*.42);if(npc.mode!=="queue")npc.mode="toQueue";}
     else{npc.mode="exit";dest=new THREE.Vector3(0,0,8.5);}
     // Console visitors use the doorway in the right-side wall, not a straight path through it.
@@ -537,7 +541,7 @@ function animate() {
     }
     const delta=dest.clone().sub(npc.mesh.position),distance=delta.length();
     if(distance>.09){const target=Math.atan2(-delta.x,-delta.z);let turn=Math.atan2(Math.sin(target-npc.mesh.rotation.y),Math.cos(target-npc.mesh.rotation.y));npc.mesh.rotation.y+=turn*Math.min(1,dt*7);npc.mesh.position.addScaledVector(delta.normalize(),Math.min(distance,dt*1.5));}
-    else if(session){npc.mode="play";npc.mesh.position.y=.24;npc.mesh.rotation.y=0;npc.mesh.scale.y=.82;const a=animated.find(x=>x.root===npc.mesh);if(a)a.limbs.forEach(l=>{l.arm.rotation.x=-.7;l.leg.rotation.x=.8;});}
+    else if(session||consoleSession){npc.mode="play";npc.mesh.position.y=0;npc.mesh.rotation.y=0;npc.mesh.scale.y=consoleSession?1:.82;}
     else if(qi>=0){npc.mode="queue";npc.mesh.position.y=Math.sin(now*.004+npc.phase)*.018;}
   }
   for(let i=clubNPCs.length-1;i>=0;i--){if(clubNPCs[i].mode==="exit"&&clubNPCs[i].mesh.position.z>8.25){scene.remove(clubNPCs[i].mesh);const ai=animated.findIndex(a=>a.root===clubNPCs[i].mesh);if(ai>=0)animated.splice(ai,1);clubNPCs.splice(i,1);}}
