@@ -3,272 +3,858 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#090909">
 <title>UGLY CLICKER 2.0</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
 <style>
-*{box-sizing:border-box}
-body{margin:0;background:#090909;color:#f5d77a;font-family:Arial,sans-serif;text-align:center;padding:15px}
-h1{color:#e8bd48;letter-spacing:3px}
-h2{color:#e8bd48}
-h3{color:#e8bd48}
-.panel{background:#171717;border:1px solid #92702a;border-radius:18px;padding:18px;margin:14px auto;max-width:430px}
-.balance{font-size:32px;font-weight:bold}
-.coin{width:180px;height:180px;border-radius:50%;border:5px solid #f5d77a;background:radial-gradient(circle,#f5d77a,#9b6b0b);color:#171000;font-size:54px;font-weight:bold;margin:20px auto;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 0 30px #a77a22}
-button{background:#d9ad3e;color:#111;border:0;border-radius:10px;padding:13px 18px;margin:5px;font-weight:bold;cursor:pointer}
-button:disabled{opacity:.5;cursor:not-allowed}
-.muted{color:#aaa}
-.item{border-bottom:1px solid #444;padding:12px 0}
-#status{color:#aaa;font-size:13px}
-.page{display:none}
-.page.active{display:block}
-.nav button{min-width:125px}
-input{background:#090909;border:1px solid #92702a;border-radius:9px;padding:12px;color:#f5d77a;width:80%;max-width:220px;text-align:center;font-size:17px}
-.small{font-size:13px;color:#aaa}
-.business-number{font-size:25px;font-weight:bold;color:#f5d77a}
-.business-card{border:1px solid #51401e;border-radius:12px;padding:12px;margin:12px 0;background:#111}
+:root{
+ --bg:#080808;
+ --surface:#111;
+ --surface2:#171717;
+ --gold:#e9bd59;
+ --gold2:#ffdf91;
+ --gold-dark:#805b1b;
+ --text:#f5e5bd;
+ --muted:#89847a;
+ --green:#77d69a;
+ --red:#d66b61;
+ --border:rgba(220,174,75,.24);
+}
 
-/* ПОСТОЯННЫЕ УЛУЧШЕНИЯ КЛИКА */
-.click-upgrade-card{
- background:#111;
- border:1px solid #51401e;
- border-radius:12px;
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+
+body{
+ margin:0;
+ background:
+ radial-gradient(ellipse at 50% -15%,rgba(174,124,35,.15),transparent 55%),
+ var(--bg);
+ color:var(--text);
+ font-family:Arial,sans-serif;
+ text-align:center;
+ padding:0 0 105px;
+ min-height:100vh;
+}
+
+button,input{font:inherit}
+button{cursor:pointer;touch-action:manipulation}
+
+button:disabled{
+ opacity:.4;
+ cursor:not-allowed;
+ filter:grayscale(1);
+}
+
+#app{
+ max-width:520px;
+ margin:auto;
+ padding:0 15px;
+}
+
+/* HEADER */
+
+.top-header{
+ padding:17px 0 12px;
+ display:flex;
+ align-items:center;
+ justify-content:space-between;
+ gap:10px;
+}
+
+.brand{
+ text-align:left;
+}
+
+.brand-name{
+ font-size:21px;
+ font-weight:900;
+ letter-spacing:2px;
+ color:var(--gold2);
+}
+
+.brand-sub{
+ font-size:9px;
+ letter-spacing:3px;
+ color:var(--muted);
+ margin-top:4px;
+}
+
+.profile-button{
+ width:43px;
+ height:43px;
+ border-radius:14px;
+ background:linear-gradient(145deg,#30230e,#17130b);
+ border:1px solid var(--border);
+ color:var(--gold2);
+ font-size:20px;
+}
+
+.gold-line{
+ height:1px;
+ background:linear-gradient(90deg,transparent,var(--gold-dark),var(--gold2),var(--gold-dark),transparent);
+ opacity:.7;
+}
+
+/* BALANCES */
+
+.balance-grid{
+ display:grid;
+ grid-template-columns:1fr 1fr;
+ gap:10px;
+ margin:15px 0;
+}
+
+.balance-card{
+ text-align:left;
  padding:14px;
+ border:1px solid var(--border);
+ border-radius:17px;
+ background:linear-gradient(145deg,#19150d,#101010 75%);
+ box-shadow:0 8px 25px #0008;
+ min-width:0;
+}
+
+.balance-label{
+ color:var(--muted);
+ font-size:10px;
+ font-weight:bold;
+ letter-spacing:1.5px;
+}
+
+.balance-value{
+ color:var(--gold2);
+ font-size:23px;
+ font-weight:900;
+ margin-top:8px;
+ overflow-wrap:anywhere;
+}
+
+.balance-symbol{
+ color:var(--gold);
+ font-size:11px;
+ margin-top:4px;
+}
+
+/* PLAYER INFO */
+
+.player-info{
+ display:flex;
+ align-items:center;
+ justify-content:space-between;
+ gap:10px;
+ padding:12px 14px;
+ border-radius:14px;
+ background:#111;
+ border:1px solid #292318;
+ margin-bottom:18px;
+}
+
+.player-level{
+ text-align:left;
+ font-size:12px;
+ font-weight:bold;
+}
+
+.player-level strong{
+ display:block;
+ color:var(--gold2);
+ font-size:17px;
+ margin-top:4px;
+}
+
+.player-xp{
+ text-align:right;
+ font-size:11px;
+ color:var(--muted);
+}
+
+.player-xp strong{
+ display:block;
+ color:var(--gold);
+ font-size:14px;
+ margin-top:4px;
+}
+
+/* PAGE SYSTEM */
+
+.page{display:none;animation:pageIn .25s ease}
+.page.active{display:block}
+
+@keyframes pageIn{
+ from{opacity:0;transform:translateY(7px)}
+ to{opacity:1;transform:translateY(0)}
+}
+
+.section-heading{
+ text-align:left;
+ margin:24px 2px 12px;
+}
+
+.section-heading h2{
+ color:var(--gold2);
+ font-size:17px;
+ letter-spacing:1.5px;
+ margin:0;
+}
+
+.section-heading p{
+ color:var(--muted);
+ font-size:10px;
+ letter-spacing:1px;
+ margin:6px 0 0;
+}
+
+.panel{
+ background:linear-gradient(145deg,#171717,#101010);
+ border:1px solid var(--border);
+ border-radius:19px;
+ padding:17px;
+ margin:13px 0;
+ box-shadow:0 8px 25px #0005;
+}
+
+.panel h2{
+ color:var(--gold2);
+ font-size:16px;
+ letter-spacing:1px;
+ margin:2px 0 15px;
+}
+
+.muted,.small{
+ color:var(--muted);
+}
+
+.small{font-size:11px;line-height:1.6}
+
+.balance{
+ color:var(--gold2);
+ font-size:29px;
+ font-weight:900;
+}
+
+/* MAIN CLICKER */
+
+.clicker-hero{
+ position:relative;
+ overflow:hidden;
+ padding:23px 15px 20px;
+ border-radius:22px;
+ background:
+ radial-gradient(ellipse at center,rgba(174,124,35,.15),transparent 65%),
+ linear-gradient(145deg,#19150e,#0d0d0d);
+ border:1px solid rgba(233,189,89,.35);
+ box-shadow:0 12px 35px #0008;
+}
+
+.hero-label{
+ color:var(--muted);
+ font-size:10px;
+ letter-spacing:2px;
+ font-weight:bold;
+}
+
+.coin{
+ width:190px;
+ height:190px;
+ border-radius:50%;
+ margin:25px auto 20px;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ cursor:pointer;
+ user-select:none;
+ color:#382507;
+ font-size:65px;
+ font-weight:1000;
+ border:7px solid #a87926;
+ background:
+ radial-gradient(circle at 35% 27%,#fff1b9 0%,#f7d77d 17%,#d6a43b 48%,#936319 75%,#553607 100%);
+ box-shadow:
+ 0 0 0 5px #38270e,
+ 0 0 0 7px #9a702c,
+ 0 0 40px rgba(220,166,60,.3),
+ inset 0 5px 12px #fff8;
+ transition:transform .09s,filter .1s;
+}
+
+.coin:active{
+ transform:scale(.93);
+ filter:brightness(1.2);
+}
+
+.coin-caption{
+ color:var(--muted);
+ font-size:11px;
+ letter-spacing:1px;
+}
+
+.click-reward-info{
+ background:linear-gradient(145deg,#211a0c,#121212);
+ border:1px solid var(--border);
+ border-radius:15px;
+ padding:15px;
+ margin-top:17px;
+}
+
+.click-reward-info .balance{
+ font-size:30px;
+ margin:7px 0;
+}
+
+/* BUTTONS */
+
+button{
+ background:linear-gradient(145deg,#f0ce79,#c18d2d);
+ color:#171005;
+ border:1px solid #f3d68c;
+ border-radius:11px;
+ padding:12px 17px;
+ margin:5px 3px;
+ font-weight:900;
+ font-size:12px;
+ box-shadow:0 4px 12px #0005;
+ transition:transform .12s,filter .12s;
+}
+
+button:active{transform:scale(.97);filter:brightness(1.1)}
+
+.button-secondary{
+ background:#211b10;
+ border:1px solid var(--gold-dark);
+ color:var(--gold2);
+}
+
+.button-danger{
+ background:#321714;
+ color:#ffc1ad;
+ border:1px solid #72382e;
+}
+
+.button-full{
+ width:100%;
+ margin:8px 0 0;
+}
+
+/* ITEMS */
+
+.item{
+ border-bottom:1px solid #302819;
+ padding:13px 0;
+ font-size:13px;
+}
+
+.item:last-child{border-bottom:0}
+
+.business-number{
+ font-size:26px;
+ font-weight:900;
+ color:var(--gold2);
+}
+
+.business-card{
+ border:1px solid var(--border);
+ border-radius:14px;
+ padding:15px;
+ margin:12px 0;
+ background:linear-gradient(145deg,#1b1811,#111);
+ text-align:left;
+}
+
+.business-card b{color:var(--gold2)}
+
+input{
+ background:#090909;
+ border:1px solid var(--gold-dark);
+ border-radius:11px;
+ padding:13px;
+ color:var(--gold2);
+ width:100%;
+ max-width:260px;
+ text-align:center;
+ font-size:16px;
+ outline:none;
+ margin:8px 0;
+}
+
+input:focus{border-color:var(--gold2)}
+
+/* CLICK UPGRADES */
+
+.click-upgrade-card{
+ background:linear-gradient(145deg,#1b1811,#101010);
+ border:1px solid var(--border);
+ border-radius:15px;
+ padding:16px;
  margin:12px 0;
 }
-.click-upgrade-card.owned{
- border-color:#55a86b;
-}
+
+.click-upgrade-card.owned{border-color:#477a51}
+
 .click-upgrade-card h3{
- margin:5px 0 10px;
+ color:var(--gold2);
+ margin:5px 0 12px;
 }
+
 .click-upgrade-bonus{
- color:#f5d77a;
+ color:var(--gold2);
  font-size:19px;
  font-weight:bold;
 }
+
 .click-upgrade-price{
- color:#aaa;
- margin:8px 0;
+ color:var(--muted);
+ margin:10px 0;
+ font-size:12px;
 }
+
 .click-upgrade-owned{
- color:#8bd49b;
+ color:var(--green);
  font-weight:bold;
  margin:10px 0;
+ font-size:12px;
 }
-.click-reward-info{
- background:#111;
- border:1px solid #92702a;
- border-radius:12px;
- padding:13px;
- margin:12px 0;
+
+/* GRAMM */
+
+.gramm-hero{
+ background:linear-gradient(145deg,#1b1710,#0c0c0c);
+ border:1px solid var(--border);
+ border-radius:20px;
+ padding:20px 15px;
 }
 
 /* BATTLE PASS */
-.bp-header{background:linear-gradient(145deg,#30220b,#171717 65%);border:1px solid #d9ad3e}
-.bp-level{font-size:42px;font-weight:bold;color:#f5d77a}
-.bp-progress{height:14px;background:#333;border-radius:20px;overflow:hidden;margin:12px 0}
-.bp-progress-fill{height:100%;background:linear-gradient(90deg,#a8791c,#ffe28a);width:0%;transition:width .3s}
-.bp-task{background:#111;border:1px solid #51401e;border-radius:12px;padding:13px;margin:10px 0;text-align:left}
-.bp-task-title{font-weight:bold;color:#f5d77a}
-.bp-task-progress{height:8px;background:#333;border-radius:10px;margin:9px 0;overflow:hidden}
-.bp-task-fill{height:100%;background:#d9ad3e}
-.bp-reward{background:#111;border:1px solid #51401e;border-radius:10px;padding:12px;margin:8px 0}
+
+.bp-header{
+ background:
+ radial-gradient(ellipse at top,rgba(213,164,65,.2),transparent 70%),
+ linear-gradient(145deg,#211a0c,#101010);
+ border:1px solid #9e772e;
+}
+
+.bp-level{
+ font-size:35px;
+ font-weight:900;
+ color:var(--gold2);
+ margin:14px 0;
+}
+
+.bp-progress{
+ height:13px;
+ background:#302a1e;
+ border-radius:20px;
+ overflow:hidden;
+ margin:12px 0;
+ border:1px solid #4d3a1d;
+}
+
+.bp-progress-fill{
+ height:100%;
+ background:linear-gradient(90deg,#95681b,#ffdf91);
+ width:0%;
+ transition:width .3s;
+ box-shadow:0 0 12px #e9bd59;
+}
+
+.bp-task{
+ background:#111;
+ border:1px solid var(--border);
+ border-radius:14px;
+ padding:14px;
+ margin:10px 0;
+ text-align:left;
+}
+
+.bp-task-title{
+ font-weight:bold;
+ color:var(--gold2);
+}
+
+.bp-task-progress{
+ height:7px;
+ background:#302a1e;
+ border-radius:10px;
+ margin:10px 0;
+ overflow:hidden;
+}
+
+.bp-task-fill{
+ height:100%;
+ background:linear-gradient(90deg,#a8791c,#f5d77a);
+}
+
+.bp-reward{
+ background:#111;
+ border:1px solid var(--border);
+ border-radius:12px;
+ padding:12px;
+ margin:9px 0;
+}
+
 .bp-reward.free{border-color:#92702a}
-.bp-reward.premium{border-color:#d9ad3e;background:linear-gradient(120deg,#211a0d,#111)}
-.bp-reward-title{font-weight:bold;margin-bottom:7px}
-.bp-columns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.bp-columns button{width:100%;margin:4px 0;padding:10px 5px;font-size:12px}
-.bp-tag{display:inline-block;padding:5px 9px;border-radius:8px;background:#35280e;color:#f5d77a;font-size:12px;margin:3px}
-.bp-claimed{color:#8bd49b;font-weight:bold}
-.bp-locked{color:#888}
-.bp-section-title{margin-top:25px}
-.bp-level-number{font-size:20px;color:#f5d77a;font-weight:bold}
-.bp-reward-value{font-size:13px;line-height:1.7}
-.bp-buy-buttons{display:flex;flex-wrap:wrap;justify-content:center}
-.bp-buy-buttons button{flex:1;min-width:130px}
+
+.bp-reward.premium{
+ border-color:#d9ad3e;
+ background:linear-gradient(120deg,#211a0d,#111);
+}
+
+.bp-reward-title{
+ font-weight:bold;
+ margin-bottom:7px;
+ color:var(--gold2);
+}
+
+.bp-columns{
+ display:grid;
+ grid-template-columns:1fr 1fr;
+ gap:8px;
+}
+
+.bp-columns button{
+ width:100%;
+ margin:5px 0;
+ padding:10px 5px;
+ font-size:11px;
+}
+
+.bp-tag{
+ display:inline-block;
+ padding:6px 10px;
+ border-radius:8px;
+ background:#35280e;
+ color:var(--gold2);
+ font-size:11px;
+ margin:3px;
+}
+
+.bp-claimed{color:var(--green);font-weight:bold}
+.bp-locked{color:#777}
+.bp-level-number{font-size:19px;color:var(--gold2);font-weight:bold}
+.bp-reward-value{font-size:12px;line-height:1.8}
+.bp-section-title{margin-top:20px}
+
+.bp-buy-buttons{
+ display:flex;
+ flex-wrap:wrap;
+ justify-content:center;
+ gap:5px;
+}
+
+.bp-buy-buttons button{flex:1;min-width:125px}
+
+/* BOTTOM NAVIGATION */
+
+.bottom-nav{
+ position:fixed;
+ bottom:0;
+ left:0;
+ right:0;
+ z-index:100;
+ padding:9px 7px calc(9px + env(safe-area-inset-bottom));
+ background:rgba(10,10,10,.96);
+ border-top:1px solid rgba(220,174,75,.3);
+ backdrop-filter:blur(15px);
+ display:grid;
+ grid-template-columns:repeat(4,1fr);
+ gap:3px;
+ max-width:520px;
+ margin:auto;
+}
+
+.nav-button{
+ background:transparent;
+ color:#777;
+ border:0;
+ box-shadow:none;
+ border-radius:12px;
+ padding:8px 2px;
+ margin:0;
+ min-width:0;
+ display:flex;
+ flex-direction:column;
+ align-items:center;
+ justify-content:center;
+ gap:5px;
+ font-size:9px;
+ letter-spacing:.3px;
+}
+
+.nav-icon{
+ font-size:20px;
+ line-height:1;
+}
+
+.nav-button.active{
+ color:var(--gold2);
+ background:linear-gradient(145deg,#30230e,#17130b);
+ border:1px solid rgba(220,174,75,.25);
+}
+
+/* STATUS */
+
+#status{
+ color:var(--muted);
+ font-size:10px;
+ padding:15px 5px;
+}
 
 @media(max-width:360px){
- .nav button{min-width:105px;padding:10px}
+ #app{padding:0 10px}
+ .coin{width:165px;height:165px}
+ .balance-value{font-size:19px}
  .bp-columns{grid-template-columns:1fr}
+ .brand-name{font-size:18px}
 }
+
 </style>
 </head>
 
 <body>
 
-<h1>UGLY CLICKER</h1>
-<p class="muted">GOLD EDITION 2.0</p>
+<div id="app">
 
-<div class="nav">
-<button onclick="showPage('main')">UGLY CLICKER</button>
-<button onclick="showPage('gramm')">GRAMM CLICKER</button>
-<button onclick="showPage('businesses')">БИЗНЕСЫ</button>
-<button onclick="showPage('battlepass')">BATTLE PASS</button>
+<!-- HEADER -->
+
+<header class="top-header">
+ <div class="brand">
+  <div class="brand-name">UGLY CLICKER</div>
+  <div class="brand-sub">PREMIUM GOLD EDITION</div>
+ </div>
+
+ <button class="profile-button" onclick="showPage('main')" aria-label="Профиль">♛</button>
+</header>
+
+<div class="gold-line"></div>
+
+<!-- БАЛАНСЫ -->
+
+<div class="balance-grid">
+
+ <div class="balance-card">
+  <div class="balance-label">USD BALANCE</div>
+  <div class="balance-value">$<span id="balance">0</span></div>
+  <div class="balance-symbol">◆ DOLLAR ACCOUNT</div>
+ </div>
+
+ <div class="balance-card">
+  <div class="balance-label">GRAMM BALANCE</div>
+  <div class="balance-value"><span id="grammBalance">0</span></div>
+  <div class="balance-symbol">◆ GRAMM ACCOUNT</div>
+ </div>
+
 </div>
 
-<!-- ОСНОВНОЙ КЛИКЕР -->
+<!-- УРОВЕНЬ -->
+
+<div class="player-info">
+ <div class="player-level">
+  PLAYER LEVEL
+  <strong>LVL <span id="level">1</span></strong>
+ </div>
+
+ <div class="player-xp">
+  EXPERIENCE
+  <strong><span id="experience">0</span> XP</strong>
+ </div>
+</div>
+
+<!-- MAIN -->
 
 <section id="main" class="page active">
 
-<div class="panel">
-<div class="muted">ТВОЙ БАЛАНС</div>
-<div class="balance">$<span id="balance">0</span></div>
-<p>Уровень: <span id="level">1</span></p>
-<p>Опыт: <span id="experience">0</span></p>
-<p>Множитель: x<span id="multiplier">1</span></p>
-</div>
+ <div class="clicker-hero">
+  <div class="hero-label">YOUR PERSONAL MONEY MACHINE</div>
 
-<div class="coin" id="coin">U</div>
-<p>Нажимай, чтобы зарабатывать</p>
+  <div class="coin" id="coin">U</div>
 
-<div class="click-reward-info">
-<div class="muted">ТВОЯ НАГРАДА ЗА ОДИН КЛИК</div>
-<div class="balance">$<span id="clickReward">1</span></div>
-<p class="small">С учётом постоянных и временных улучшений</p>
-</div>
+  <div class="coin-caption">TAP TO EARN MONEY</div>
 
-<div class="panel">
-<h2>Ежедневная награда</h2>
-<button id="daily">Получить $1 000</button>
-</div>
+  <div class="click-reward-info">
+   <div class="balance-label">REWARD PER CLICK</div>
+   <div class="balance">$<span id="clickReward">1</span></div>
+   <div class="small">Multiplier x<span id="multiplier">1</span></div>
+  </div>
+ </div>
 
-<div class="panel">
-<h2>Улучшения</h2>
+ <div class="section-heading">
+  <h2>DAILY REWARD</h2>
+  <p>ЕЖЕДНЕВНЫЙ БОНУС</p>
+ </div>
 
-<div class="item">
-<b>Бонус x2</b>
-<p>Цена: $5 000</p>
-<p class="small">Действует 3 минуты</p>
-<p id="x2status">Не активен</p>
-<button onclick="buyUpgrade('x2')">Купить x2</button>
-</div>
+ <div class="panel">
+  <h2>Ежедневная награда</h2>
+  <div class="balance">$1 000</div>
+  <button class="button-full" id="daily">ПОЛУЧИТЬ НАГРАДУ</button>
+ </div>
 
-<div class="item">
-<b>Бонус x4</b>
-<p>Цена: $12 000</p>
-<p class="small">Действует 3 минуты</p>
-<p id="x4status">Не активен</p>
-<button onclick="buyUpgrade('x4')">Купить x4</button>
-</div>
+ <div class="section-heading">
+  <h2>BOOST CENTER</h2>
+  <p>ВРЕМЕННЫЕ И ПОСТОЯННЫЕ УЛУЧШЕНИЯ</p>
+ </div>
 
-<div class="item">
-<b>Постоянное улучшение x10</b>
-<p>Цена: $2 000 000</p>
-<p class="small">Остаётся навсегда</p>
-<p id="x10status">Не куплено</p>
-<button id="x10button" onclick="buyUpgrade('x10')">Купить x10</button>
-</div>
-</div>
+ <div class="panel">
+  <h2>Улучшения клика</h2>
 
-<!-- НОВЫЕ ПОСТОЯННЫЕ УЛУЧШЕНИЯ КЛИКА -->
+  <div class="item">
+   <b>⚡ Бонус x2</b>
+   <p>Цена: $5 000</p>
+   <p class="small">Действует 3 минуты</p>
+   <p id="x2status">Не активен</p>
+   <button onclick="buyUpgrade('x2')">АКТИВИРОВАТЬ x2</button>
+  </div>
 
-<div class="panel">
-<h2>⚡ ПОСТОЯННЫЕ УЛУЧШЕНИЯ КЛИКА</h2>
+  <div class="item">
+   <b>⚡ Бонус x4</b>
+   <p>Цена: $12 000</p>
+   <p class="small">Действует 3 минуты</p>
+   <p id="x4status">Не активен</p>
+   <button onclick="buyUpgrade('x4')">АКТИВИРОВАТЬ x4</button>
+  </div>
 
-<p class="small">
-Покупай улучшения, чтобы навсегда увеличить доход за каждый клик.
-</p>
+  <div class="item">
+   <b>♛ Постоянное улучшение x10</b>
+   <p>Цена: $2 000 000</p>
+   <p class="small">Остаётся навсегда</p>
+   <p id="x10status">Не куплено</p>
+   <button id="x10button" onclick="buyUpgrade('x10')">КУПИТЬ x10</button>
+  </div>
+ </div>
 
-<div class="click-reward-info">
-<div class="muted">ТВОЯ БАЗОВАЯ НАГРАДА</div>
-<div class="balance">$<span id="clickBase">1</span></div>
-<p class="small">Без временных множителей</p>
-</div>
+ <div class="panel">
+  <h2>⚡ ПОСТОЯННЫЕ УЛУЧШЕНИЯ</h2>
 
-<div id="clickUpgradeList">
-<p class="muted">Загрузка улучшений...</p>
-</div>
-</div>
+  <p class="small">Увеличивай базовую награду за каждый клик навсегда.</p>
 
-<div class="panel">
-<h2>Магазин</h2>
-<div id="shop">Загрузка магазина...</div>
-</div>
+  <div class="click-reward-info">
+   <div class="balance-label">BASE CLICK REWARD</div>
+   <div class="balance">$<span id="clickBase">1</span></div>
+  </div>
 
-<div class="panel">
-<h2>Мой инвентарь</h2>
-<div id="inventory">Пока пусто</div>
-</div>
+  <div id="clickUpgradeList">
+   <p class="muted">Загрузка улучшений...</p>
+  </div>
+ </div>
 
-<div class="panel">
-<h2>Топ игроков</h2>
-<div id="leaderboard">Загрузка...</div>
-</div>
+ <div class="section-heading">
+  <h2>PREMIUM MARKET</h2>
+  <p>МАГАЗИН И ИМУЩЕСТВО</p>
+ </div>
+
+ <div class="panel">
+  <h2>МАГАЗИН</h2>
+  <div id="shop">Загрузка магазина...</div>
+ </div>
+
+ <div class="panel">
+  <h2>МОЙ ИНВЕНТАРЬ</h2>
+  <div id="inventory">Пока пусто</div>
+ </div>
+
+ <div class="panel">
+  <h2>TOP PLAYERS</h2>
+  <div id="leaderboard">Загрузка...</div>
+ </div>
 
 </section>
 
-<!-- GRAMM CLICKER -->
+<!-- GRAMM -->
 
 <section id="gramm" class="page">
 
-<div class="panel">
-<h2>GRAMM CLICKER</h2>
-<div class="muted">ТВОЙ БАЛАНС GRAMM</div>
-<div class="balance"><span id="grammBalance">0</span> GRAMM</div>
-<p>Множитель: x<span id="grammMultiplier">1</span></p>
-<div class="coin" id="grammCoin">G</div>
-<p>Нажимай, чтобы зарабатывать GRAMM</p>
-</div>
+ <div class="section-heading">
+  <h2>GRAMM CLICKER</h2>
+  <p>ОТДЕЛЬНАЯ ИГРОВАЯ ВАЛЮТА</p>
+ </div>
 
-<div class="panel">
-<h2>Обмен валюты</h2>
-<p>Курс: 1 GRAMM = $10</p>
-<input id="exchangeAmount" type="number" min="1" step="1" placeholder="Количество">
+ <div class="gramm-hero">
+  <div class="balance-label">YOUR GRAMM BALANCE</div>
+  <div class="balance" style="margin:12px 0">
+   <span id="grammBalanceMirror">0</span> GRAMM
+  </div>
 
-<div>
-<button onclick="exchange('toGramm')">Доллары → GRAMM</button>
-</div>
+  <div class="coin" id="grammCoin">G</div>
 
-<div>
-<button onclick="exchange('toDollars')">GRAMM → Доллары</button>
-</div>
+  <div class="coin-caption">TAP TO EARN GRAMM</div>
 
-<p class="small">Обмен действует только внутри игры.</p>
-</div>
+  <p class="small">Множитель: x<span id="grammMultiplier">1</span></p>
+ </div>
+
+ <div class="section-heading">
+  <h2>CURRENCY EXCHANGE</h2>
+  <p>ОБМЕН ВНУТРИ ИГРЫ</p>
+ </div>
+
+ <div class="panel">
+  <h2>ОБМЕН ВАЛЮТЫ</h2>
+
+  <div class="balance">$10 = 1 GRAMM</div>
+
+  <input id="exchangeAmount" type="number" min="1" step="1" placeholder="Количество">
+
+  <button class="button-full" onclick="exchange('toGramm')">
+   USD → GRAMM
+  </button>
+
+  <button class="button-full button-secondary" onclick="exchange('toDollars')">
+   GRAMM → USD
+  </button>
+
+  <p class="small">Курс: 1 GRAMM = $10</p>
+ </div>
 
 </section>
 
-<!-- БИЗНЕСЫ -->
+<!-- BUSINESSES -->
 
 <section id="businesses" class="page">
 
-<div class="panel">
-<h2>МОИ БИЗНЕСЫ</h2>
-<p class="muted">ОТДЕЛЬНЫЙ БИЗНЕС-СЧЁТ</p>
-<div class="business-number">$<span id="businessBalance">0</span></div>
-<p>Пассивный доход зачисляется автоматически 24/7</p>
-<p>Общий доход в час:</p>
-<div class="business-number">$<span id="businessIncome">0</span></div>
-</div>
+ <div class="section-heading">
+  <h2>BUSINESS EMPIRE</h2>
+  <p>ТВОЯ БИЗНЕС-ИМПЕРИЯ</p>
+ </div>
 
-<div class="panel">
-<h2>ВЫВОД ПРИБЫЛИ</h2>
-<p>Перевод с бизнес-счёта</p>
-<input id="withdrawAmount" type="number" min="1" step="1" placeholder="Сумма в долларах">
-<p class="small">Для перевода в GRAMM сумма должна делиться на 10</p>
+ <div class="panel">
+  <h2>BUSINESS ACCOUNT</h2>
 
-<div>
-<button onclick="withdrawBusiness('usd')">На долларовый баланс</button>
-</div>
+  <div class="balance-label">БИЗНЕС-БАЛАНС</div>
+  <div class="business-number">$<span id="businessBalance">0</span></div>
 
-<div>
-<button onclick="withdrawBusiness('gramm')">Обменять на GRAMM</button>
-</div>
+  <div class="gold-line" style="margin:15px 0"></div>
 
-<p class="small">Курс: 1 GRAMM = $10</p>
-</div>
+  <p class="muted">ПАССИВНЫЙ ДОХОД В ЧАС</p>
+  <div class="business-number">$<span id="businessIncome">0</span></div>
 
-<div class="panel">
-<h2>МОИ ПРЕДПРИЯТИЯ</h2>
-<div id="ownedBusinesses">Загрузка...</div>
-</div>
+  <p class="small">Предприятия приносят прибыль автоматически 24/7.</p>
+ </div>
 
-<div class="panel">
-<h2>КАТАЛОГ БИЗНЕСОВ</h2>
-<div id="businessCatalog">Загрузка бизнеса...</div>
-</div>
+ <div class="panel">
+  <h2>WITHDRAW PROFITS</h2>
+
+  <p class="small">Перевод средств с бизнес-счёта</p>
+
+  <input id="withdrawAmount" type="number" min="1" step="1" placeholder="Сумма в долларах">
+
+  <button class="button-full" onclick="withdrawBusiness('usd')">
+   ПЕРЕВЕСТИ В USD
+  </button>
+
+  <button class="button-full button-secondary" onclick="withdrawBusiness('gramm')">
+   ОБМЕНЯТЬ НА GRAMM
+  </button>
+
+  <p class="small">Курс: 1 GRAMM = $10</p>
+ </div>
+
+ <div class="panel">
+  <h2>MY BUSINESSES</h2>
+  <div id="ownedBusinesses">Загрузка...</div>
+ </div>
+
+ <div class="panel">
+  <h2>BUSINESS CATALOG</h2>
+  <div id="businessCatalog">Загрузка бизнеса...</div>
+ </div>
 
 </section>
 
@@ -276,49 +862,103 @@ input{background:#090909;border:1px solid #92702a;border-radius:9px;padding:12px
 
 <section id="battlepass" class="page">
 
-<div class="panel bp-header">
-<h2>UGLY BATTLE PASS</h2>
-<p class="muted">СЕЗОННЫЙ ПРОПУСК</p>
-<div class="bp-level">УРОВЕНЬ <span id="bpLevel">1</span> / 100</div>
+ <div class="section-heading">
+  <h2>UGLY BATTLE PASS</h2>
+  <p>SEASONAL REWARDS</p>
+ </div>
 
-<div class="bp-progress">
-<div class="bp-progress-fill" id="bpProgressFill"></div>
-</div>
+ <div class="panel bp-header">
+  <div class="bp-tag">SEASON 01</div>
 
-<p><span id="bpXP">0</span> / <span id="bpNextXP">200</span> BP XP</p>
-<p id="bpSeasonDates" class="small">Загрузка сезона...</p>
-<p id="bpPremiumStatus" class="bp-tag">FREE PASS</p>
-<button onclick="loadBattlePass()">Обновить Battle Pass</button>
-</div>
+  <div class="bp-level">
+   LEVEL <span id="bpLevel">1</span> / 100
+  </div>
 
-<div class="panel">
-<h2>PREMIUM PASS</h2>
-<p>Открой премиальную дорожку наград!</p>
-<p><b>$300 000</b> или <b>30 000 GRAMM</b></p>
-<p class="small">Покупка Premium открывает премиальные награды сезона.</p>
+  <div class="bp-progress">
+   <div class="bp-progress-fill" id="bpProgressFill"></div>
+  </div>
 
-<div class="bp-buy-buttons">
-<button id="bpBuyUsd" onclick="buyBPPremium('usd')">Купить за $300 000</button>
-<button id="bpBuyGramm" onclick="buyBPPremium('gramm')">Купить за 30 000 GRAMM</button>
-</div>
-</div>
+  <p>
+   <span id="bpXP">0</span> /
+   <span id="bpNextXP">200</span> BP XP
+  </p>
 
-<div class="panel">
-<h2>ЕЖЕДНЕВНЫЕ ЗАДАНИЯ</h2>
-<p class="small">Выполняй задания и получай BP XP.</p>
-<div id="bpTasks">Загрузка заданий...</div>
-</div>
+  <p id="bpSeasonDates" class="small">Загрузка сезона...</p>
 
-<div class="panel">
-<h2 class="bp-section-title">ДОРОЖКА НАГРАД</h2>
-<p class="small">Каждый уровень содержит доллары и GRAMM.</p>
-<p><span class="bp-tag">FREE</span> <span class="bp-tag">PREMIUM — x2</span></p>
-<div id="bpRewards">Загрузка наград...</div>
-</div>
+  <p id="bpPremiumStatus" class="bp-tag">FREE PASS</p>
+
+  <button class="button-full" onclick="loadBattlePass()">
+   ОБНОВИТЬ PASS
+  </button>
+ </div>
+
+ <div class="panel">
+  <h2>♛ PREMIUM PASS</h2>
+
+  <p class="small">ОТКРОЙ ПРЕМИАЛЬНУЮ ДОРОЖКУ НАГРАД</p>
+
+  <div class="balance">$300 000</div>
+  <p class="muted">ИЛИ</p>
+  <div class="balance">30 000 GRAMM</div>
+
+  <div class="bp-buy-buttons">
+   <button id="bpBuyUsd" onclick="buyBPPremium('usd')">
+    BUY USD
+   </button>
+
+   <button id="bpBuyGramm" onclick="buyBPPremium('gramm')">
+    BUY GRAMM
+   </button>
+  </div>
+ </div>
+
+ <div class="panel">
+  <h2>DAILY MISSIONS</h2>
+  <p class="small">ВЫПОЛНЯЙ ЗАДАНИЯ И ПОЛУЧАЙ BP XP</p>
+  <div id="bpTasks">Загрузка заданий...</div>
+ </div>
+
+ <div class="panel">
+  <h2>REWARD TRACK</h2>
+  <p class="small">100 УРОВНЕЙ НАГРАД</p>
+  <p>
+   <span class="bp-tag">FREE</span>
+   <span class="bp-tag">PREMIUM x2</span>
+  </p>
+  <div id="bpRewards">Загрузка наград...</div>
+ </div>
 
 </section>
 
 <p id="status">Подключение...</p>
+
+</div>
+
+<!-- BOTTOM NAV -->
+
+<nav class="bottom-nav">
+
+ <button class="nav-button active" data-page="main" onclick="showPage('main')">
+  <span class="nav-icon">◈</span>
+  <span>ГЛАВНАЯ</span>
+ </button>
+
+ <button class="nav-button" data-page="gramm" onclick="showPage('gramm')">
+  <span class="nav-icon">◎</span>
+  <span>GRAMM</span>
+ </button>
+
+ <button class="nav-button" data-page="businesses" onclick="showPage('businesses')">
+  <span class="nav-icon">♜</span>
+  <span>БИЗНЕС</span>
+ </button>
+
+ <button class="nav-button" data-page="battlepass" onclick="showPage('battlepass')">
+  <span class="nav-icon">♛</span>
+  <span>BATTLE PASS</span>
+ </button>
+
+</nav>
 
 <script>
 const tg=window.Telegram?.WebApp;
@@ -385,9 +1025,20 @@ async function api(path,options={}){
  return data;
 }
 
+/* NAVIGATION */
+
 function showPage(page){
- document.querySelectorAll(".page").forEach(el=>el.classList.remove("active"));
+ document.querySelectorAll(".page").forEach(el=>{
+  el.classList.remove("active");
+ });
+
  document.getElementById(page).classList.add("active");
+
+ document.querySelectorAll(".nav-button").forEach(button=>{
+  button.classList.toggle("active",button.dataset.page===page);
+ });
+
+ window.scrollTo({top:0,behavior:"smooth"});
 
  if(page==="battlepass"){
   loadBattlePass();
@@ -398,9 +1049,17 @@ function showPage(page){
  }
 }
 
+/* RENDER */
+
 function render(){
  document.getElementById("balance").textContent=money(state.balance);
  document.getElementById("grammBalance").textContent=money(state.grammBalance);
+
+ const grammMirror=document.getElementById("grammBalanceMirror");
+ if(grammMirror){
+  grammMirror.textContent=money(state.grammBalance);
+ }
+
  document.getElementById("businessBalance").textContent=money(state.businessBalance);
  document.getElementById("businessIncome").textContent=money(state.businessIncomePerHour);
  document.getElementById("experience").textContent=money(state.experience);
@@ -431,7 +1090,7 @@ function render(){
     ${escapeHTML(item.item_name)}<br>
     <span class="muted">Покупка: $${money(item.purchase_price)}</span><br>
     <button onclick="sellItem(${Number(item.id)})">
-     Продать за $${money(Math.floor(Number(item.purchase_price)*0.7))}
+     ПРОДАТЬ ЗА $${money(Math.floor(Number(item.purchase_price)*0.7))}
     </button>
    </div>
   `).join("")
@@ -456,7 +1115,7 @@ function renderOwnedBusinesses(){
    <p>Доход: $${money(item.hourly_income)} / час</p>
    <p class="small">Куплен: ${new Date(item.purchased_at).toLocaleDateString("ru-RU")}</p>
    <button onclick="sellBusiness('${escapeHTML(item.id)}')">
-    Продать за $${money(Math.floor(Number(item.purchase_price)*0.7))}
+    ПРОДАТЬ ЗА $${money(Math.floor(Number(item.purchase_price)*0.7))}
    </button>
   </div>
  `).join("");
@@ -476,13 +1135,13 @@ function renderBusinessCatalog(){
    <p>Цена: $${money(item.price)}</p>
    <p>Пассивный доход: $${money(item.income)} / час</p>
    <button onclick="buyBusiness('${escapeHTML(item.key)}')">
-    Купить бизнес
+    КУПИТЬ БИЗНЕС
    </button>
   </div>
  `).join("");
 }
 
-/* ЗАГРУЗКА СОСТОЯНИЯ ИГРОКА */
+/* LOAD PLAYER STATE */
 
 async function loadState(){
  const data=await api("/api/state");
@@ -506,7 +1165,7 @@ async function loadState(){
  render();
 }
 
-/* ПОСТОЯННЫЕ УЛУЧШЕНИЯ КЛИКА */
+/* PERMANENT CLICK UPGRADES */
 
 async function loadClickUpgrades(){
  const container=document.getElementById("clickUpgradeList");
@@ -529,14 +1188,13 @@ async function loadClickUpgrades(){
    container.innerHTML=
     '<p class="muted">Не удалось загрузить улучшения. Попробуй обновить страницу.</p>';
   }
-}
-
+ }
 }
 
 function renderClickUpgrades(){
  const container=document.getElementById("clickUpgradeList");
 
- if(!container) return;
+ if(!container)return;
 
  if(!clickUpgradeData.length){
   container.innerHTML='<p class="muted">Улучшения пока недоступны</p>';
@@ -586,7 +1244,7 @@ async function buyClickUpgrade(key){
    `button[onclick="buyClickUpgrade('${key}')"]`
   );
 
-  if(button) button.disabled=true;
+  if(button)button.disabled=true;
 
   const data=await api("/api/click-upgrades/buy",{
    method:"POST",
@@ -609,7 +1267,7 @@ async function buyClickUpgrade(key){
  }
 }
 
-/* ОСНОВНОЙ КЛИКЕР */
+/* MAIN CLICKER */
 
 async function clickCoin(){
  try{
@@ -643,7 +1301,7 @@ async function clickGramm(){
  }
 }
 
-/* СТАРЫЕ УЛУЧШЕНИЯ x2, x4, x10 */
+/* BOOSTS */
 
 async function buyUpgrade(type){
  try{
@@ -661,7 +1319,7 @@ async function buyUpgrade(type){
  }
 }
 
-/* ОБМЕН ВАЛЮТЫ */
+/* EXCHANGE */
 
 async function exchange(direction){
  try{
@@ -687,7 +1345,7 @@ async function exchange(direction){
  }
 }
 
-/* МАГАЗИН */
+/* SHOP */
 
 async function loadShop(){
  const catalog=await api("/api/catalog");
@@ -709,7 +1367,7 @@ async function loadShop(){
     <div class="item">
      ${escapeHTML(item.name)}<br>
      <b>$${money(item.price)}</b><br>
-     <button onclick="buyItem('${category}',${index})">Купить</button>
+     <button onclick="buyItem('${category}',${index})">КУПИТЬ</button>
     </div>
    `).join("")}
   `).join("");
@@ -747,7 +1405,7 @@ async function sellItem(itemId){
  }
 }
 
-/* ЕЖЕДНЕВНАЯ НАГРАДА */
+/* DAILY REWARD */
 
 async function dailyReward(){
  try{
@@ -765,7 +1423,7 @@ async function dailyReward(){
  }
 }
 
-/* РЕЙТИНГ */
+/* LEADERBOARD */
 
 async function loadLeaderboard(){
  try{
@@ -786,7 +1444,7 @@ async function loadLeaderboard(){
  }
 }
 
-/* БИЗНЕСЫ */
+/* BUSINESSES */
 
 async function loadBusinessCatalog(){
  businessCatalog=await api("/api/businesses/catalog");
@@ -810,7 +1468,7 @@ async function buyBusiness(key){
 }
 
 async function sellBusiness(businessId){
- if(!confirm("Продать этот бизнес за 70% первоначальной цены?")) return;
+ if(!confirm("Продать этот бизнес за 70% первоначальной цены?"))return;
 
  try{
   const data=await api("/api/businesses/sell",{
@@ -879,7 +1537,7 @@ async function loadBattlePass(){
 }
 
 function bpIsClaimed(level,track){
- if(!bpState||!Array.isArray(bpState.claimed)) return false;
+ if(!bpState||!Array.isArray(bpState.claimed))return false;
 
  return bpState.claimed.some(item=>
   Number(item.level)===Number(level)&&item.track===track
@@ -887,7 +1545,7 @@ function bpIsClaimed(level,track){
 }
 
 function renderBattlePass(){
- if(!bpState) return;
+ if(!bpState)return;
 
  const level=Number(bpState.level||1);
  const xp=Number(bpState.xp||0);
@@ -1037,7 +1695,7 @@ async function buyBPPremium(currency){
   currency==="usd"
    ?"Купить Premium Pass за $300 000?"
    :"Купить Premium Pass за 30 000 GRAMM?"
- )) return;
+ ))return;
 
  try{
   await api("/api/battle-pass/buy-premium",{
@@ -1072,20 +1730,20 @@ async function claimBPReward(level,track){
  }
 }
 
-/* ОШИБКИ */
+/* ERRORS */
 
 function showError(error){
  document.getElementById("status").textContent=error.message;
  alert(error.message);
 }
 
-/* СОБЫТИЯ */
+/* EVENTS */
 
 document.getElementById("coin").addEventListener("click",clickCoin);
 document.getElementById("grammCoin").addEventListener("click",clickGramm);
 document.getElementById("daily").addEventListener("click",dailyReward);
 
-/* ЗАПУСК ИГРЫ */
+/* START */
 
 async function start(){
  try{
@@ -1115,7 +1773,7 @@ async function start(){
 
 start();
 
-/* ОБНОВЛЕНИЕ ТАЙМЕРОВ */
+/* TIMERS */
 
 setInterval(()=>{
  if(state.bonuses.x2Seconds>0){
@@ -1147,3 +1805,4 @@ setInterval(()=>{
 </script>
 </body>
 </html>
+
