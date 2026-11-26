@@ -411,7 +411,7 @@ function currentInput() {
 function findInteractable() {
   let best = null, bestDistance = Infinity;
   for (const item of interactables) {
-    if ((item.station ?? item.index ?? 0) >= (state.stations || 4)) continue;
+    const maxItems=item.action==="upgrade_console_component"?(state.clubData.consoleStations||[]).length:(state.stations||4);if(item.station!==undefined&&item.station>=maxItems)continue;
     const d = player.position.distanceTo(item.position);
     if (d < item.radius && d < bestDistance) { best = item; bestDistance = d; }
   }
