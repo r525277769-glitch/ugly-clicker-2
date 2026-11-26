@@ -138,48 +138,78 @@ function addShelf(x, z, facing = 1) {
   }
   return rack;
 }
-function makePerson(x, z, shirt, isPlayer = false) {
-  const root = new THREE.Group(); root.position.set(x, 0, z); scene.add(root);
-  const skin = M.skin, clothing = mat(shirt);
-  const torso = addMesh(root, new THREE.CapsuleGeometry(.27, .52, 5, 10), clothing, [0, 1.02, 0]);
-  const neck = cylinder(root, .09, .1, .16, 0, 1.47, 0, skin, 12);
-  const head = sphere(root, .235, 0, 1.72, 0, skin, 20, 16);
-  // ears, hair, eyes and nose
-  sphere(root, .07, -.225, 1.72, 0, skin, 12, 10);
-  sphere(root, .07, .225, 1.72, 0, skin, 12, 10);
-  sphere(root, .245, 0, 1.85, -.015, mat(isPlayer ? "#30251f" : "#392b25"), 18, 10).scale.set(1, .48, 1);
-  for (const side of [-1, 1]) {
-    sphere(root, .025, side * .085, 1.75, .205, mat("#211b18"), 8, 8);
-    cylinder(root, .105, .13, .68, side * .39, 1.02, 0, skin, 12).rotation.z = side * -.18;
-    const leg = cylinder(root, .12, .14, .64, side * .145, .36, 0, M.pants, 12);
-    const foot = box(root, .22, .13, .38, side * .145, .08, -.07, M.shoe);
-    if (isPlayer) {
-      leg.userData.swing = side;
-      animated.push({ type: "leg", mesh: leg, side });
-    }
-  }
-  // employee apron / name badge
-  if (!isPlayer) {
-    box(root, .31, .42, .025, 0, .93, .276, mat("#333b35"), false);
-    box(root, .13, .08, .025, 0, 1.19, .295, M.gold, false);
-  }
-  return root;
+function makePerson(x,z,shirt,isPlayer=false,variant=0){
+ const root=new THREE.Group();root.position.set(x,0,z);scene.add(root);
+ const skins=["#f0b58a","#a96f4f","#e1a078","#c58b68","#f2c29c"],skin=mat(skins[variant%skins.length],.82);
+ const clothes=mat(shirt,.68),pants=mat(["#27344f","#30333c","#3b2e4d","#25413f"][variant%4],.82);
+ const accent=mat(["#ffd34f","#34d8ff","#ff6a8a","#9b79ff"][variant%4],.35,.15,{emissive:["#5b3b00","#003d55","#501020","#28104d"][variant%4],emissiveIntensity:.35});
+ const torsoPivot=new THREE.Group();torsoPivot.position.set(0,1.12,0);root.add(torsoPivot);
+ addMesh(torsoPivot,new THREE.CapsuleGeometry(.31,.48,5,12),clothes,[0,0,0]);
+ box(torsoPivot,.42,.24,.055,0,.08,.285,accent,false);box(torsoPivot,.47,.09,.34,0,-.29,0,mat("#202633"),false);
+ cylinder(root,.105,.12,.18,0,1.48,0,skin,14);
+ const head=new THREE.Group();head.position.set(0,1.77,0);root.add(head);sphere(head,.255,0,0,0,skin,24,18);
+ const hair=mat(["#28202b","#4a2b1c","#171b28","#b77b35"][variant%4]);
+ const cap=sphere(head,.26,0,.13,-.015,hair,20,12);cap.scale.set(1,.58,1.02);
+ for(const side of [-1,1]){sphere(head,.075,side*.245,-.015,0,skin,12,10);sphere(head,.036,side*.09,.025,.222,mat("#fffdf4"),12,10);sphere(head,.019,side*.09,.022,.253,mat("#20212b"),10,8);box(head,.09,.018,.025,side*.09,.105,.235,mat("#3a2925"),false).rotation.z=side*-.12;}
+ sphere(head,.04,0,-.045,.25,skin,12,8);
+ if(variant%3===0){box(head,.55,.075,.34,0,.22,-.015,accent,false);box(head,.09,.16,.08,0,.14,.16,accent,false);}
+ const limbs=[];
+ for(const side of [-1,1]){
+  const arm=new THREE.Group();arm.position.set(side*.37,1.34,0);root.add(arm);cylinder(arm,.115,.14,.48,0,-.22,0,clothes,14);sphere(arm,.115,0,-.48,.015,skin,12,10);box(arm,.17,.09,.16,0,-.49,.025,accent,false);
+  const leg=new THREE.Group();leg.position.set(side*.16,.72,0);root.add(leg);cylinder(leg,.14,.16,.52,0,-.25,0,pants,14);cylinder(leg,.105,.12,.12,0,-.52,0,skin,12);
+  const shoe=new THREE.Group();shoe.position.set(0,-.56,-.08);leg.add(shoe);box(shoe,.27,.16,.42,0,0,-.035,mat(variant%2?"#171c29":"#f2f0e9"),false);box(shoe,.28,.045,.4,0,-.085,-.035,accent,false);
+  limbs.push({arm,leg,side});
+ }
+ box(root,.43,.48,.2,0,1.05,-.29,mat(isPlayer?"#1e3659":"#29364b"),true);box(root,.28,.12,.22,0,1.2,-.4,accent,false);
+ animated.push({type:"character",root,torsoPivot,limbs,phase:variant*.71,isPlayer});return root;
+}
+function makeGamingPC(parent,x,y,z,tier=1){
+ const g=new THREE.Group();g.position.set(x,y,z);parent.add(g);box(g,.36,.56,.34,0,.28,0,mat("#182331",.32,.35),true);
+ const glow=mat(["#27c8ff","#7c69ff","#35f0c0","#ffbf45"][Math.min(3,tier-1)],.3,.1,{emissive:["#0877a8","#3820a1","#087b55","#9c5700"][Math.min(3,tier-1)],emissiveIntensity:1.1});
+ box(g,.012,.42,.27,.187,.3,0,mat("#24394e",.2,.15,{transparent:true,opacity:.82}),false);
+ for(let i=0;i<3;i++){const fan=cylinder(g,.07,.07,.018,.198,.42-i*.14,0,glow,20);fan.rotation.z=Math.PI/2;}
+ return g;
+}
+function makeGamingStation(x,z,index,data){
+ const g=new THREE.Group();g.position.set(x,0,z);scene.add(g);
+ const c=data.components||{},tier=Math.min(4,...Object.values(c).map(Number).filter(Boolean));
+ const trim=mat(["#ffcc4d","#3dcfff","#45e0a2","#bd85ff"][tier-1],.32,.35,{emissive:["#5a3600","#004d75","#07543c","#3d176a"][tier-1],emissiveIntensity:.3});
+ box(g,2.1,.15,.92,0,.78,0,mat("#27374b",.36,.28));box(g,2.12,.045,.94,0,.87,0,trim,false);
+ for(const sx of [-.9,.9])box(g,.12,.76,.13,sx,.38,0,mat("#64788e",.32,.55));
+ box(g,.88,.56,.11,0,1.28,-.36,mat("#111b2b",.22,.35));
+ const tex=canvasTexture((ctx,w,h)=>{const gr=ctx.createLinearGradient(0,0,w,h);gr.addColorStop(0,"#102d56");gr.addColorStop(.5,tier>2?"#7136a8":"#087b9c");gr.addColorStop(1,"#111b35");ctx.fillStyle=gr;ctx.fillRect(0,0,w,h);ctx.fillStyle="#fff";ctx.font="bold 42px Arial";ctx.fillText("UGLY",24,78);ctx.font="bold 18px Arial";ctx.fillText("GAMING ARENA",24,112);ctx.fillStyle="#42e9ff";ctx.fillRect(22,132,w*.55,8);},256,160);
+ box(g,.76,.42,.012,0,1.29,-.295,mat("#fff",.3,0,{map:tex,emissive:"#4d91c5",emissiveIntensity:.32}),false);
+ box(g,.12,.17,.13,0,1.02,-.34,mat("#71849a",.3,.5));box(g,.55,.035,.22,0,.98,.18,mat("#151e2b",.35,.2));
+ for(let k=0;k<5;k++)box(g,.065,.012,.13,-.22+k*.11,1.002,.18,trim,false);
+ box(g,.38,.045,.22,-.59,1.01,.17,mat("#172332",.35,.2));makeGamingPC(g,.78,.24,.12,tier);
+ const chair=new THREE.Group();chair.position.set(0,0,1.05);g.add(chair);cylinder(chair,.065,.075,.48,0,.28,0,mat("#71849a",.25,.6),14);cylinder(chair,.42,.42,.1,0,.07,0,mat("#182332",.35,.2),24);
+ box(chair,.65,.65,.17,0,.72,.12,mat("#202d42",.42,.12));box(chair,.5,.12,.18,0,1.1,.1,trim,false);
+ for(const sx of [-1,1]){box(chair,.08,.38,.48,sx*.37,.48,.02,mat("#27394e"),false);box(chair,.1,.08,.34,sx*.37,.67,.02,trim,false);}
+ makeLabel(g,"PC "+String(index+1).padStart(2,"0"),0,2.15,-.4,1.3,.3);g.userData={index,tier};stationGroups.push(g);
+ const keys=["gpu","cpu","ram","monitor","keyboard","mouse","chair"],names=["Видеокарта","Процессор","ОЗУ","Монитор","Клавиатура","Мышь","Кресло"];
+ keys.forEach((key,k)=>interactables.push({position:new THREE.Vector3(x+((k%4)-1.5)*.3,0,z+1.15+Math.floor(k/4)*.28),name:names[k],hint:"Улучшение компонента ПК · "+names[k],action:"upgrade_component",station:index,component:key,radius:1.9}));
 }
 function buildStore(){
- scene=new THREE.Scene();scene.background=new THREE.Color("#101925");scene.fog=new THREE.Fog("#101925",23,44);camera=new THREE.PerspectiveCamera(58,1,.1,100);
- scene.add(new THREE.HemisphereLight("#c7e5ff","#25202c",1.45));const key=new THREE.DirectionalLight("#d5e8ff",2.1);key.position.set(-5,11,7);key.castShadow=true;key.shadow.mapSize.set(1024,1024);scene.add(key);
- const blue=new THREE.PointLight("#268cff",42,16,2);blue.position.set(0,3,-5);scene.add(blue);const purple=new THREE.PointLight("#a43cff",28,14,2);purple.position.set(6,3,3);scene.add(purple);
- box(scene,18,.3,18,0,-.16,0,mat("#303944",.9));for(let x=-8;x<=8;x+=2)for(let z=-8;z<=8;z+=2)box(scene,1.96,.012,1.96,x,-.002,z,mat((x+z)%4?"#343c47":"#2a323c",.9));
- box(scene,18,5,.3,0,2.35,-9,M.wall);box(scene,.3,5,18,-9,2.35,0,M.wall);box(scene,.3,5,18,9,2.35,0,M.wall);box(scene,18,.25,18,0,5,0,mat("#10151c"));
- box(scene,7,.9,.2,0,4.15,-8.72,M.dark);const sign=new THREE.Mesh(new THREE.PlaneGeometry(6.5,.72),signMaterial("UGLY CYBER CLUB","GAMING • ESPORTS • COMMUNITY"));sign.position.set(0,4.15,-8.58);scene.add(sign);
- for(const x of [-7,-3,3,7]){box(scene,.12,3,.12,x,1.55,-5.2,M.metal);box(scene,1.5,.12,.15,x,3.08,-5.2,M.gold);}
- box(scene,3.3,1.05,.9,0,.53,6.7,M.wood);box(scene,3.4,.12,1,0,1.1,6.7,M.dark);makeLabel(scene,"RECEPTION",0,2,6.1,2.4,.4);
+ scene=new THREE.Scene();scene.background=new THREE.Color("#101a32");scene.fog=new THREE.Fog("#101a32",27,52);camera=new THREE.PerspectiveCamera(58,1,.1,100);
+ scene.add(new THREE.HemisphereLight("#c8eaff","#22233d",1.8));
+ const key=new THREE.DirectionalLight("#fff0d4",2.8);key.position.set(-6,12,7);key.castShadow=true;key.shadow.mapSize.set(1536,1536);key.shadow.camera.left=-15;key.shadow.camera.right=15;key.shadow.camera.top=15;key.shadow.camera.bottom=-15;scene.add(key);
+ for(const [color,intensity,pos] of [["#21cfff",70,[-5,3,-4]],["#9c4dff",65,[6,3,2]],["#ff4e9b",35,[0,3,7]]]){const l=new THREE.PointLight(color,intensity,20,2);l.position.set(...pos);scene.add(l);}
+ box(scene,18,.35,18,0,-.18,0,mat("#263449",.72,.18));
+ for(let x=-8;x<=8;x+=2)for(let z=-8;z<=8;z+=2)box(scene,1.96,.018,1.96,x,.008,z,mat((x+z)%4?"#293b53":"#202f45",.68,.12),false);
+ box(scene,18,5,.32,0,2.35,-9,mat("#263b59"));box(scene,.32,5,18,-9,2.35,0,mat("#263b59"));box(scene,.32,5,18,9,2.35,0,mat("#263b59"));box(scene,18,.25,18,0,5,0,mat("#111a2b"));
+ for(let i=0;i<7;i++){const p=box(scene,.12,3.6,.08,-7.2+i*2.4,2.25,-8.78,mat(i%2?"#1bd5ff":"#a56cff",.32,.25,{emissive:i%2?"#087a9d":"#4d1684",emissiveIntensity:.55}),false);p.rotation.z=i%2?.18:-.18;}
+ box(scene,7,.95,.22,0,4.12,-8.72,mat("#121d31",.3,.3));const sign=new THREE.Mesh(new THREE.PlaneGeometry(6.5,.72),signMaterial("UGLY CYBER CLUB","PLAY • COMPETE • LEVEL UP"));sign.position.set(0,4.12,-8.57);scene.add(sign);
+ for(const z of [-6,-1,4]){box(scene,17,.08,.16,0,3.45,z,mat("#20cfff",.28,.4,{emissive:"#087fa8",emissiveIntensity:.9}),false);box(scene,17,.06,.14,0,3.28,z+.12,mat("#a55cff",.28,.4,{emissive:"#4a138c",emissiveIntensity:.75}),false);}
+ box(scene,3.8,1.05,.85,0,.53,7.1,mat("#17283f",.34,.3));box(scene,3.9,.08,.92,0,1.1,7.1,mat("#22d6ff",.25,.4,{emissive:"#067c9d",emissiveIntensity:.7}),false);makeLabel(scene,"RECEPTION",0,2,6.45,2.5,.4);
+ for(const x of [-1.35,1.35])box(scene,.06,2.3,.12,x,1.15,8.3,mat("#21cfff",.2,.45,{emissive:"#087d9d",emissiveIntensity:.8}),false);
  const spots=[[-5.1,-3.4],[-1.8,-3.4],[1.8,-3.4],[5.1,-3.4],[-5.1,2],[-1.8,2],[1.8,2],[5.1,2]];
- for(let i=0;i<8;i++){const x=spots[i][0],z=spots[i][1],g=new THREE.Group();g.position.set(x,0,z);scene.add(g);const tier=Number(state.clubData?.stations?.[i]?.tier||1),accent=mat(["#333","#4c718a","#4b8b74","#8d6ac2","#d6a744"][tier],.3,.4);
- box(g,2.25,.14,.9,0,.78,0,M.wood);box(g,.12,.78,.12,-.92,.38,0,M.metal);box(g,.12,.78,.12,.92,.38,0,M.metal);box(g,.9,.08,.5,0,.91,-.12,M.dark);box(g,.82,.51,.09,0,1.22,-.38,M.dark);box(g,.72,.4,.02,0,1.23,-.326,mat("#071a2b",.2,.1,{emissive:"#0a4773",emissiveIntensity:.7}));box(g,.7,.02,.02,0,1.08,-.31,accent);box(g,.42,.12,.32,-.62,1.03,.18,M.dark);box(g,.32,.025,.22,.05,1,.18,M.dark);cylinder(g,.055,.07,.7,0,.38,.1,M.metal,12);cylinder(g,.43,.43,.12,0,.08,.18,M.dark,20);box(g,.34,.62,.48,.79,.34,.12,M.dark);box(g,.025,.38,.02,.79,.35,-.13,accent);for(let k=0;k<3;k++)sphere(g,.035,.79,.55-k*.14,-.14,M.gold,10,8);
- const chair=new THREE.Group();chair.position.set(0,0,1.05);g.add(chair);cylinder(chair,.07,.07,.56,0,.32,0,M.metal);cylinder(chair,.42,.42,.1,0,.08,0,M.dark,20);box(chair,.68,.72,.16,0,.83,.16,M.dark);box(chair,.56,.06,.12,0,.9,.05,accent);makeLabel(g,"PC "+String(i+1).padStart(2,"0"),0,2.05,-.4,1.3,.3);g.visible=i<(state.stations||4);stationGroups.push(g);interactables.push({position:new THREE.Vector3(x,0,z+1.05),name:"ПК №"+(i+1),hint:"Подойди к компьютеру и нажми действие, чтобы улучшить комплект",action:"upgrade_station",index:i,radius:1.75});}
- for(const x of [-6,0,6])for(const z of [-6,0,6]){box(scene,1.5,.06,.5,x,4.65,z,M.metal);const l=new THREE.PointLight("#77bfff",22,7);l.position.set(x,4.1,z);scene.add(l);}
- player=makePerson(0,7.7,"#275c9a",true);makeLabel(scene,"YOU",0,2.25,7.7,1,.28);for(let i=0;i<Math.min(8,3+Math.floor((state.adLevel||0)/2));i++){const npc=makePerson(-7+i*.5,7.1,["#8a583d","#4d755c","#845b91","#a16b45","#557a9e"][i]);clubNPCs.push({mesh:npc,phase:i*.8,station:i%Math.max(1,state.stations||4),mode:"walk",timer:6+Math.random()*8,home:new THREE.Vector3(-7+i*.5,0,7.1)});}
+ for(let i=0;i<8;i++)makeGamingStation(spots[i][0],spots[i][1],i,state.clubData?.stations?.[i]||{tier:1});
+ for(const x of [-7,-3,3,7]){box(scene,.13,4.5,.13,x,2.5,-5.2,mat("#71849a",.28,.65));box(scene,1.8,.07,.3,x,4.55,-5.2,mat("#f2f7ff",.2,.1,{emissive:"#cceeff",emissiveIntensity:1.2}),false);}
+ for(const x of [-6,0,6])for(const z of [-6,0,6]){box(scene,1.8,.07,.38,x,4.65,z,mat("#dcecff",.2,.1,{emissive:"#8bdcff",emissiveIntensity:1}),false);const l=new THREE.PointLight("#77bfff",28,8);l.position.set(x,4.05,z);scene.add(l);}
+ for(const x of [-7.8,7.8]){box(scene,.05,2.4,4.4,x,2.25,-1,mat("#12253b",.25,.25));for(let i=0;i<5;i++)box(scene,.035,.12,.55,x+(x<0?.04:-.04),1.4+i*.35,-1.8+i*.75,mat(i%2?"#21d5ff":"#b66cff",.22,.3,{emissive:i%2?"#0780a5":"#6125a0",emissiveIntensity:.9}),false);}
+ player=makePerson(0,7.7,"#2877c9",true,0);makeLabel(scene,"YOU",0,2.3,7.7,1,.28);
+ const shirts=["#e45d48","#43a77b","#8357b9","#e2a33b","#347db7","#d65b9a","#4d9aa0","#b1a04a"];
+ for(let i=0;i<Math.min(8,3+Math.floor((state.adLevel||0)/2));i++){const home=new THREE.Vector3(-7+i*.5,0,7.1),npc=makePerson(home.x,home.z,shirts[i%shirts.length],false,i+1);clubNPCs.push({mesh:npc,phase:i*.8,station:i%Math.max(1,state.stations||4),mode:"walk",timer:6+Math.random()*8,home});}
 }
 function resize() {
   const canvas = $("uglyBusinessCanvas");
@@ -236,7 +266,7 @@ function animate() {
   const moving = input.length > .08;
   for (const a of animated) {
     if (a.type === "idle") a.mesh.position.y = Math.sin(performance.now() * .0017 + a.phase) * .025;
-    if (a.type === "leg") a.mesh.rotation.x = Math.sin(performance.now() * .012 + a.side * Math.PI) * (moving ? .48 : .02);
+    if(a.type==="character"){const phase=performance.now()*.009+a.phase,stride=moving?.72:.035;a.torsoPivot.position.y=1.12+(moving?Math.abs(Math.sin(phase))*.045:Math.sin(phase*.6)*.012);a.torsoPivot.rotation.z=moving?Math.sin(phase)*.035:0;a.limbs.forEach(l=>{l.leg.rotation.x=Math.sin(phase+l.side*Math.PI)*stride;l.arm.rotation.x=-Math.sin(phase+l.side*Math.PI)*stride*.72;});}
   }
   const now = performance.now();
   for (const npc of clubNPCs) {
@@ -259,7 +289,7 @@ function animate() {
   activeObject = findInteractable();
   $("simHint").textContent = activeObject ? activeObject.hint : "Двигайся по клубу. Подойди к игровому месту.";
   $("simAction").disabled = !activeObject || actionBusy;
-  $("simAction").textContent = activeObject ? "ДЕЙСТВИЕ · " + activeObject.name.toUpperCase() : "ПОДОЙДИ БЛИЖЕ";
+  $("simAction").textContent = activeObject ? "УЛУЧШИТЬ · " + activeObject.name.toUpperCase() : "ПОДОЙДИ БЛИЖЕ";
   if (renderer) renderer.render(scene, camera);
 }
 function updateHUD() {
@@ -326,7 +356,7 @@ function bindControls() {
   const releaseLook = event => { if (event.pointerId === lookPointer) lookPointer = null; };
   canvas.addEventListener("pointerup", releaseLook);
   canvas.addEventListener("pointercancel", releaseLook);
-  $("simAction").addEventListener("click",()=>{if(activeObject)doAction("upgrade_station",{station:activeObject.index});});
+  $("simAction").addEventListener("click",()=>{if(activeObject)doAction(activeObject.action||"upgrade_station",{station:activeObject.station??activeObject.index,component:activeObject.component});});
   $("simBuyStation")?.addEventListener("click",()=>doAction("buy_station"));
   $("simAdvertise")?.addEventListener("click",()=>doAction("advertise"));
   $("simCashout")?.addEventListener("click",async()=>{try{const d=await api("/api/simulator/exchange",{method:"POST",body:JSON.stringify({currency:"gramm"})});Object.assign(state,d.state||{});updateHUD();toast("Зачислено "+d.gramm+" GRAMM на основной баланс");}catch(e){toast(e.message,"error");}});
@@ -334,7 +364,7 @@ function bindControls() {
     if (["KeyW","KeyA","KeyS","KeyD","ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].includes(event.code)) {
       keys[event.code] = true; event.preventDefault();
     }
-    if (event.code === "KeyE" && activeObject) doAction("upgrade_station",{station:activeObject.index});
+    if (event.code === "KeyE" && activeObject) doAction(activeObject.action||"upgrade_station",{station:activeObject.station??activeObject.index,component:activeObject.component});
   });
   window.addEventListener("keyup", event => { keys[event.code] = false; });
   window.addEventListener("blur", () => { Object.keys(keys).forEach(key => keys[key] = false); moveX = moveY = 0; });
