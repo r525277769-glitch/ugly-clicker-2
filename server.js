@@ -2333,7 +2333,8 @@ async function getClub(client,id,lock=false){
  d.adLevel=Number(d.adLevel||0);
  const hourly=Math.round(d.stations.reduce((n,s)=>n+(CLUB_TIER_RATE[Number(s.tier)||1]||20),0)*(1+d.adLevel*.12));
  const elapsed=Math.max(0,(Date.now()-new Date(r.last_income_at).getTime())/3600000);
- const earned=Math.floor(hourly*elapsed);\n const visitors=Math.max(1,Math.floor(elapsed*d.stations.length*(1+d.adLevel*.25)*2));
+ const earned=Math.floor(hourly*elapsed);
+ const visitors=Math.max(1,Math.floor(elapsed*d.stations.length*(1+d.adLevel*.25)*2));
  if(earned>0)await client.query("UPDATE ugly_simulator_players SET shop_cash=shop_cash+$1,customers_served=customers_served+$2,last_income_at=NOW() WHERE telegram_id=$3",[earned,visitors,id]);
  else if(elapsed>=1)await client.query("UPDATE ugly_simulator_players SET last_income_at=NOW() WHERE telegram_id=$1",[id]);
  const cash=earned?Number((await client.query("SELECT shop_cash FROM ugly_simulator_players WHERE telegram_id=$1",[id])).rows[0].shop_cash):Number(r.shop_cash);
