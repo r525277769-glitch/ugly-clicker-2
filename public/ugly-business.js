@@ -369,35 +369,28 @@ function buildStore(){
  // Four leafy potted plants bring greenery into the room corners.
  const addPlant=(x,z,scale=1)=>{
    const pot=new THREE.Group();pot.position.set(x,0,z);pot.scale.setScalar(scale);scene.add(pot);
-   cylinder(pot,.34,.25,.48,0,.24,0,mat("#bd754d",.72,.04),20);
-   cylinder(pot,.35,.35,.07,0,.49,0,mat("#d99567",.62,.04),20);
-   cylinder(pot,.29,.29,.035,0,.53,0,mat("#342a25",1),20);
-   cylinder(pot,.035,.045,.82,0,.91,0,mat("#6b4b31",.95),10);
-   const greens=["#347d50","#4b9a5e","#71b86c","#236a49","#8bc66d"];
-   for(let i=0;i<9;i++){
-     const angle=i*Math.PI*2/9,leaf=new THREE.Group();leaf.position.set(Math.cos(angle)*.12,.83+((i%3)*.12),Math.sin(angle)*.12);leaf.rotation.z=Math.cos(angle)*-.62;leaf.rotation.y=-angle;pot.add(leaf);
-     const blade=sphere(leaf,.16,0,.22,0,mat(greens[i%greens.length],.82),12,10);blade.scale.set(.62,1.8,.42);
-   }
-   for(let i=0;i<4;i++){const leaf=sphere(pot,.15,(i-1.5)*.09,1.22+(i%2)*.08,(i%2?1:-1)*.08,mat(greens[(i+2)%greens.length],.82),12,10);leaf.scale.set(.55,1.5,.42);}
+   const terracotta=mat("#a95f3f",.72,.02),rim=mat("#d18a60",.62,.02),soil=mat("#30251f",1);
+   cylinder(pot,.39,.29,.58,0,.29,0,terracotta,24);cylinder(pot,.405,.405,.09,0,.59,0,rim,24);cylinder(pot,.34,.34,.035,0,.64,0,soil,20);
+   const greens=["#267447","#328b50","#55a95e","#1e603d","#79bd68","#3c9956"],stems=mat("#527b3d",.9);
+   for(let i=0;i<13;i++){const a=i*Math.PI*2/13,h=.95+(i%4)*.13,branch=new THREE.Group();branch.position.set(Math.cos(a)*.07,.66,Math.sin(a)*.07);branch.rotation.y=-a;branch.rotation.z=i%2?-.32:.32;pot.add(branch);cylinder(branch,.018,.025,h*.48,0,h*.24,0,stems,8);const blade=sphere(branch,.19,0,h*.55,0,mat(greens[i%greens.length],.88),14,12);blade.scale.set(.62,1.75,.48);blade.rotation.z=-.18;const side=sphere(branch,.125,.12,h*.39,.025,mat(greens[(i+2)%greens.length],.9),12,10);side.scale.set(.55,1.25,.45);side.rotation.z=-.55;}
+   for(let i=0;i<7;i++){const a=i*Math.PI*2/7,leaf=sphere(pot,.17,Math.cos(a)*.23,1.45+(i%3)*.08,Math.sin(a)*.23,mat(greens[(i+3)%greens.length],.86),14,12);leaf.scale.set(.7,1.45,.55);leaf.rotation.z=Math.cos(a)*-.35;}
+   const crown=sphere(pot,.19,0,1.58,0,mat("#4a9b58",.9),14,12);crown.scale.set(.9,1.25,.9);
  };
  addPlant(-roomHalf+1,-roomHalf+1,.92);addPlant(roomHalf-1,-roomHalf+1,.92);
  addPlant(-roomHalf+1,roomHalf-1,.92);addPlant(roomHalf-1,roomHalf-1,.92);
  // Console lounge decor: dedicated gaming posters and leafy plants in the wing corners.
  const wingPoster=(x,y,z,title,subtitle,accent,rotationY=0,variant=0)=>{
    const tex=canvasTexture((ctx,w,h)=>{
-     const grad=ctx.createLinearGradient(0,0,w,h);grad.addColorStop(0,"#081629");grad.addColorStop(1,"#243b58");ctx.fillStyle=grad;ctx.fillRect(0,0,w,h);
-     ctx.fillStyle=accent;ctx.fillRect(0,0,w,15);ctx.fillRect(0,h-15,w,15);
-     ctx.strokeStyle=accent;ctx.lineWidth=7;ctx.strokeRect(10,10,w-20,h-20);
-     ctx.save();ctx.translate(w/2,h*.42);ctx.strokeStyle=accent;ctx.lineWidth=11;
-     if(variant%3===0){ctx.beginPath();ctx.arc(0,0,61,0,Math.PI*2);ctx.stroke();ctx.beginPath();ctx.moveTo(-72,55);ctx.lineTo(72,-55);ctx.stroke();}
-     else if(variant%3===1){ctx.beginPath();ctx.moveTo(-70,58);ctx.lineTo(0,-72);ctx.lineTo(70,58);ctx.closePath();ctx.stroke();}
-     else{ctx.beginPath();ctx.moveTo(-78,0);ctx.lineTo(78,0);ctx.moveTo(0,-70);ctx.lineTo(0,70);ctx.stroke();ctx.strokeRect(-48,-48,96,96);}
-     ctx.restore();ctx.textAlign="center";ctx.fillStyle="#fff";ctx.font="bold 34px Arial";ctx.fillText(title,w/2,h*.78);
-     ctx.fillStyle=accent;ctx.font="bold 17px Arial";ctx.fillText(subtitle,w/2,h*.89);
-   },256,384);
-   box(scene,1.12,1.55,.09,x,y,z,mat("#101c2e",.3,.55),false);
-   const art=new THREE.Mesh(new THREE.PlaneGeometry(1.02,1.45),new THREE.MeshStandardMaterial({map:tex,roughness:.7,side:THREE.DoubleSide}));
-   art.position.set(x,y,z);art.rotation.y=rotationY;scene.add(art);
+     ctx.fillStyle="#101827";ctx.fillRect(0,0,w,h);const glow=ctx.createRadialGradient(w*.5,h*.36,8,w*.5,h*.36,180);glow.addColorStop(0,accent+"55");glow.addColorStop(1,"#10182700");ctx.fillStyle=glow;ctx.fillRect(0,0,w,h);
+     ctx.fillStyle=accent;ctx.fillRect(0,0,w,12);ctx.fillStyle="#fff";ctx.font="bold 19px Arial";ctx.textAlign="left";ctx.fillText("UGLY  /  GAMING",22,42);ctx.strokeStyle=accent;ctx.lineWidth=5;
+     if(variant%3===0){ctx.beginPath();ctx.arc(w/2,h*.39,73,0,Math.PI*2);ctx.stroke();ctx.beginPath();ctx.moveTo(w/2-94,h*.39);ctx.lineTo(w/2+94,h*.39);ctx.moveTo(w/2,h*.39-94);ctx.lineTo(w/2,h*.39+94);ctx.stroke();}
+     else if(variant%3===1){ctx.beginPath();ctx.moveTo(w/2,h*.18);ctx.lineTo(w*.78,h*.58);ctx.lineTo(w*.22,h*.58);ctx.closePath();ctx.stroke();ctx.strokeRect(w*.39,h*.34,w*.22,h*.22);}
+     else{ctx.strokeRect(w*.24,h*.22,w*.52,h*.34);ctx.beginPath();ctx.moveTo(w*.18,h*.62);ctx.lineTo(w*.82,h*.62);ctx.moveTo(w*.5,h*.16);ctx.lineTo(w*.5,h*.66);ctx.stroke();}
+     ctx.fillStyle="#f5f7fb";ctx.textAlign="center";ctx.font="900 34px Arial";ctx.fillText(title,w/2,h*.79);ctx.fillStyle=accent;ctx.font="bold 18px Arial";ctx.fillText(subtitle,w/2,h*.88);ctx.fillStyle="#8795a8";ctx.font="14px Arial";ctx.fillText("PLAY  •  CONNECT  •  REPEAT",w/2,h*.95);
+   },384,576);
+   const group=new THREE.Group();group.position.set(x,y,z);group.rotation.y=rotationY;scene.add(group);group.add(new THREE.Mesh(new THREE.PlaneGeometry(1.18,1.62),mat("#0a111e",.42,.28)));
+   const art=new THREE.Mesh(new THREE.PlaneGeometry(1.08,1.52),new THREE.MeshBasicMaterial({map:tex,side:THREE.DoubleSide}));art.position.z=.012;group.add(art);
+   const edgeMat=mat(accent,.3,.12,{emissive:accent,emissiveIntensity:.22});for(const yy of [-.79,.79])box(group,1.18,.025,.025,0,yy,.018,edgeMat,false);for(const xx of [-.575,.575])box(group,.025,1.58,.025,xx,0,.018,edgeMat,false);
  };
  const wingFrontZ=11+consoleRoomLevel*4;
  wingPoster(wingX-2.35,2.72,-10.79,"PLAYSTATION","EXCLUSIVE GAMES","#20cfff",0,0);
