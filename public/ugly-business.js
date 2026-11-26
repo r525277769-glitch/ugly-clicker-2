@@ -291,7 +291,7 @@ function animate() {
 }
 function syncClubNPCs(){
  const desired=[...(state.clubData?.queue||[]).map(q=>({...q,kind:"queue"})),...(state.clubData?.sessions||[]).map(q=>({...q,kind:"session"}))];
- for(const d of desired){if(clubNPCs.some(n=>n.id===d.id))continue;const mesh=makePerson(0,7.8,["#e45d48","#43a77b","#8357b9","#e2a33b","#347db7","#d65b9a"][clubNPCs.length%6],false,clubNPCs.length+1);clubNPCs.push({id:d.id,mesh,phase:Math.random()*6,mode:d.kind==="session"?"toSeat":"queue",station:d.station});}
+ for(const d of desired){if(clubNPCs.some(n=>n.id===d.id))continue;const mesh=makePerson(3.4,8.1,["#e45d48","#43a77b","#8357b9","#e2a33b","#347db7","#d65b9a"][clubNPCs.length%6],false,clubNPCs.length+1);clubNPCs.push({id:d.id,mesh,phase:Math.random()*6,mode:d.kind==="session"?"toSeat":"queue",station:d.station});}
  for(let i=clubNPCs.length-1;i>=0;i--){if(!desired.some(d=>d.id===clubNPCs[i].id)){if(scene)scene.remove(clubNPCs[i].mesh);const ai=animated.findIndex(a=>a.root===clubNPCs[i].mesh);if(ai>=0)animated.splice(ai,1);clubNPCs.splice(i,1);}}
 }
 function renderClubPanels(){
