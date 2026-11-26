@@ -2328,7 +2328,7 @@ const CLUB_NAMES=["Алекс","Макс","Даня","Марк","Илья","Ни
 const CLUB_COMPONENT_DEFAULTS={gpu:1,cpu:1,ram:1,monitor:1,keyboard:1,mouse:1,chair:1,desk:1};
 const CONSOLE_COMPONENTS=["tv","console","sofa"],CONSOLE_NAMES=["PlayStation","Xbox"];
 const CONSOLE_LEVEL_PRICE=[0,1800,6500,18000,45000];
-const CONSOLE_SESSION_PRICES={3:[35,50],4:[45,65],5:[55,80]};
+const CONSOLE_SESSION_PRICES={1:[3000,5000],2:[7000,10000],3:[15000,18000],4:[23000,30000]};
 function consoleStationLevel(st){return Math.max(1,Math.min(4,...CONSOLE_COMPONENTS.map(k=>Number(st[k]||1))));}
 function consoleFreeStations(d){const busy=new Set((d.consoleSessions||[]).map(x=>Number(x.station)));return d.consoleStations.map((_,i)=>i).filter(i=>!busy.has(i));}
 function clubStationLevel(st){
@@ -2379,7 +2379,7 @@ async function getClub(client,id,lock=false){
   }
   let freeConsole=consoleFreeStations(d);
   while(d.queue.length&&freeConsole.length){
-   const guest=d.queue.shift(),station=freeConsole.shift(),tier=consoleStationLevel(d.consoleStations[station]),base=CONSOLE_SESSION_PRICES[4],mult=[0,1,1.4,2,3][tier],range=[Math.round(base[0]*mult),Math.round(base[1]*mult)],duration=240;
+   const guest=d.queue.shift(),station=freeConsole.shift(),tier=consoleStationLevel(d.consoleStations[station]),range=CONSOLE_SESSION_PRICES[tier]||CONSOLE_SESSION_PRICES[1],duration=240;
    const reward=range[0]+Math.floor(Math.random()*(range[1]-range[0]+1));
    d.consoleSessions.push({id:guest.id,name:guest.name,station,minutes:4,duration,reward,startedAt:new Date(now).toISOString(),endsAt:new Date(now+duration*1000).toISOString(),autoReception:true});
    xp+=5;dirty=true;
@@ -2420,7 +2420,7 @@ app.post("/api/simulator/action",auth,async(req,res)=>{
     const ci=Number(String(req.body.station).split(":")[1]),st=d.consoleStations[ci];
     if(!Number.isInteger(ci)||!st)throw Error("Консольное место не найдено");
     if((d.consoleSessions||[]).some(x=>Number(x.station)===ci))throw Error("Консольное место уже занято");
-    const minutes=[3,4,5].includes(Number(req.body.minutes))?Number(req.body.minutes):4,tier=consoleStationLevel(st),base=CONSOLE_SESSION_PRICES[minutes],mult=[0,1,1.4,2,3][tier],range=[Math.round(base[0]*mult),Math.round(base[1]*mult)],quoted=Number(req.body.expectedReward),reward=Number.isInteger(quoted)&&quoted>=range[0]&&quoted<=range[1]?quoted:range[0]+Math.floor(Math.random()*(range[1]-range[0]+1)),duration=minutes*60;
+    const minutes=[3,4,5].includes(Number(req.body.minutes))?Number(req.body.minutes):4,tier=consoleStationLevel(st),range=CONSOLE_SESSION_PRICES[tier]||CONSOLE_SESSION_PRICES[1],quoted=Number(req.body.expectedReward),reward=Number.isInteger(quoted)&&quoted>=range[0]&&quoted<=range[1]?quoted:range[0]+Math.floor(Math.random()*(range[1]-range[0]+1)),duration=minutes*60;
     d.queue=d.queue.filter(x=>x.id!==queueId);
     d.consoleSessions.push({id:queueId,name:guest.name,station:ci,minutes,duration,reward,startedAt:new Date().toISOString(),endsAt:new Date(Date.now()+duration*1000).toISOString()});
     msg=guest.name+" оформлен на консоль №"+(ci+1)+" на "+minutes+" мин.";
