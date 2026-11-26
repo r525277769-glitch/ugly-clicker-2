@@ -2345,7 +2345,7 @@ async function getClub(client,id,lock=false){
  const d=r.club_data||{stations:[{tier:1},{tier:1},{tier:1},{tier:1}],adLevel:0};
  d.stations=Array.isArray(d.stations)&&d.stations.length?d.stations:[{tier:1},{tier:1},{tier:1},{tier:1}];
  d.stations=d.stations.slice(0,8).map(st=>({...st,components:{...CLUB_COMPONENT_DEFAULTS,...(st.components||Object.fromEntries(CLUB_COMPONENTS.map(k=>[k,Number(st.tier)||1])))}}));
- d.adLevel=Number(d.adLevel||0);d.queue=Array.isArray(d.queue)?d.queue:[];d.sessions=Array.isArray(d.sessions)?d.sessions:[];
+ d.adLevel=Number(d.adLevel||0);d.adminEnabled=Boolean(d.adminEnabled);d.queue=Array.isArray(d.queue)?d.queue:[];d.sessions=Array.isArray(d.sessions)?d.sessions:[];
  const now=Date.now();let cash=Number(r.shop_cash),xp=Number(r.shop_xp),customers=Number(r.customers_served),dirty=false;
  const finished=d.sessions.filter(x=>new Date(x.endsAt).getTime()<=now);
  if(finished.length){
@@ -2358,6 +2358,16 @@ async function getClub(client,id,lock=false){
   d.queue.push({id:require("crypto").randomBytes(6).toString("hex"),name:CLUB_NAMES[Math.floor(Math.random()*CLUB_NAMES.length)],arrivedAt:new Date(now).toISOString()});
   const delay=Math.max(12000,42000-d.adLevel*2500);
   d.nextArrivalAt=new Date(now+delay+Math.floor(Math.random()*10000)).toISOString();dirty=true;
+ }
+ // Purchased receptionist automatically assigns every waiting guest to a free PC.
+ if(d.adminEnabled){
+  let freeNow=clubFreeStations(d);
+  while(d.queue.length&&freeNow.length){
+   const guest=d.queue.shift(),station=freeNow.shift(),tier=clubStationLevel(d.stations[station]),range=CLUB_CUSTOMER_PAYMENT[tier];
+   const duration=120+Math.floor(Math.random()*181),reward=range[0]+Math.floor(Math.random()*(range[1]-range[0]+1)),startedAt=new Date(now).toISOString();
+   d.sessions.push({id:guest.id,name:guest.name,station,duration,reward,startedAt,endsAt:new Date(now+duration*1000).toISOString(),autoReception:true});
+   xp+=5;dirty=true;
+  }
  }
  const hourly=Math.round(d.stations.reduce((n,st)=>n+CLUB_TIER_RATE[clubStationLevel(st)],0)*(1+d.adLevel*.12));
  if(dirty||cash!==Number(r.shop_cash)||xp!==Number(r.shop_xp)||customers!==Number(r.customers_served)){
@@ -2426,6 +2436,13 @@ app.post("/api/simulator/action",auth,async(req,res)=>{
    msg="Компонент ПК №"+(i+1)+" улучшен до уровня "+next;
   }else if(a==="expand_room"){
    const level=Number(d.roomLevel||0),prices=[12000,25000,50000];if(level>=3)throw Error("Зал уже расширен до максимального размера");const price=prices[level];if(s.cash<price)throw Error("Нужно $"+price.toLocaleString("ru-RU")+" для расширения зала");d.roomLevel=level+1;await c.query("UPDATE ugly_simulator_players SET shop_cash=shop_cash-$1,club_data=$2::jsonb,shop_xp=shop_xp+60 WHERE telegram_id=$3",[price,JSON.stringify(d),req.player.id]);msg="Зал расширен! Появилось больше пространства для клуба.";
+  }else if(a==="buy_admin"){
+   if(d.adminEnabled)throw Error("Администратор уже нанят");
+   const price=40000;
+   if(s.cash<price)throw Error("Для найма администратора нужно $40 000");
+   d.adminEnabled=true;
+   await c.query("UPDATE ugly_simulator_players SET shop_cash=shop_cash-$1,club_data=$2::jsonb,shop_xp=shop_xp+100,updated_at=NOW() WHERE telegram_id=$3",[price,JSON.stringify(d),req.player.id]);
+   msg="Администратор нанят! Теперь он автоматически выдаёт сессии на свободные ПК.";
   }else if(a==="advertise"){
    const price=500*(d.adLevel+1);
    if(d.adLevel>=10)throw Error("Реклама максимального уровня");
@@ -2461,7 +2478,32 @@ app.post("/api/simulator/exchange",auth,async(req,res)=>{
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`UGLY CLICKER 2.0 running on port ${PORT}`);
 
-  initDatabase().catch(error => {
+  initDatabase().then(() => {
+    // Keep club reception running even when the player closes the Mini App.
+    setInterval(async () => {
+      if (!databaseReady) return;
+      let ids;
+      try {
+        ids = await pool.query("SELECT telegram_id FROM ugly_simulator_players WHERE club_data->>'adminEnabled'='true'");
+      } catch (error) {
+        console.error("Club receptionist scan failed:", error.message);
+        return;
+      }
+      for (const row of ids.rows) {
+        const client = await pool.connect();
+        try {
+          await client.query("BEGIN");
+          await getClub(client, row.telegram_id, true);
+          await client.query("COMMIT");
+        } catch (error) {
+          await client.query("ROLLBACK");
+          console.error("Club receptionist error:", error.message);
+        } finally {
+          client.release();
+        }
+      }
+    }, 5000);
+  }).catch(error => {
     databaseReady = false;
     console.error("Database initialization failed:", error);
   });
