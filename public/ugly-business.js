@@ -382,6 +382,34 @@ function buildStore(){
  };
  addPlant(-roomHalf+1,-roomHalf+1,.92);addPlant(roomHalf-1,-roomHalf+1,.92);
  addPlant(-roomHalf+1,roomHalf-1,.92);addPlant(roomHalf-1,roomHalf-1,.92);
+ // Console lounge decor: dedicated gaming posters and leafy plants in the wing corners.
+ const wingPoster=(x,y,z,title,subtitle,accent,rotationY=0,variant=0)=>{
+   const tex=canvasTexture((ctx,w,h)=>{
+     const grad=ctx.createLinearGradient(0,0,w,h);grad.addColorStop(0,"#081629");grad.addColorStop(1,"#243b58");ctx.fillStyle=grad;ctx.fillRect(0,0,w,h);
+     ctx.fillStyle=accent;ctx.fillRect(0,0,w,15);ctx.fillRect(0,h-15,w,15);
+     ctx.strokeStyle=accent;ctx.lineWidth=7;ctx.strokeRect(10,10,w-20,h-20);
+     ctx.save();ctx.translate(w/2,h*.42);ctx.strokeStyle=accent;ctx.lineWidth=11;
+     if(variant%3===0){ctx.beginPath();ctx.arc(0,0,61,0,Math.PI*2);ctx.stroke();ctx.beginPath();ctx.moveTo(-72,55);ctx.lineTo(72,-55);ctx.stroke();}
+     else if(variant%3===1){ctx.beginPath();ctx.moveTo(-70,58);ctx.lineTo(0,-72);ctx.lineTo(70,58);ctx.closePath();ctx.stroke();}
+     else{ctx.beginPath();ctx.moveTo(-78,0);ctx.lineTo(78,0);ctx.moveTo(0,-70);ctx.lineTo(0,70);ctx.stroke();ctx.strokeRect(-48,-48,96,96);}
+     ctx.restore();ctx.textAlign="center";ctx.fillStyle="#fff";ctx.font="bold 34px Arial";ctx.fillText(title,w/2,h*.78);
+     ctx.fillStyle=accent;ctx.font="bold 17px Arial";ctx.fillText(subtitle,w/2,h*.89);
+   },256,384);
+   box(scene,1.12,1.55,.09,x,y,z,mat("#101c2e",.3,.55),false);
+   const art=new THREE.Mesh(new THREE.PlaneGeometry(1.02,1.45),new THREE.MeshStandardMaterial({map:tex,roughness:.7,side:THREE.DoubleSide}));
+   art.position.set(x,y,z);art.rotation.y=rotationY;scene.add(art);
+ };
+ const wingFrontZ=11+consoleRoomLevel*4;
+ wingPoster(wingX-2.35,2.72,-10.79,"PLAYSTATION","EXCLUSIVE GAMES","#20cfff",0,0);
+ wingPoster(wingX+2.35,2.72,-10.79,"XBOX","POWER YOUR DREAMS","#6be37a",0,1);
+ wingPoster(roomHalf+9.29,2.72,-6.4,"GAME ON","NEXT LEVEL","#b66cff",-Math.PI/2,2);
+ wingPoster(roomHalf+9.29,2.72,-1.8,"NO LIMITS","PLAY TO WIN","#ff5d9e",-Math.PI/2,0);
+ wingPoster(roomHalf+9.29,2.72,3.0,"CYBER LOUNGE","STAY IN GAME","#ffc45b",-Math.PI/2,1);
+ wingPoster(wingX,2.72,wingFrontZ-.18,"LEVEL UP","CHOOSE YOUR SIDE","#20cfff",Math.PI,2);
+ addPlant(roomHalf+1.05,-9.35,.82);
+ addPlant(roomHalf+8.35,-9.35,.82);
+ addPlant(roomHalf+1.05,9.35+consoleRoomLevel*4,.82);
+ addPlant(roomHalf+8.35,9.35+consoleRoomLevel*4,.82);
  // Reception counter with a clear staff position behind it.
  const reception=new THREE.Group();reception.position.set(0,0,7.1);scene.add(reception);
  // Raised counter top, front fascia and side cheeks leave the staff side open.
