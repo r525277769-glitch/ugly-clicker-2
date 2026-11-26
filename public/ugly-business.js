@@ -140,52 +140,61 @@ function addShelf(x, z, facing = 1) {
 }
 function makePerson(x,z,shirt,isPlayer=false,variant=0){
  const root=new THREE.Group();root.position.set(x,0,z);scene.add(root);
- const skins=["#f0b58a","#a96f4f","#e1a078","#c58b68","#f2c29c"],skin=mat(skins[variant%skins.length],.82);
- const clothes=mat(shirt,.68),pants=mat(["#27344f","#30333c","#3b2e4d","#25413f"][variant%4],.82);
- const accent=mat(["#ffd34f","#34d8ff","#ff6a8a","#9b79ff"][variant%4],.35,.15,{emissive:["#5b3b00","#003d55","#501020","#28104d"][variant%4],emissiveIntensity:.35});
- const torsoPivot=new THREE.Group();torsoPivot.position.set(0,1.12,0);root.add(torsoPivot);
- addMesh(torsoPivot,new THREE.CapsuleGeometry(.31,.48,5,12),clothes,[0,0,0]);
- box(torsoPivot,.42,.24,.055,0,.08,-.285,accent,false);box(torsoPivot,.47,.09,.34,0,-.29,0,mat("#202633"),false);
- cylinder(root,.105,.12,.18,0,1.48,0,skin,14);
- const head=new THREE.Group();head.position.set(0,1.77,0);root.add(head);sphere(head,.255,0,0,0,skin,24,18);
- const hair=mat(["#28202b","#4a2b1c","#171b28","#b77b35"][variant%4]);
- const cap=sphere(head,.26,0,.13,-.015,hair,20,12);cap.scale.set(1,.58,1.02);
- for(const side of [-1,1]){sphere(head,.072,side*.245,-.015,0,skin,12,10);sphere(head,.041,side*.09,.025,-.218,mat("#fffdf4"),12,10);sphere(head,.022,side*.09,.022,-.252,mat("#20212b"),10,8);box(head,.09,.018,.025,side*.09,.105,-.235,mat("#3a2925"),false).rotation.z=side*-.12;}
- sphere(head,.04,0,-.045,-.255,skin,12,8);
- if(variant%3===0){box(head,.55,.075,.34,0,.22,-.015,accent,false);box(head,.09,.16,.08,0,.14,.16,accent,false);}
+ const skins=["#f0b58a","#a96f4f","#e1a078","#c58b68","#f2c29c"],skin=mat(skins[variant%skins.length],.82),clothes=mat(shirt,.66),pants=mat(["#27344f","#30333c","#3b2e4d","#25413f"][variant%4],.82);
+ const accent=mat(["#ffd34f","#34d8ff","#ff6a8a","#9b79ff"][variant%4],.35,.12,{emissive:["#5b3b00","#003d55","#501020","#28104d"][variant%4],emissiveIntensity:.28});
+ const pelvis=new THREE.Group();pelvis.position.set(0,.91,0);root.add(pelvis);addMesh(pelvis,new THREE.CapsuleGeometry(.235,.22,4,12),pants,[0,-.02,0]);
+ const torsoPivot=new THREE.Group();torsoPivot.position.set(0,1.12,0);root.add(torsoPivot);addMesh(torsoPivot,new THREE.CapsuleGeometry(.31,.48,6,16),clothes,[0,.02,0]);
+ box(torsoPivot,.42,.13,.08,0,-.27,-.275,accent,false);cylinder(root,.095,.105,.16,0,1.49,0,skin,16);
+ const head=new THREE.Group();head.position.set(0,1.76,0);root.add(head);const skull=sphere(head,.245,0,0,0,skin,24,20);skull.scale.set(.91,1.12,.9);
+ const hair=mat(["#28202b","#4a2b1c","#171b28","#b77b35"][variant%4]);const cap=sphere(head,.25,0,.13,.005,hair,22,14);cap.scale.set(1,.55,1);
+ const white=mat("#fff8e9",.5),dark=mat("#20232b",.72);
+ for(const side of [-1,1]){sphere(head,.067,side*.235,-.015,0,skin,12,10);sphere(head,.052,side*.088,.035,-.205,white,14,10);sphere(head,.024,side*.088,.035,-.248,dark,12,10);box(head,.105,.018,.025,side*.088,.105,-.222,hair,false).rotation.z=side*-.1;}
+ sphere(head,.035,0,-.025,-.245,skin,12,8);box(head,.085,.018,.018,0,-.105,-.226,mat("#75483d"),false);box(torsoPivot,.18,.07,.07,0,.245,-.265,accent,false);
  const limbs=[];
  for(const side of [-1,1]){
-  const arm=new THREE.Group();arm.position.set(side*.37,1.34,0);root.add(arm);cylinder(arm,.115,.14,.48,0,-.22,0,clothes,14);sphere(arm,.115,0,-.48,.015,skin,12,10);box(arm,.17,.09,.16,0,-.49,.025,accent,false);
-  const leg=new THREE.Group();leg.position.set(side*.16,.72,0);root.add(leg);cylinder(leg,.14,.16,.52,0,-.25,0,pants,14);cylinder(leg,.105,.12,.12,0,-.52,0,skin,12);
-  const shoe=new THREE.Group();shoe.position.set(0,-.56,-.08);leg.add(shoe);box(shoe,.27,.16,.42,0,0,-.035,mat(variant%2?"#171c29":"#f2f0e9"),false);box(shoe,.28,.045,.4,0,-.085,-.035,accent,false);
-  limbs.push({arm,leg,side});
+  const arm=new THREE.Group();arm.position.set(side*.355,1.34,0);root.add(arm);addMesh(arm,new THREE.CapsuleGeometry(.105,.27,4,10),clothes,[0,-.17,0]);
+  const forearm=new THREE.Group();forearm.position.set(0,-.34,0);arm.add(forearm);addMesh(forearm,new THREE.CapsuleGeometry(.082,.24,4,10),clothes,[0,-.14,-.005]);sphere(forearm,.082,0,-.29,-.005,skin,12,10);
+  const leg=new THREE.Group();leg.position.set(side*.145,.79,0);root.add(leg);addMesh(leg,new THREE.CapsuleGeometry(.125,.29,4,12),pants,[0,-.18,0]);
+  const calf=new THREE.Group();calf.position.set(0,-.36,0);leg.add(calf);addMesh(calf,new THREE.CapsuleGeometry(.092,.27,4,12),pants,[0,-.15,0]);
+  const foot=new THREE.Group();foot.position.set(0,-.32,-.075);calf.add(foot);box(foot,.22,.13,.36,0,-.005,-.045,mat("#202633",.42,.08),false);box(foot,.225,.025,.35,0,-.073,-.045,accent,false);
+  limbs.push({arm,forearm,leg,calf,foot,side});
  }
- box(root,.43,.48,.2,0,1.05,.29,mat(isPlayer?"#1e3659":"#29364b"),true);box(root,.28,.12,.22,0,1.2,.4,accent,false);
  animated.push({type:"character",root,torsoPivot,limbs,phase:variant*.71,isPlayer});return root;
 }
 function makeGamingPC(parent,x,y,z,tier=1){
- const g=new THREE.Group();g.position.set(x,y,z);parent.add(g);box(g,.36,.56,.34,0,.28,0,mat("#182331",.32,.35),true);
- const glow=mat(["#27c8ff","#7c69ff","#35f0c0","#ffbf45"][Math.min(3,tier-1)],.3,.1,{emissive:["#0877a8","#3820a1","#087b55","#9c5700"][Math.min(3,tier-1)],emissiveIntensity:1.1});
- box(g,.012,.42,.27,.187,.3,0,mat("#24394e",.2,.15,{transparent:true,opacity:.82}),false);
- for(let i=0;i<3;i++){const fan=cylinder(g,.07,.07,.018,.198,.42-i*.14,0,glow,20);fan.rotation.z=Math.PI/2;}
+ const g=new THREE.Group();g.position.set(x,y,z);parent.add(g);
+ const colors=["#202d3d","#15506d","#17634e","#56377c"],lights=["#27c8ff","#7c69ff","#35f0c0","#ffbf45"],emissives=["#0877a8","#3820a1","#087b55","#9c5700"],idx=clamp((tier||1)-1,0,3);
+ const glow=mat(lights[idx],.24,.15,{emissive:emissives[idx],emissiveIntensity:1.55});
+ box(g,.46,.68,.43,0,.36,0,mat(colors[idx],.28,.48),true);
+ box(g,.012,.57,.35,.237,.37,0,mat("#7892a9",.2,.35,{transparent:true,opacity:.72}),false);box(g,.018,.57,.35,.245,.37,0,glow,false);
+ for(let i=0;i<3;i++){const fan=cylinder(g,.078,.078,.022,0,.56-i*.19,-.224,glow,24);fan.rotation.x=Math.PI/2;const hub=cylinder(g,.025,.025,.026,0,.56-i*.19,-.24,mat("#d9f7ff",.2,.45),16);hub.rotation.x=Math.PI/2;}
+ box(g,.31,.025,.018,0,.69,-.225,mat("#d8eaff",.22,.35),false);box(g,.12,.035,.025,.14,.69,-.23,glow,false);
+ for(let i=0;i<4;i++)box(g,.025,.19,.012,-.14+i*.045,.36,.219,mat("#9fb3c8",.3,.65),false);
  return g;
 }
 function makeGamingStation(x,z,index,data){
  const g=new THREE.Group();g.position.set(x,0,z);scene.add(g);
- const c=data.components||{},tier=Math.min(4,...Object.values(c).map(Number).filter(Boolean));
- const trim=mat(["#ffcc4d","#3dcfff","#45e0a2","#bd85ff"][tier-1],.32,.35,{emissive:["#5a3600","#004d75","#07543c","#3d176a"][tier-1],emissiveIntensity:.3});
- box(g,2.1,.15,.92,0,.78,0,mat("#27374b",.36,.28));box(g,2.12,.045,.94,0,.87,0,trim,false);
- for(const sx of [-.9,.9])box(g,.12,.76,.13,sx,.38,0,mat("#64788e",.32,.55));
- box(g,.88,.56,.11,0,1.28,-.36,mat("#111b2b",.22,.35));
- const tex=canvasTexture((ctx,w,h)=>{const gr=ctx.createLinearGradient(0,0,w,h);gr.addColorStop(0,"#102d56");gr.addColorStop(.5,tier>2?"#7136a8":"#087b9c");gr.addColorStop(1,"#111b35");ctx.fillStyle=gr;ctx.fillRect(0,0,w,h);ctx.fillStyle="#fff";ctx.font="bold 42px Arial";ctx.fillText("UGLY",24,78);ctx.font="bold 18px Arial";ctx.fillText("GAMING ARENA",24,112);ctx.fillStyle="#42e9ff";ctx.fillRect(22,132,w*.55,8);},256,160);
- box(g,.76,.42,.012,0,1.29,-.295,mat("#fff",.3,0,{map:tex,emissive:"#4d91c5",emissiveIntensity:.32}),false);
- box(g,.12,.17,.13,0,1.02,-.34,mat("#71849a",.3,.5));box(g,.55,.035,.22,0,.98,.18,mat("#151e2b",.35,.2));
- for(let k=0;k<5;k++)box(g,.065,.012,.13,-.22+k*.11,1.002,.18,trim,false);
- box(g,.38,.045,.22,-.59,1.01,.17,mat("#172332",.35,.2));makeGamingPC(g,.78,.24,.12,tier);
- const chair=new THREE.Group();chair.position.set(0,0,1.05);g.add(chair);cylinder(chair,.065,.075,.48,0,.28,0,mat("#71849a",.25,.6),14);cylinder(chair,.42,.42,.1,0,.07,0,mat("#182332",.35,.2),24);
- box(chair,.65,.65,.17,0,.72,.12,mat("#202d42",.42,.12));box(chair,.5,.12,.18,0,1.1,.1,trim,false);
- for(const sx of [-1,1]){box(chair,.08,.38,.48,sx*.37,.48,.02,mat("#27394e"),false);box(chair,.1,.08,.34,sx*.37,.67,.02,trim,false);}
- makeLabel(g,"PC "+String(index+1).padStart(2,"0"),0,2.15,-.4,1.3,.3);g.userData={index,tier};stationGroups.push(g);
+ const c=data.components||{},levels=Object.values(c).map(Number).filter(v=>v>0),tier=levels.length?Math.min(4,...levels):Math.max(1,Number(data.tier)||1);
+ const gpu=clamp(Number(c.gpu)||tier,1,4),cpu=clamp(Number(c.cpu)||tier,1,4),ram=clamp(Number(c.ram)||tier,1,4),monitor=clamp(Number(c.monitor)||tier,1,4),keyboard=clamp(Number(c.keyboard)||tier,1,4),mouse=clamp(Number(c.mouse)||tier,1,4),chairLevel=clamp(Number(c.chair)||tier,1,4);
+ const palette=["#ffbd45","#24cfff","#42e6a5","#bf82ff"],emit=["#704000","#00618a","#087a4d","#4a1a83"],trim=mat(palette[gpu-1],.26,.42,{emissive:emit[gpu-1],emissiveIntensity:.55});
+ const screenMat=mat("#fff",.24,.05,{map:canvasTexture((ctx,w,h)=>{const gr=ctx.createLinearGradient(0,0,w,h);gr.addColorStop(0,["#12314c","#0a5276","#104a38","#48265f"][monitor-1]);gr.addColorStop(1,["#07111f","#142b5a","#102b25","#211333"][monitor-1]);ctx.fillStyle=gr;ctx.fillRect(0,0,w,h);ctx.fillStyle="#fff";ctx.font="bold 38px Arial";ctx.fillText("UGLY",18,57);ctx.font="16px Arial";ctx.fillText("GAMING ARENA / PC "+(index+1),18,83);ctx.fillStyle=palette[monitor-1];ctx.fillRect(18,104,w*.72,7);},256,160),emissive:palette[monitor-1],emissiveIntensity:.12+monitor*.055});
+ box(g,2.1,.15,.92,0,.78,0,mat("#27374b",.34,.32));box(g,2.12,.045,.94,0,.87,0,trim,false);
+ for(const sx of [-.9,.9])box(g,.12,.76,.13,sx,.38,0,mat("#71869c",.28,.62));
+ box(g,.88,.56,.11,0,1.28,-.36,mat("#111b2b",.2,.42));box(g,.76,.42,.016,0,1.29,-.295,screenMat,false);
+ box(g,.12,.17,.13,0,1.02,-.34,mat("#71849a",.26,.58));box(g,.34,.035,.25,0,.98,-.19,mat("#182536",.3,.35));
+ const boardGlow=mat(palette[keyboard-1],.3,.15,{emissive:emit[keyboard-1],emissiveIntensity:.2+keyboard*.12});
+ box(g,.64,.045,.24,-.12,.925,.22,mat("#121b29",.3,.3));
+ for(let row=0;row<4;row++)for(let col=0;col<12;col++)box(g,.039,.025,.038,-.405+col*.052,.96,.135+row*.052,keyboard>=2?boardGlow:mat("#8493a4",.42,.2),false);
+ box(g,.15,.018,.035,-.12,.963,.385,boardGlow,false);
+ box(g,.31,.025,.25,.57,.91,.235,mat("#101a29",.45,.12));box(g,.32,.012,.26,.57,.925,.235,mat("#203d57",.38,.15,{emissive:palette[mouse-1],emissiveIntensity:.12+mouse*.08}),false);
+ const mouseBody=sphere(g,.075,.57,.98,.22,mat(["#222d3c","#1a526e","#1d674f","#563c79"][mouse-1],.28,.25),18,12);mouseBody.scale.set(.72,.42,1.12);
+ box(g,.012,.025,.065,.57,.997,.16,mat("#d8e8f6",.24,.3),false);cylinder(g,.018,.018,.022,.57,1.005,.215,mat(palette[mouse-1],.25,.1,{emissive:emit[mouse-1],emissiveIntensity:.8}),12).rotation.x=Math.PI/2;
+ makeGamingPC(g,.78,.9,.02,gpu);
+ const chair=new THREE.Group();chair.position.set(0,0,1.05);g.add(chair);const chairMat=mat(["#222d3c","#173e58","#174b3b","#3e2b58"][chairLevel-1],.38,.18);
+ cylinder(chair,.065,.075,.48,0,.28,0,mat("#71849a",.25,.6),14);cylinder(chair,.42,.42,.1,0,.07,0,mat("#182332",.35,.2),24);
+ box(chair,.65,.65,.17,0,.72,.12,chairMat);box(chair,.5,.12,.18,0,1.1,.1,trim,false);
+ for(const sx of [-1,1]){box(chair,.08,.38,.48,sx*.37,.48,.02,chairMat,false);box(chair,.1,.08,.34,sx*.37,.67,.02,trim,false);}
+ makeLabel(g,"PC "+String(index+1).padStart(2,"0"),0,2.15,-.4,1.3,.3);g.userData={index,tier,components:{gpu,cpu,ram,monitor,keyboard,mouse,chair:chairLevel}};stationGroups.push(g);
  const keys=["gpu","cpu","ram","monitor","keyboard","mouse","chair"],names=["Видеокарта","Процессор","ОЗУ","Монитор","Клавиатура","Мышь","Кресло"];
  keys.forEach((key,k)=>interactables.push({position:new THREE.Vector3(x+((k%4)-1.5)*.3,0,z+1.15+Math.floor(k/4)*.28),name:names[k],hint:"Улучшение компонента ПК · "+names[k],action:"upgrade_component",station:index,component:key,radius:1.9}));
 }
@@ -267,7 +276,14 @@ function animate() {
   const moving = input.length > .08;
   for (const a of animated) {
     if (a.type === "idle") a.mesh.position.y = Math.sin(performance.now() * .0017 + a.phase) * .025;
-    if(a.type==="character"){const npc=clubNPCs.find(n=>n.mesh===a.root),characterMoving=a.isPlayer?moving:!!npc&&(npc.mode==="toSeat"||npc.mode==="toQueue"),speed=a.isPlayer?(moving?Math.max(.25,input.length)*3.65:0):(characterMoving?1.35:0);a.phase=(a.phase+dt*(characterMoving||moving?speed*2.7:1.1))%(Math.PI*2);const phase=a.phase,stride=characterMoving||moving?Math.min(.58,speed*.19):.018;a.torsoPivot.position.y=1.12+(stride>.05?Math.abs(Math.sin(phase*2))*.035:Math.sin(phase)*.008);a.torsoPivot.rotation.z=stride>.05?Math.sin(phase)*.025:0;a.limbs.forEach(l=>{l.leg.rotation.x=Math.sin(phase+l.side*Math.PI)*stride;l.arm.rotation.x=-Math.sin(phase+l.side*Math.PI)*stride*.78;});}
+    if(a.type==="character"){
+ const npc=clubNPCs.find(n=>n.mesh===a.root),walk=a.isPlayer?moving:!!npc&&(npc.mode==="toSeat"||npc.mode==="toQueue");
+ const speed=a.isPlayer?(moving?Math.max(.25,input.length)*3.65:0):(walk?1.35:0),stride=walk?Math.min(.62,speed*.2):0,phase=a.phase;
+ a.phase=(a.phase+dt*(walk?speed*2.45:1.05))%(Math.PI*2);
+ a.torsoPivot.position.y=1.12+(walk?Math.abs(Math.sin(phase*2))*.045:Math.sin(a.phase)*.006);
+ a.torsoPivot.rotation.x=walk?.045:0;a.torsoPivot.rotation.z=walk?Math.sin(phase)*.035:0;
+ a.limbs.forEach(l=>{const swing=Math.sin(phase+l.side*Math.PI),lift=Math.max(0,Math.cos(phase+l.side*Math.PI));l.leg.rotation.x=swing*stride;l.calf.rotation.x=walk?lift*.48:0;l.foot.rotation.x=walk?-lift*.12:0;l.arm.rotation.x=-swing*stride*.78;l.forearm.rotation.x=walk?-.12-lift*.22:0;});
+}
   }
   const now = performance.now();
   for (const npc of clubNPCs) {
@@ -360,6 +376,11 @@ async function tapClub(){
  catch(error){toast(error.message,"error");}
  finally{if(button)button.disabled=false;}
 }
+function rebuildClubScene(){
+ const position=player?player.position.clone():new THREE.Vector3(0,0,7.7),rotation=player?player.rotation.y:0;
+ interactables.length=0;animated.length=0;stationGroups.length=0;clubNPCs.length=0;
+ buildStore();player.position.copy(position);player.rotation.y=rotation;resize();
+}
 function updateHUD() {
   $("simCash").textContent = "$" + Number(state.cash || 0).toLocaleString("ru-RU");
   $("simLevel").textContent = state.level || 1;
@@ -379,7 +400,7 @@ async function loadState() {
     Object.assign(state, data.state || {}); updateHUD();
   } catch (error) { $("simHint").textContent = error.message; }
 }
-async function doAction(action,extra={}){if(actionBusy)return;actionBusy=true;$("simAction").disabled=true;try{const d=await api("/api/simulator/action",{method:"POST",body:JSON.stringify({action,...extra})});Object.assign(state,d.state||{});updateHUD();if(action==="expand_room"&&scene){const pos=player.position.clone(),rot=player.rotation.y;interactables.length=0;animated.length=0;stationGroups.length=0;clubNPCs.length=0;buildStore();player.position.copy(pos);player.rotation.y=rot;resize();}toast(d.message||"Готово");$("simHint").textContent=d.message||"Готово";}catch(e){toast(e.message,"error");}finally{actionBusy=false;$("simAction").disabled=!activeObject;}}
+async function doAction(action,extra={}){if(actionBusy)return;actionBusy=true;$("simAction").disabled=true;try{const d=await api("/api/simulator/action",{method:"POST",body:JSON.stringify({action,...extra})});Object.assign(state,d.state||{});updateHUD();if(["expand_room","upgrade_component","buy_station"].includes(action)&&scene)rebuildClubScene();toast(d.message||"Готово");$("simHint").textContent=d.message||"Готово";}catch(e){toast(e.message,"error");}finally{actionBusy=false;$("simAction").disabled=!activeObject;}}
 function joystickPoint(event) {
   const dx = event.clientX - joyCenter.x, dy = event.clientY - joyCenter.y;
   const length = Math.hypot(dx, dy), deadZone = 5;
