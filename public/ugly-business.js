@@ -235,7 +235,8 @@ function animate() {
   player.position.z = clamp(player.position.z, -7.15, 7.15);
   const moving = input.length > .08;
   for (const a of animated) {
-    if (a.type === "idle") a.mesh.position.y = Math.sin(performance.now() * .0017 + a.phase) * .025;\n    if (a.type === "leg") a.mesh.rotation.x = Math.sin(performance.now() * .012 + a.side * Math.PI) * (moving ? .48 : .02);
+    if (a.type === "idle") a.mesh.position.y = Math.sin(performance.now() * .0017 + a.phase) * .025;
+    if (a.type === "leg") a.mesh.rotation.x = Math.sin(performance.now() * .012 + a.side * Math.PI) * (moving ? .48 : .02);
   }
   const now = performance.now();
   for (const npc of clubNPCs) {
