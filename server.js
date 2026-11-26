@@ -334,6 +334,7 @@ async function initDatabase() {
       last_action_at TIMESTAMPTZ,
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
+    ALTER TABLE ugly_simulator_players ADD COLUMN IF NOT EXISTS club_data JSONB NOT NULL DEFAULT '{"stations":[{"tier":1},{"tier":1},{"tier":1},{"tier":1}],"adLevel":0}'::jsonb, ADD COLUMN IF NOT EXISTS last_income_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
   `);
 
   databaseReady = true;
@@ -2318,40 +2319,79 @@ app.post("/api/bitcoin-farm/exchange", auth, async (req, res) => {
 });
 
 
-/* UGLY BUSINESS SIMULATOR */
-app.get("/api/simulator/state", auth, async (req, res) => {
-  try {
-    await pool.query(`INSERT INTO ugly_simulator_players (telegram_id) VALUES ($1) ON CONFLICT (telegram_id) DO NOTHING`, [req.player.id]);
-    const r = await pool.query(`SELECT shop_cash, shop_xp, customers_served, shelves_stocked FROM ugly_simulator_players WHERE telegram_id = $1`, [req.player.id]);
-    const p = r.rows[0], xp = Number(p.shop_xp);
-    res.json({ success:true, state:{ cash:Number(p.shop_cash), xp, level:Math.floor(xp/100)+1, customers:Number(p.customers_served), stocked:Number(p.shelves_stocked) } });
-  } catch(e) { console.error("Simulator state:",e); res.status(500).json({error:"Не удалось загрузить прогресс симулятора"}); }
+/* UGLY BUSINESS — COMPUTER CLUB */
+const CLUB_TIER_PRICE=[0,500,2500,11000,24000];
+const CLUB_TIER_RATE=[0,20,42,78,125];
+async function getClub(client,id,lock=false){
+ await client.query("INSERT INTO ugly_simulator_players(telegram_id) VALUES($1) ON CONFLICT(telegram_id) DO NOTHING",[id]);
+ const suffix=lock?" FOR UPDATE":"";
+ const q=await client.query("SELECT shop_cash,shop_xp,customers_served,club_data,last_income_at FROM ugly_simulator_players WHERE telegram_id=$1"+suffix,[id]);
+ const r=q.rows[0],d=r.club_data||{stations:[{tier:1},{tier:1},{tier:1},{tier:1}],adLevel:0};
+ d.stations=Array.isArray(d.stations)&&d.stations.length?d.stations:[{tier:1},{tier:1},{tier:1},{tier:1}];
+ d.adLevel=Number(d.adLevel||0);
+ const hourly=Math.round(d.stations.reduce((n,s)=>n+(CLUB_TIER_RATE[Number(s.tier)||1]||20),0)*(1+d.adLevel*.12));
+ const elapsed=Math.max(0,(Date.now()-new Date(r.last_income_at).getTime())/3600000);
+ const earned=Math.floor(hourly*elapsed);
+ if(earned>0)await client.query("UPDATE ugly_simulator_players SET shop_cash=shop_cash+$1,last_income_at=NOW() WHERE telegram_id=$2",[earned,id]);
+ else if(elapsed>=1)await client.query("UPDATE ugly_simulator_players SET last_income_at=NOW() WHERE telegram_id=$1",[id]);
+ const cash=earned?Number((await client.query("SELECT shop_cash FROM ugly_simulator_players WHERE telegram_id=$1",[id])).rows[0].shop_cash):Number(r.shop_cash);
+ return {cash,xp:Number(r.shop_xp),level:Math.floor(Number(r.shop_xp)/100)+1,customers:Number(r.customers_served),stations:d.stations.length,adLevel:d.adLevel,hourlyIncome:hourly,clubData:d};
+}
+app.get("/api/simulator/state",auth,async(req,res)=>{
+ const c=await pool.connect();
+ try{await c.query("BEGIN");const state=await getClub(c,req.player.id);await c.query("COMMIT");res.json({success:true,state});}
+ catch(e){await c.query("ROLLBACK");res.status(500).json({error:"Не удалось загрузить компьютерный клуб"});}
+ finally{c.release();}
 });
-app.post("/api/simulator/action", auth, async (req, res) => {
-  const action=req.body.action;
-  if(!["checkout","restock"].includes(action)) return res.status(400).json({error:"Неизвестное действие"});
-  const client=await pool.connect();
-  try {
-    await client.query("BEGIN");
-    await client.query(`INSERT INTO ugly_simulator_players (telegram_id) VALUES ($1) ON CONFLICT (telegram_id) DO NOTHING`,[req.player.id]);
-    const lock=await client.query(`SELECT last_action_at FROM ugly_simulator_players WHERE telegram_id=$1 FOR UPDATE`,[req.player.id]);
-    const last=lock.rows[0].last_action_at;
-    if(last && Date.now()-new Date(last).getTime()<5000) throw new Error("Подожди несколько секунд перед следующим действием");
-    if(action==="checkout"){
-      await client.query(`UPDATE ugly_simulator_players SET shop_cash=shop_cash+25, shop_xp=shop_xp+10, customers_served=customers_served+1, last_action_at=NOW(), updated_at=NOW() WHERE telegram_id=$1`,[req.player.id]);
-    } else {
-      await client.query(`UPDATE ugly_simulator_players SET shop_cash=shop_cash-LEAST(shop_cash,5), shop_xp=shop_xp+5, shelves_stocked=shelves_stocked+1, last_action_at=NOW(), updated_at=NOW() WHERE telegram_id=$1`,[req.player.id]);
-    }
-    const r=await client.query(`SELECT shop_cash,shop_xp,customers_served,shelves_stocked FROM ugly_simulator_players WHERE telegram_id=$1`,[req.player.id]);
-    await client.query("COMMIT");
-    const p=r.rows[0],xp=Number(p.shop_xp);
-    res.json({success:true,state:{cash:Number(p.shop_cash),xp,level:Math.floor(xp/100)+1,customers:Number(p.customers_served),stocked:Number(p.shelves_stocked)}});
-  } catch(e) {
-    await client.query("ROLLBACK");
-    res.status(400).json({error:e.message});
-  } finally { client.release(); }
+app.post("/api/simulator/action",auth,async(req,res)=>{
+ const c=await pool.connect();
+ try{
+  await c.query("BEGIN");
+  let s=await getClub(c,req.player.id,true),d=s.clubData,msg="",a=req.body.action;
+  if(a==="buy_station"){
+   if(d.stations.length>=8)throw Error("Уже установлено 8 игровых мест");
+   if(s.cash<3500)throw Error("Нужно $3 500 на новое игровое место");
+   d.stations.push({tier:1});
+   await c.query("UPDATE ugly_simulator_players SET shop_cash=shop_cash-3500,club_data=$1::jsonb,shop_xp=shop_xp+20 WHERE telegram_id=$2",[JSON.stringify(d),req.player.id]);
+   msg="Новое игровое место установлено!";
+  }else if(a==="upgrade_station"){
+   const i=Number(req.body.station),st=d.stations[i];
+   if(!Number.isInteger(i)||!st)throw Error("ПК не найден");
+   const t=Number(st.tier||1)+1;
+   if(t>4)throw Error("На этом ПК уже установлен премиум-комплект");
+   const price=CLUB_TIER_PRICE[t];
+   if(s.cash<price)throw Error("Нужно $"+price.toLocaleString("ru-RU")+" для улучшения");
+   st.tier=t;
+   await c.query("UPDATE ugly_simulator_players SET shop_cash=shop_cash-$1,club_data=$2::jsonb,shop_xp=shop_xp+35 WHERE telegram_id=$3",[price,JSON.stringify(d),req.player.id]);
+   msg="ПК №"+(i+1)+" улучшен: "+["","БЮДЖЕТ","СРЕДНИЙ","ВЫСОКИЙ","ПРЕМИУМ"][t];
+  }else if(a==="advertise"){
+   const price=500*(d.adLevel+1);
+   if(d.adLevel>=10)throw Error("Реклама максимального уровня");
+   if(s.cash<price)throw Error("Реклама стоит $"+price);
+   d.adLevel++;
+   await c.query("UPDATE ugly_simulator_players SET shop_cash=shop_cash-$1,club_data=$2::jsonb,shop_xp=shop_xp+25 WHERE telegram_id=$3",[price,JSON.stringify(d),req.player.id]);
+   msg="Реклама запущена! Поток посетителей увеличен.";
+  }else throw Error("Неизвестное действие");
+  s=await getClub(c,req.player.id);
+  await c.query("COMMIT");res.json({success:true,message:msg,state:s});
+ }catch(e){await c.query("ROLLBACK");res.status(400).json({error:e.message});}
+ finally{c.release();}
 });
-
+app.post("/api/simulator/exchange",auth,async(req,res)=>{
+ if(req.body.currency!=="gramm")return res.status(400).json({error:"Можно выводить только в GRAMM"});
+ const c=await pool.connect();
+ try{
+  await c.query("BEGIN");
+  const s=await getClub(c,req.player.id,true),gramm=Math.floor(s.cash/100);
+  if(gramm<1)throw Error("Для вывода нужно минимум $100");
+  const dollars=gramm*100;
+  await c.query("UPDATE ugly_simulator_players SET shop_cash=shop_cash-$1 WHERE telegram_id=$2",[dollars,req.player.id]);
+  await c.query("UPDATE players SET gramm_balance=gramm_balance+$1 WHERE telegram_id=$2",[gramm,req.player.id]);
+  const next=await getClub(c,req.player.id);
+  await c.query("COMMIT");res.json({success:true,gramm,dollars,state:next});
+ }catch(e){await c.query("ROLLBACK");res.status(400).json({error:e.message});}
+ finally{c.release();}
+});
 // =====================================================
 // ЗАПУСК СЕРВЕРА
 // =====================================================
