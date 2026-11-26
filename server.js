@@ -2321,6 +2321,7 @@ app.post("/api/bitcoin-farm/exchange", auth, async (req, res) => {
 
 /* UGLY BUSINESS — COMPUTER CLUB */
 const CLUB_TIER_PRICE=[0,500,2500,11000,24000];
+const CLUB_CUSTOMER_PAYMENT=[null,[500,1000],[2000,4000],[5000,7000],[10000,15000]];
 const CLUB_TIER_RATE=[0,20,42,78,125];
 const CLUB_COMPONENTS=["gpu","cpu","ram","monitor","keyboard","mouse","chair","desk"];
 const CLUB_NAMES=["Алекс","Макс","Даня","Марк","Илья","Никита","Саша","Рома","Егор","Тим"];
@@ -2392,7 +2393,7 @@ app.post("/api/simulator/action",auth,async(req,res)=>{
    if(!Number.isInteger(i)||!d.stations[i])throw Error("Игровое место не найдено");
    if((d.sessions||[]).some(x=>Number(x.station)===i))throw Error("Это место уже занято");
    const requestedDuration=Number(req.body.duration),duration=Number.isInteger(requestedDuration)&&requestedDuration>=120&&requestedDuration<=300?requestedDuration:120+Math.floor(Math.random()*181),tier=clubStationLevel(d.stations[i]);
-   const base=[0,25,55,100,180][tier],reward=Math.max(1,Math.round(base*duration/180*(1+d.adLevel*.025)));
+   const paymentRange=CLUB_CUSTOMER_PAYMENT[tier],reward=paymentRange[0]+Math.floor(Math.random()*(paymentRange[1]-paymentRange[0]+1));
    d.queue=d.queue.filter(x=>x.id!==queueId);
    d.sessions.push({id:queueId,name:guest.name,station:i,duration,reward,startedAt:new Date().toISOString(),endsAt:new Date(Date.now()+duration*1000).toISOString()});
    await c.query("UPDATE ugly_simulator_players SET club_data=$1::jsonb,shop_xp=shop_xp+5,updated_at=NOW() WHERE telegram_id=$2",[JSON.stringify(d),req.player.id]);
