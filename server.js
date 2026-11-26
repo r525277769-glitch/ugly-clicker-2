@@ -2326,7 +2326,7 @@ async function getClub(client,id,lock=false){
  await client.query("INSERT INTO ugly_simulator_players(telegram_id) VALUES($1) ON CONFLICT(telegram_id) DO NOTHING",[id]);
  const suffix=lock?" FOR UPDATE":"";
  const q=await client.query("SELECT shop_cash,shop_xp,customers_served,club_data,last_income_at FROM ugly_simulator_players WHERE telegram_id=$1"+suffix,[id]);
- const r=q.rows[0],d=r.club_data||{stations:[{tier:1},{tier:1},{tier:1},{tier:1}],adLevel:0};
+ const r=q.rows[0];\n if(Number(r.shop_cash)===0&&Number(r.shop_xp)===0&&Number(r.customers_served)===0){await client.query("UPDATE ugly_simulator_players SET shop_cash=5000 WHERE telegram_id=$1",[id]);r.shop_cash=5000;}\n const d=r.club_data||{stations:[{tier:1},{tier:1},{tier:1},{tier:1}],adLevel:0};
  d.stations=Array.isArray(d.stations)&&d.stations.length?d.stations:[{tier:1},{tier:1},{tier:1},{tier:1}];
  d.adLevel=Number(d.adLevel||0);
  const hourly=Math.round(d.stations.reduce((n,s)=>n+(CLUB_TIER_RATE[Number(s.tier)||1]||20),0)*(1+d.adLevel*.12));
