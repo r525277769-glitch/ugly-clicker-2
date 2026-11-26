@@ -3,12 +3,12 @@ import * as THREE from "three";
 const $ = id => document.getElementById(id);
 const initData = window.Telegram?.WebApp?.initData || "";
 const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
-const state = { cash: 0, level: 1, customers: 0, xp: 0 };
+const state = { cash:0, level:1, customers:0, xp:0, stations:4, adLevel:0, hourlyIncome:0, clubData:{stations:[]} };
 let renderer, scene, camera, player, clock, ready = false, raf = 0;
 let yaw = 0, moveX = 0, moveY = 0, activeObject = null, actionBusy = false;
 let joyPointer = null, lookPointer = null, lookLastX = 0, joyCenter = { x: 0, y: 0 };
 let joystickRadius = 48, cameraDistance = 5.8, cameraHeight = 3.2;
-const interactables = [], animated = [], keys = Object.create(null);
+const interactables = [], animated = [], keys = Object.create(null);\nconst stationGroups=[], clubNPCs=[];
 const tempForward = new THREE.Vector3(), tempRight = new THREE.Vector3(), tempMove = new THREE.Vector3();
 const _v = new THREE.Vector3();
 
@@ -164,103 +164,21 @@ function makePerson(x, z, shirt, isPlayer = false) {
   }
   return root;
 }
-function buildStore() {
-  scene = new THREE.Scene();
-  scene.background = new THREE.Color("#9caeb7");
-  scene.fog = new THREE.Fog("#9caeb7", 19, 39);
-  camera = new THREE.PerspectiveCamera(58, 1, .1, 100);
-  scene.add(new THREE.HemisphereLight("#f1f4ff", "#6c6254", 1.7));
-  const key = new THREE.DirectionalLight("#ffe8c8", 2.35);
-  key.position.set(-7, 11, 7); key.castShadow = true;
-  key.shadow.mapSize.set(1536, 1536); key.shadow.camera.left = -13; key.shadow.camera.right = 13;
-  key.shadow.camera.top = 13; key.shadow.camera.bottom = -13; key.shadow.bias = -.00025;
-  scene.add(key);
-  const fill = new THREE.DirectionalLight("#c4dcff", .7); fill.position.set(7, 5, -5); scene.add(fill);
-
-  // tiled floor, walls and ceiling
-  const floorMat = mat("#ffffff", .9); floorMat.map = floorTexture(); floorMat.map.wrapS = floorMat.map.wrapT = THREE.RepeatWrapping;
-  floorMat.map.repeat.set(4, 4);
-  box(scene, 16, .28, 16, 0, -.16, 0, floorMat);
-  box(scene, 16, 4.5, .24, 0, 2.08, -8, M.wall);
-  box(scene, .24, 4.5, 16, -8, 2.08, 0, M.wall);
-  box(scene, .24, 4.5, 16, 8, 2.08, 0, M.wall);
-  box(scene, 16, .22, .24, 0, 2.08, 8, M.wall);
-  box(scene, 16, .2, 16, 0, 4.45, 0, mat("#30373b"));
-  // skirting and wall panels
-  box(scene, 15.7, .2, .07, 0, .12, -7.84, M.wallDark);
-  box(scene, .07, .2, 15.7, -7.84, .12, 0, M.wallDark);
-  box(scene, .07, .2, 15.7, 7.84, .12, 0, M.wallDark);
-  for (let x = -6; x <= 6; x += 2) box(scene, .025, 3.5, .02, x, 2.05, -7.86, M.wallDark, false);
-  // entrance storefront glazing and aluminum frames
-  box(scene, 4.8, 2.7, .07, 0, 1.52, 7.82, M.glass, false);
-  for (const x of [-2.45, 0, 2.45]) box(scene, .07, 2.9, .12, x, 1.52, 7.75, M.metal);
-  box(scene, 5, .09, .16, 0, 2.98, 7.75, M.metal);
-  box(scene, 5, .09, .16, 0, .08, 7.75, M.metal);
-  // storefront sign
-  box(scene, 5.6, 1.0, .24, 0, 3.55, -7.76, M.dark);
-  const sign = new THREE.Mesh(new THREE.PlaneGeometry(5.35, .78), signMaterial("UGLY MARKET", "FRESH • DAILY • QUALITY"));
-  sign.position.set(0, 3.55, -7.62); scene.add(sign);
-  // decorative wall art / shelves
-  for (const x of [-6.7, 6.7]) {
-    box(scene, .08, 2.2, .08, x, 1.4, -5.7, M.gold);
-    box(scene, .08, 2.2, .08, x, 1.4, -3.5, M.gold);
-    box(scene, .08, .08, 2.3, x, 2.48, -4.6, M.gold);
-    box(scene, .08, .08, 2.3, x, .32, -4.6, M.gold);
-  }
-  // checkout lane, counter, scanner and display
-  box(scene, 2.8, 1.05, 1.0, -4.8, .52, -2.8, M.wood);
-  box(scene, 2.9, .09, 1.08, -4.8, 1.08, -2.8, M.dark);
-  box(scene, .6, .08, .5, -4.0, 1.16, -2.8, M.metal);
-  box(scene, .35, .32, .28, -4.0, 1.34, -2.8, M.dark);
-  box(scene, .32, .045, .25, -4.0, 1.52, -2.8, mat("#6c9a9a", .2, .4));
-  box(scene, .25, .25, .22, -5.6, 1.22, -2.8, mat("#d4b66b", .2, .3));
-  makeLabel(scene, "CHECKOUT", -4.8, 2.15, -2.8, 2.0, .48);
-  interactables.push({ position: new THREE.Vector3(-4.8, 0, -2.8), name: "Касса", hint: "КАССА · Нажми действие, чтобы обслужить покупателя", action: "checkout", radius: 2.05 });
-  // checkout belt
-  box(scene, 1.65, .12, .62, -4.8, .91, -2.0, M.dark);
-  for (let i = 0; i < 8; i++) cylinder(scene, .045, .045, .64, -5.55 + i * .215, .91, -2.0, M.metal, 10).rotation.x = Math.PI / 2;
-  // aisle shelving
-  addShelf(-1.5, -2.0);
-  addShelf(2.1, -2.0);
-  addShelf(-1.5, 1.25);
-  addShelf(2.1, 1.25);
-  for (const p of [[-1.5, -2.0], [2.1, -2.0], [-1.5, 1.25], [2.1, 1.25]]) {
-    interactables.push({ position: new THREE.Vector3(p[0], 0, p[1]), name: "Стеллаж", hint: "ТОВАРЫ · Нажми действие, чтобы пополнить запасы", action: "restock", radius: 2.0 });
-  }
-  // chilled display units
-  for (let i = 0; i < 3; i++) {
-    const x = 4.8 + i * .85;
-    box(scene, .76, 2.6, 1.0, x, 1.3, -5.9, M.steel);
-    box(scene, .68, 2.35, .06, x, 1.3, -5.36, M.glass);
-    for (let s = 0; s < 4; s++) {
-      box(scene, .62, .045, .8, x, .38 + s * .56, -5.78, M.steel);
-      for (let n = 0; n < 3; n++) makeCan(scene, x - .2 + n * .2, .58 + s * .56, -5.34, ["#7b9caa", "#c78b43", "#78946a"][n]);
-    }
-  }
-  makeLabel(scene, "COLD DRINKS", 5.6, 3.0, -5.15, 2.0, .42);
-  // fruit display near entrance
-  box(scene, 2.6, .65, .9, 4.8, .32, 3.2, M.wood);
-  for (let i = 0; i < 18; i++) {
-    const x = 3.75 + (i % 6) * .4, z = 2.9 + Math.floor(i / 6) * .25;
-    sphere(scene, .16, x, .78, z, mat(["#b94b35", "#d4a33e", "#6f934a"][i % 3]), 12, 10);
-  }
-  makeLabel(scene, "FRESH FOOD", 4.8, 1.5, 3.2, 1.7, .4);
-  // staff and shoppers
-  const employee = makePerson(-4.8, -1.2, "#36516a");
-  animated.push({ type: "idle", mesh: employee, phase: 1.2 });
-  const customerA = makePerson(-3.4, -4.5, "#8a583d");
-  const customerB = makePerson(5.7, 1.6, "#4c684f");
-  animated.push({ type: "idle", mesh: customerA, phase: 2.1 }, { type: "idle", mesh: customerB, phase: .4 });
-  // player starts near front doors, looking into shop (-Z)
-  player = makePerson(0, 5.4, "#2c4a68", true);
-  player.position.set(0, 0, 5.4);
-  // lamps
-  for (const x of [-5, 0, 5]) for (const z of [-5, 0, 5]) addCeilingLight(x, z);
-  // exit arrows and floor accents
-  for (let i = 0; i < 3; i++) {
-    const arrow = box(scene, .22, .025, .55, -3.3 + i * .55, .012, 6.6, M.gold, false);
-    arrow.rotation.y = Math.PI;
-  }
+function buildStore(){
+ scene=new THREE.Scene();scene.background=new THREE.Color("#101925");scene.fog=new THREE.Fog("#101925",23,44);camera=new THREE.PerspectiveCamera(58,1,.1,100);
+ scene.add(new THREE.HemisphereLight("#c7e5ff","#25202c",1.45));const key=new THREE.DirectionalLight("#d5e8ff",2.1);key.position.set(-5,11,7);key.castShadow=true;key.shadow.mapSize.set(1024,1024);scene.add(key);
+ const blue=new THREE.PointLight("#268cff",42,16,2);blue.position.set(0,3,-5);scene.add(blue);const purple=new THREE.PointLight("#a43cff",28,14,2);purple.position.set(6,3,3);scene.add(purple);
+ box(scene,18,.3,18,0,-.16,0,mat("#303944",.9));for(let x=-8;x<=8;x+=2)for(let z=-8;z<=8;z+=2)box(scene,1.96,.012,1.96,x,-.002,z,mat((x+z)%4?"#343c47":"#2a323c",.9));
+ box(scene,18,5,.3,0,2.35,-9,M.wall);box(scene,.3,5,18,-9,2.35,0,M.wall);box(scene,.3,5,18,9,2.35,0,M.wall);box(scene,18,.25,18,0,5,0,mat("#10151c"));
+ box(scene,7,.9,.2,0,4.15,-8.72,M.dark);const sign=new THREE.Mesh(new THREE.PlaneGeometry(6.5,.72),signMaterial("UGLY CYBER CLUB","GAMING • ESPORTS • COMMUNITY"));sign.position.set(0,4.15,-8.58);scene.add(sign);
+ for(const x of [-7,-3,3,7]){box(scene,.12,3,.12,x,1.55,-5.2,M.metal);box(scene,1.5,.12,.15,x,3.08,-5.2,M.gold);}
+ box(scene,3.3,1.05,.9,0,.53,6.7,M.wood);box(scene,3.4,.12,1,0,1.1,6.7,M.dark);makeLabel(scene,"RECEPTION",0,2,6.1,2.4,.4);
+ const spots=[[-5.1,-3.4],[-1.8,-3.4],[1.8,-3.4],[5.1,-3.4],[-5.1,2],[-1.8,2],[1.8,2],[5.1,2]];
+ for(let i=0;i<8;i++){const x=spots[i][0],z=spots[i][1],g=new THREE.Group();g.position.set(x,0,z);scene.add(g);const tier=Number(state.clubData?.stations?.[i]?.tier||1),accent=mat(["#333","#4c718a","#4b8b74","#8d6ac2","#d6a744"][tier],.3,.4);
+ box(g,2.25,.14,.9,0,.78,0,M.wood);box(g,.12,.78,.12,-.92,.38,0,M.metal);box(g,.12,.78,.12,.92,.38,0,M.metal);box(g,.9,.08,.5,0,.91,-.12,M.dark);box(g,.82,.51,.09,0,1.22,-.38,M.dark);box(g,.72,.4,.02,0,1.23,-.326,mat("#071a2b",.2,.1,{emissive:"#0a4773",emissiveIntensity:.7}));box(g,.7,.02,.02,0,1.08,-.31,accent);box(g,.42,.12,.32,-.62,1.03,.18,M.dark);box(g,.32,.025,.22,.05,1,.18,M.dark);cylinder(g,.055,.07,.7,0,.38,.1,M.metal,12);cylinder(g,.43,.43,.12,0,.08,.18,M.dark,20);box(g,.34,.62,.48,.79,.34,.12,M.dark);box(g,.025,.38,.02,.79,.35,-.13,accent);for(let k=0;k<3;k++)sphere(g,.035,.79,.55-k*.14,-.14,M.gold,10,8);
+ const chair=new THREE.Group();chair.position.set(0,0,1.05);g.add(chair);cylinder(chair,.07,.07,.56,0,.32,0,M.metal);cylinder(chair,.42,.42,.1,0,.08,0,M.dark,20);box(chair,.68,.72,.16,0,.83,.16,M.dark);box(chair,.56,.06,.12,0,.9,.05,accent);makeLabel(g,"PC "+String(i+1).padStart(2,"0"),0,2.05,-.4,1.3,.3);g.visible=i<(state.stations||4);stationGroups.push(g);interactables.push({position:new THREE.Vector3(x,0,z+1.05),name:"ПК №"+(i+1),hint:"Подойди к компьютеру и нажми действие, чтобы улучшить комплект",action:"upgrade_station",index:i,radius:1.75});}
+ for(const x of [-6,0,6])for(const z of [-6,0,6]){box(scene,1.5,.06,.5,x,4.65,z,M.metal);const l=new THREE.PointLight("#77bfff",22,7);l.position.set(x,4.1,z);scene.add(l);}
+ player=makePerson(0,7.7,"#275c9a",true);makeLabel(scene,"YOU",0,2.25,7.7,1,.28);for(let i=0;i<5;i++){const npc=makePerson(-7+i*.5,7.1,["#8a583d","#4d755c","#845b91","#a16b45","#557a9e"][i]);clubNPCs.push({mesh:npc,phase:i*.8,station:i%Math.max(1,state.stations||4),mode:"walk",timer:6+Math.random()*8,home:new THREE.Vector3(-7+i*.5,0,7.1)});}
 }
 function resize() {
   const canvas = $("uglyBusinessCanvas");
@@ -319,7 +237,7 @@ function animate() {
   }
   updateCamera(dt);
   activeObject = findInteractable();
-  $("simHint").textContent = activeObject ? activeObject.hint : "Двигайся джойстиком. Подойди вплотную к кассе или стеллажу.";
+  $("simHint").textContent = activeObject ? activeObject.hint : "Двигайся по клубу. Подойди к игровому месту.";
   $("simAction").disabled = !activeObject || actionBusy;
   $("simAction").textContent = activeObject ? "ДЕЙСТВИЕ · " + activeObject.name.toUpperCase() : "ПОДОЙДИ БЛИЖЕ";
   if (renderer) renderer.render(scene, camera);
@@ -329,7 +247,7 @@ function updateHUD() {
   $("simLevel").textContent = state.level || 1;
   $("simCustomers").textContent = state.customers || 0;
   $("simXpText").textContent = (Number(state.xp || 0) % 100) + " / 100 опыта";
-  $("simXpFill").style.width = (Number(state.xp || 0) % 100) + "%";
+  $("simXpFill").style.width = (Number(state.xp || 0) % 100) + "%";\n  if ($("simStations")) $("simStations").textContent=(state.stations||4)+" / 8";\n  if ($("simIncome")) $("simIncome").textContent="$"+Number(state.hourlyIncome||0).toLocaleString("ru-RU")+"/ч";\n  if ($("simAdLevel")) $("simAdLevel").textContent=state.adLevel||0;
 }
 async function loadState() {
   try {
@@ -337,17 +255,7 @@ async function loadState() {
     Object.assign(state, data.state || {}); updateHUD();
   } catch (error) { $("simHint").textContent = error.message; }
 }
-async function doAction(action) {
-  if (actionBusy) return;
-  actionBusy = true; $("simAction").disabled = true;
-  try {
-    const data = await api("/api/simulator/action", { method: "POST", body: JSON.stringify({ action }) });
-    Object.assign(state, data.state || {}); updateHUD();
-    const message = action === "checkout" ? "Покупатель обслужен: +$25 в кассу!" : "Запасы магазина обновлены!";
-    toast(message); $("simHint").textContent = message;
-  } catch (error) { toast(error.message, "error"); }
-  finally { actionBusy = false; $("simAction").disabled = !activeObject; }
-}
+async function doAction(action,extra={}){if(actionBusy)return;actionBusy=true;$("simAction").disabled=true;try{const d=await api("/api/simulator/action",{method:"POST",body:JSON.stringify({action,...extra})});Object.assign(state,d.state||{});updateHUD();toast(d.message||"Готово");$("simHint").textContent=d.message||"Готово";}catch(e){toast(e.message,"error");}finally{actionBusy=false;$("simAction").disabled=!activeObject;}}
 function joystickPoint(event) {
   const dx = event.clientX - joyCenter.x, dy = event.clientY - joyCenter.y;
   const length = Math.hypot(dx, dy), deadZone = 5;
@@ -394,12 +302,12 @@ function bindControls() {
   const releaseLook = event => { if (event.pointerId === lookPointer) lookPointer = null; };
   canvas.addEventListener("pointerup", releaseLook);
   canvas.addEventListener("pointercancel", releaseLook);
-  $("simAction").addEventListener("click", () => { if (activeObject) doAction(activeObject.action); });
+  $("simAction").addEventListener("click",()=>{if(activeObject)doAction("upgrade_station",{station:activeObject.index});});\n  $("simBuyStation")?.addEventListener("click",()=>doAction("buy_station"));\n  $("simAdvertise")?.addEventListener("click",()=>doAction("advertise"));\n  $("simCashout")?.addEventListener("click",async()=>{try{const d=await api("/api/simulator/exchange",{method:"POST",body:JSON.stringify({currency:"gramm"})});Object.assign(state,d.state||{});updateHUD();toast("Зачислено "+d.gramm+" GRAMM на основной баланс");}catch(e){toast(e.message,"error");}});
   window.addEventListener("keydown", event => {
     if (["KeyW","KeyA","KeyS","KeyD","ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].includes(event.code)) {
       keys[event.code] = true; event.preventDefault();
     }
-    if (event.code === "KeyE" && activeObject) doAction(activeObject.action);
+    if (event.code === "KeyE" && activeObject) doAction("upgrade_station",{station:activeObject.index});
   });
   window.addEventListener("keyup", event => { keys[event.code] = false; });
   window.addEventListener("blur", () => { Object.keys(keys).forEach(key => keys[key] = false); moveX = moveY = 0; });
