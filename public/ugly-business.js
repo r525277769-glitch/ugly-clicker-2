@@ -321,20 +321,32 @@ function buildStore(){
  for(const [color,intensity,pos] of [["#21cfff",70,[-5,3,-4]],["#9c4dff",65,[6,3,2]],["#ff4e9b",35,[0,3,7]]]){const l=new THREE.PointLight(color,intensity,20,2);l.position.set(...pos);scene.add(l);}
  const roomSize=18+Number(state.clubData.roomLevel||0)*4,roomHalf=roomSize/2;
  box(scene,roomSize,.35,roomSize,0,-.18,0,surfaceMat("#ffffff","floor",.32,.18));
- box(scene,roomSize,5,.32,0,2.35,-roomHalf,surfaceMat("#ffffff","wall",.88,0));box(scene,.32,5,roomSize,-roomHalf,2.35,0,surfaceMat("#ffffff","wall",.88,0));
-  // Solid partition between PC and console rooms; keep only a narrow, framed doorway.
-  const doorwayHalf=1.7,partitionMat=surfaceMat("#ffffff","wall",.78,.02);
-  box(scene,.32,5,roomHalf-doorwayHalf,roomHalf,2.35,-(roomHalf+doorwayHalf)/2,partitionMat);
-  box(scene,.32,5,roomHalf-doorwayHalf,roomHalf,2.35,(roomHalf+doorwayHalf)/2,partitionMat);
+  // Wall shells stay solid; textured panels are mounted flush to room-facing surfaces.
+  const wallSolid=mat("#14243a",.86,.02),wallSkin=new THREE.MeshStandardMaterial({map:surfaceTexture("wall"),roughness:.82,metalness:.02,side:THREE.DoubleSide});
+  const wallPanel=(w,h,x,y,z,rotationY=0)=>{const panel=new THREE.Mesh(new THREE.PlaneGeometry(w,h),wallSkin);panel.position.set(x,y,z);panel.rotation.y=rotationY;panel.receiveShadow=true;scene.add(panel);return panel;};
+  box(scene,roomSize,5,.32,0,2.35,-roomHalf,wallSolid);wallPanel(roomSize,4.94,0,2.35,-roomHalf+.166,0);
+  box(scene,.32,5,roomSize,-roomHalf,2.35,0,wallSolid);wallPanel(roomSize,4.94,-roomHalf+.166,2.35,0,Math.PI/2);
+  // Solid partition between PC and console rooms; only the framed doorway remains open.
+  const doorwayHalf=1.7,partitionMat=wallSolid,segment=roomHalf-doorwayHalf,segmentCenter=(roomHalf+doorwayHalf)/2;
+  for(const side of [-1,1]){
+    const z=side*segmentCenter;
+    box(scene,.32,5,segment,roomHalf,2.35,z,partitionMat);
+    wallPanel(segment,4.94,roomHalf-.166,2.35,z,Math.PI/2);
+    wallPanel(segment,4.94,roomHalf+.166,2.35,z,-Math.PI/2);
+  }
   box(scene,.34,.28,doorwayHalf*2+.22,roomHalf,4.72,0,surfaceMat("#172a43","metal",.34,.62));
   for(const side of [-1,1]){
     box(scene,.34,4.65,.14,roomHalf,2.34,side*(doorwayHalf+.035),surfaceMat("#172a43","metal",.34,.62));
     box(scene,.38,.07,.2,roomHalf,4.68,side*(doorwayHalf+.035),mat(side<0?"#21cfff":"#a56cff",.22,.35,{emissive:side<0?"#087fa8":"#4a138c",emissiveIntensity:.85}),false);
-  }box(scene,roomSize,.25,roomSize,0,5,0,surfaceMat("#ffffff","ceiling",.82,.08));
- const wingX=roomHalf+4.75;
- const consoleRoomLevel=Number(state.clubData.consoleRoomLevel||0),consoleDepth=22+consoleRoomLevel*4,consoleCenterZ=consoleRoomLevel*2;
- box(scene,9.5,.3,consoleDepth,wingX,-.18,consoleCenterZ,surfaceMat("#ffffff","floor",.32,.18));
- box(scene,9.5,5,.3,wingX,2.35,-11,surfaceMat("#ffffff","wall",.88,0));box(scene,9.5,5,.3,wingX,2.35,11+consoleRoomLevel*4,surfaceMat("#ffffff","wall",.88,0));box(scene,.3,5,consoleDepth,roomHalf+9.5,2.35,consoleCenterZ,surfaceMat("#ffffff","wall",.88,0));box(scene,9.5,.25,consoleDepth,wingX,5,consoleCenterZ,surfaceMat("#ffffff","ceiling",.82,.08));
+  }
+  box(scene,roomSize,.25,roomSize,0,5,0,surfaceMat("#ffffff","ceiling",.82,.08));
+  const wingX=roomHalf+4.75;
+  const consoleRoomLevel=Number(state.clubData.consoleRoomLevel||0),consoleDepth=22+consoleRoomLevel*4,consoleCenterZ=consoleRoomLevel*2;
+  box(scene,9.5,.3,consoleDepth,wingX,-.18,consoleCenterZ,surfaceMat("#ffffff","floor",.32,.18));
+  box(scene,9.5,5,.3,wingX,2.35,-11,wallSolid);wallPanel(9.5,4.94,wingX,2.35,-10.85,0);
+  box(scene,9.5,5,.3,wingX,2.35,11+consoleRoomLevel*4,wallSolid);wallPanel(9.5,4.94,wingX,2.35,10.85+consoleRoomLevel*4,Math.PI);
+  box(scene,.3,5,consoleDepth,roomHalf+9.5,2.35,consoleCenterZ,wallSolid);wallPanel(consoleDepth,4.94,roomHalf+9.35,2.35,consoleCenterZ,-Math.PI/2);
+  box(scene,9.5,.25,consoleDepth,wingX,5,consoleCenterZ,surfaceMat("#ffffff","ceiling",.82,.08));
  box(scene,.12,3.5,.18,roomHalf+.08,2.1,-2.3,mat("#21cfff",.2,.3,{emissive:"#087fa8",emissiveIntensity:1}),false);box(scene,.12,3.5,.18,roomHalf+.08,2.1,2.3,mat("#a55cff",.2,.3,{emissive:"#4a138c",emissiveIntensity:1}),false);
  const wingSign=new THREE.Mesh(new THREE.PlaneGeometry(3.4,.65),signMaterial("CONSOLE LOUNGE","PLAYSTATION • XBOX"));wingSign.position.set(roomHalf+4.75,3.7,-10.78);scene.add(wingSign);
  box(scene,.12,2.5,3.2,-2.45,1.25,6.0,surfaceMat("#263d58","plastic",.35,.3));box(scene,.12,2.5,3.2,2.45,1.25,6.0,surfaceMat("#263d58","plastic",.35,.3));// Keep the entrance-to-club passage open: rear reception partition removed.
