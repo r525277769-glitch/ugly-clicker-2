@@ -2420,7 +2420,7 @@ app.post("/api/simulator/action",auth,async(req,res)=>{
     const ci=Number(String(req.body.station).split(":")[1]),st=d.consoleStations[ci];
     if(!Number.isInteger(ci)||!st)throw Error("Консольное место не найдено");
     if((d.consoleSessions||[]).some(x=>Number(x.station)===ci))throw Error("Консольное место уже занято");
-    const minutes=[30,60,120,180].includes(Number(req.body.minutes))?Number(req.body.minutes):60,range=CONSOLE_SESSION_PRICES[minutes],reward=range[0]+Math.floor(Math.random()*(range[1]-range[0]+1)),duration=minutes*60;
+    const minutes=[30,60,120,180].includes(Number(req.body.minutes))?Number(req.body.minutes):60,range=CONSOLE_SESSION_PRICES[minutes],quoted=Number(req.body.expectedReward),reward=Number.isInteger(quoted)&&quoted>=range[0]&&quoted<=range[1]?quoted:range[0]+Math.floor(Math.random()*(range[1]-range[0]+1)),duration=minutes*60;
     d.queue=d.queue.filter(x=>x.id!==queueId);
     d.consoleSessions.push({id:queueId,name:guest.name,station:ci,minutes,duration,reward,startedAt:new Date().toISOString(),endsAt:new Date(Date.now()+duration*1000).toISOString()});
     msg=guest.name+" оформлен на консоль №"+(ci+1)+" на "+minutes+" мин.";
