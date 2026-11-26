@@ -184,8 +184,8 @@ function makeGamingStation(x,z,index,data){
  const gpu=clamp(Number(c.gpu)||tier,1,4),cpu=clamp(Number(c.cpu)||tier,1,4),ram=clamp(Number(c.ram)||tier,1,4),monitor=clamp(Number(c.monitor)||tier,1,4),keyboard=clamp(Number(c.keyboard)||tier,1,4),mouse=clamp(Number(c.mouse)||tier,1,4),chairLevel=clamp(Number(c.chair)||tier,1,4);
  const palette=["#ffbd45","#24cfff","#42e6a5","#bf82ff"],emit=["#704000","#00618a","#087a4d","#4a1a83"],trim=mat(palette[gpu-1],.26,.42,{emissive:emit[gpu-1],emissiveIntensity:.55});
  const screenMat=mat("#fff",.24,.05,{map:canvasTexture((ctx,w,h)=>{const gr=ctx.createLinearGradient(0,0,w,h);gr.addColorStop(0,["#12314c","#0a5276","#104a38","#48265f"][monitor-1]);gr.addColorStop(1,["#07111f","#142b5a","#102b25","#211333"][monitor-1]);ctx.fillStyle=gr;ctx.fillRect(0,0,w,h);ctx.fillStyle="#fff";ctx.font="bold 38px Arial";ctx.fillText("UGLY",18,57);ctx.font="16px Arial";ctx.fillText("GAMING ARENA / PC "+(index+1),18,83);ctx.fillStyle=palette[monitor-1];ctx.fillRect(18,104,w*.72,7);},256,160),emissive:palette[monitor-1],emissiveIntensity:.12+monitor*.055});
- box(g,2.1,.15,.92,0,.78,0,mat("#27374b",.34,.32));box(g,2.12,.045,.94,0,.87,0,trim,false);
- for(const sx of [-.9,.9])box(g,.12,.76,.13,sx,.38,0,mat("#71869c",.28,.62));
+ const deskShell=mat(["#26374b","#174d68","#18513f","#49315f"][gpu-1],.3,.42);box(g,2.1,.15,.92,0,.78,0,deskShell);box(g,2.12,.045,.94,0,.87,0,trim,false);
+ for(const sx of [-.9,.9]){box(g,.12,.76,.13,sx,.38,0,mat(["#71869c","#2b9ab5","#398b6c","#9270b8"][gpu-1],.28,.62));box(g,.13,.035,.14,sx,.72,.03,trim,false);}
  box(g,.88,.56,.11,0,1.28,-.36,mat("#111b2b",.2,.42));box(g,.76,.42,.016,0,1.29,-.422,screenMat,false);
  box(g,.12,.17,.13,0,1.02,-.34,mat("#71849a",.26,.58));box(g,.34,.035,.25,0,.98,-.19,mat("#182536",.3,.35));
  const boardGlow=mat(palette[keyboard-1],.3,.15,{emissive:emit[keyboard-1],emissiveIntensity:.2+keyboard*.12});
@@ -230,7 +230,7 @@ function buildStore(){
  box(laptop,.78,.39,.012,0,.28,-.232,mat("#0a1b2d",.18,.2,{emissive:"#087ba5",emissiveIntensity:.4}),false);
  box(laptop,.58,.012,.2,0,.052,.12,mat("#263c52",.3,.35),false);
  box(laptop,.2,.008,.11,0,.052,.28,mat("#7894aa",.25,.55),false);
- const laptopScreen=new THREE.Mesh(new THREE.PlaneGeometry(.72,.32),signMaterial("UGLY ADMIN","TAP TO MANAGE GUESTS"));laptopScreen.position.set(0,.28,-.222);laptop.add(laptopScreen);
+ const laptopScreen=new THREE.Mesh(new THREE.PlaneGeometry(.72,.32),signMaterial("UGLY ADMIN","TAP TO MANAGE GUESTS"));laptopScreen.material.side=THREE.DoubleSide;laptopScreen.material.needsUpdate=true;laptopScreen.position.set(0,.28,-.222);laptop.add(laptopScreen);
  makeLabel(scene,"RECEPTION",0,2.12,6.48,2.5,.4);
  interactables.push({position:new THREE.Vector3(0,0,7.22),name:"Ноутбук администратора",hint:"НОУТБУК РЕСЕПШЕНА · НАЖМИ, ЧТОБЫ ПРИНЯТЬ ПОСЕТИТЕЛЯ",action:"open_reception",radius:2.25});
  const spots=[[-5.1,-3.4],[-1.8,-3.4],[1.8,-3.4],[5.1,-3.4],[-5.1,2],[-1.8,2],[1.8,2],[5.1,2]];
