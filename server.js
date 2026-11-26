@@ -29,7 +29,7 @@ const catalog = {
   car: [
     { name: "Спортивный автомобиль", price: 50000 },
     { name: "Премиум автомобиль", price: 500000 },
-    { name: "Суперкар", price: 5000000 },
+    { name: "Суперкар", price: 10000000 },
     { name: "Гиперкар", price: 10000000 }
   ],
   watch: [
@@ -54,7 +54,6 @@ const catalog = {
   ]
 };
 
-// Новый каталог бизнесов
 const businessCatalog = [
   { key: "kiosk", name: "Ларёк", price: 1000, income: 10 },
   { key: "cafe", name: "Кафе", price: 15000, income: 150 },
@@ -72,6 +71,57 @@ const upgrades = {
   x4: { price: 12000, multiplier: 4, duration: 180000 },
   x10: { price: 2000000, multiplier: 10, permanent: true }
 };
+
+// =====================================================
+// BATTLE PASS: НАСТРОЙКИ
+// =====================================================
+
+const BP_CONFIG = {
+  seasonDays: 30,
+  maxLevel: 100,
+  xpPerLevel: 200,
+  freeTaskXP: 75,
+  premiumTaskXP: 150,
+  premiumDollarPrice: 300000,
+  premiumGrammPrice: 30000
+};
+
+const BP_TASKS = [
+  {
+    key: "click_dollars",
+    title: "Заработать $2 000 кликами",
+    target: 2000
+  },
+  {
+    key: "business_profit",
+    title: "Получить прибыль от бизнеса",
+    target: 1
+  },
+  {
+    key: "gramm_50",
+    title: "Сделать 50 кликов в GRAMM CLICKER",
+    target: 50
+  },
+  {
+    key: "gramm_75",
+    title: "Сделать 75 кликов в GRAMM CLICKER",
+    target: 75
+  },
+  {
+    key: "gramm_100",
+    title: "Сделать 100 кликов в GRAMM CLICKER",
+    target: 100
+  },
+  {
+    key: "shop_purchase",
+    title: "Купить любой предмет в магазине",
+    target: 1
+  }
+];
+
+// =====================================================
+// БАЗА ДАННЫХ
+// =====================================================
 
 async function initDatabase() {
   if (!DATABASE_URL) {
@@ -126,11 +176,9 @@ async function initDatabase() {
     ALTER TABLE players
       ADD COLUMN IF NOT EXISTS x10_unlocked BOOLEAN NOT NULL DEFAULT FALSE;
 
-    -- Отдельный счёт бизнеса
     ALTER TABLE players
       ADD COLUMN IF NOT EXISTS business_balance BIGINT NOT NULL DEFAULT 0;
 
-    -- Купленные предприятия игроков
     CREATE TABLE IF NOT EXISTS player_businesses (
       id BIGSERIAL PRIMARY KEY,
       telegram_id BIGINT NOT NULL REFERENCES players(telegram_id),
@@ -144,11 +192,506 @@ async function initDatabase() {
 
     CREATE INDEX IF NOT EXISTS idx_player_businesses_telegram_id
       ON player_businesses(telegram_id);
+
+    -- BATTLE PASS: сезоны
+
+    CREATE TABLE IF NOT EXISTS battle_pass_seasons (
+      id BIGSERIAL PRIMARY KEY,
+      starts_at TIMESTAMPTZ NOT NULL,
+      ends_at TIMESTAMPTZ NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
+    -- BATTLE PASS: прогресс игроков
+
+    CREATE TABLE IF NOT EXISTS player_battle_pass (
+      telegram_id BIGINT NOT NULL REFERENCES players(telegram_id),
+      season_id BIGINT NOT NULL REFERENCES battle_pass_seasons(id),
+      bp_xp BIGINT NOT NULL DEFAULT 0,
+      bp_level INTEGER NOT NULL DEFAULT 1,
+      premium BOOLEAN NOT NULL DEFAULT FALSE,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      PRIMARY KEY (telegram_id, season_id)
+    );
+
+    -- BATTLE PASS: ежедневные задания
+
+    CREATE TABLE IF NOT EXISTS battle_pass_tasks (
+      id BIGSERIAL PRIMARY KEY,
+      telegram_id BIGINT NOT NULL REFERENCES players(telegram_id),
+      season_id BIGINT NOT NULL REFERENCES battle_pass_seasons(id),
+      task_date DATE NOT NULL,
+      task_key TEXT NOT NULL,
+      progress INTEGER NOT NULL DEFAULT 0,
+      completed_at TIMESTAMPTZ,
+      UNIQUE (telegram_id, season_id, task_date, task_key)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_bp_tasks_player_date
+      ON battle_pass_tasks(telegram_id, season_id, task_date);
+
+    -- BATTLE PASS: полученные награды
+
+    CREATE TABLE IF NOT EXISTS battle_pass_claims (
+      id BIGSERIAL PRIMARY KEY,
+      telegram_id BIGINT NOT NULL REFERENCES players(telegram_id),
+      season_id BIGINT NOT NULL REFERENCES battle_pass_seasons(id),
+      bp_level INTEGER NOT NULL,
+      track TEXT NOT NULL,
+      dollars BIGINT NOT NULL,
+      gramm BIGINT NOT NULL,
+      claimed_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE (telegram_id, season_id, bp_level, track)
+    );
   `);
 
   databaseReady = true;
   console.log("Database ready");
 }
+
+// =====================================================
+// BATTLE PASS: СЕЗОНЫ И ПРОГРЕСС
+// =====================================================
+
+async function getActiveBPSeason(client) {
+  let result = await client.query(
+    `SELECT id, starts_at, ends_at
+     FROM battle_pass_seasons
+     WHERE ends_at > NOW()
+     ORDER BY id DESC
+     LIMIT 1`
+  );
+
+  if (result.rows.length) {
+    return result.rows[0];
+  }
+
+  // Защита от создания нескольких сезонов одновременно.
+  await client.query("SELECT pg_advisory_xact_lock(20261126)");
+
+  result = await client.query(
+    `SELECT id, starts_at, ends_at
+     FROM battle_pass_seasons
+     WHERE ends_at > NOW()
+     ORDER BY id DESC
+     LIMIT 1`
+  );
+
+  if (result.rows.length) {
+    return result.rows[0];
+  }
+
+  const created = await client.query(
+    `INSERT INTO battle_pass_seasons (starts_at, ends_at)
+     VALUES (NOW(), NOW() + INTERVAL '30 days')
+     RETURNING id, starts_at, ends_at`
+  );
+
+  return created.rows[0];
+}
+
+async function getOrCreateBPPlayer(client, telegramId, seasonId) {
+  await client.query(
+    `INSERT INTO player_battle_pass
+      (telegram_id, season_id)
+     VALUES ($1, $2)
+     ON CONFLICT (telegram_id, season_id) DO NOTHING`,
+    [telegramId, seasonId]
+  );
+
+  const result = await client.query(
+    `SELECT bp_xp, bp_level, premium
+     FROM player_battle_pass
+     WHERE telegram_id = $1 AND season_id = $2
+     FOR UPDATE`,
+    [telegramId, seasonId]
+  );
+
+  return result.rows[0];
+}
+
+function getBPReward(level, track) {
+  const freeDollars = level * 1000;
+  const freeGramm = level * 10;
+
+  const multiplier = track === "premium" ? 2 : 1;
+
+  return {
+    dollars: freeDollars * multiplier,
+    gramm: freeGramm * multiplier
+  };
+}
+
+async function addBPExperience(client, telegramId, seasonId, amount) {
+  const result = await client.query(
+    `UPDATE player_battle_pass
+     SET bp_xp = LEAST(
+       $3,
+       bp_xp + $4
+     ),
+     bp_level = LEAST(
+       100,
+       FLOOR(LEAST($3, bp_xp + $4)::numeric / 200)::integer + 1
+     )
+     WHERE telegram_id = $1 AND season_id = $2
+     RETURNING bp_xp, bp_level`,
+    [
+      telegramId,
+      seasonId,
+      (BP_CONFIG.maxLevel - 1) * BP_CONFIG.xpPerLevel,
+      amount
+    ]
+  );
+
+  return result.rows[0];
+}
+
+// Вызывается только внутри уже открытой транзакции.
+async function trackBPTask(client, telegramId, taskKey, amount) {
+  const task = BP_TASKS.find(item => item.key === taskKey);
+
+  if (!task || amount <= 0) return;
+
+  const season = await getActiveBPSeason(client);
+
+  const bpPlayer = await getOrCreateBPPlayer(
+    client,
+    telegramId,
+    season.id
+  );
+
+  const today = new Date().toISOString().slice(0, 10);
+
+  await client.query(
+    `INSERT INTO battle_pass_tasks
+      (telegram_id, season_id, task_date, task_key, progress)
+     VALUES ($1, $2, $3, $4, $5)
+     ON CONFLICT (telegram_id, season_id, task_date, task_key)
+     DO UPDATE SET progress = LEAST(
+       battle_pass_tasks.progress + EXCLUDED.progress,
+       100000000
+     )`,
+    [telegramId, season.id, today, taskKey, amount]
+  );
+
+  const completed = await client.query(
+    `UPDATE battle_pass_tasks
+     SET completed_at = NOW()
+     WHERE telegram_id = $1
+       AND season_id = $2
+       AND task_date = $3
+       AND task_key = $4
+       AND progress >= $5
+       AND completed_at IS NULL
+     RETURNING id`,
+    [telegramId, season.id, today, taskKey, task.target]
+  );
+
+  // XP начисляется только один раз при первом выполнении.
+  if (completed.rows.length) {
+    const xp = bpPlayer.premium
+      ? BP_CONFIG.premiumTaskXP
+      : BP_CONFIG.freeTaskXP;
+
+    await addBPExperience(
+      client,
+      telegramId,
+      season.id,
+      xp
+    );
+  }
+}
+
+// =====================================================
+// BATTLE PASS: API СОСТОЯНИЯ
+// =====================================================
+
+app.get("/api/battle-pass/state", auth, async (req, res) => {
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    const season = await getActiveBPSeason(client);
+
+    const player = await getOrCreateBPPlayer(
+      client,
+      req.player.id,
+      season.id
+    );
+
+    const today = new Date().toISOString().slice(0, 10);
+
+    const tasksResult = await client.query(
+      `SELECT task_key, progress, completed_at
+       FROM battle_pass_tasks
+       WHERE telegram_id = $1
+         AND season_id = $2
+         AND task_date = $3`,
+      [req.player.id, season.id, today]
+    );
+
+    const claimsResult = await client.query(
+      `SELECT bp_level, track
+       FROM battle_pass_claims
+       WHERE telegram_id = $1 AND season_id = $2`,
+      [req.player.id, season.id]
+    );
+
+    const taskMap = {};
+
+    for (const row of tasksResult.rows) {
+      taskMap[row.task_key] = row;
+    }
+
+    const claimed = claimsResult.rows.map(row => ({
+      level: Number(row.bp_level),
+      track: row.track
+    }));
+
+    const tasks = BP_TASKS.map(task => {
+      const saved = taskMap[task.key];
+
+      return {
+        key: task.key,
+        title: task.title,
+        target: task.target,
+        progress: saved ? Number(saved.progress) : 0,
+        completed: Boolean(saved && saved.completed_at),
+        xpReward: player.premium
+          ? BP_CONFIG.premiumTaskXP
+          : BP_CONFIG.freeTaskXP
+      };
+    });
+
+    await client.query("COMMIT");
+
+    const xp = Number(player.bp_xp);
+    const level = Number(player.bp_level);
+
+    res.json({
+      success: true,
+      season: {
+        id: Number(season.id),
+        startsAt: season.starts_at,
+        endsAt: season.ends_at,
+        days: BP_CONFIG.seasonDays
+      },
+      level,
+      xp,
+      xpPerLevel: BP_CONFIG.xpPerLevel,
+      xpProgress: level >= BP_CONFIG.maxLevel
+        ? BP_CONFIG.xpPerLevel
+        : xp % BP_CONFIG.xpPerLevel,
+      maxLevel: BP_CONFIG.maxLevel,
+      premium: player.premium,
+      premiumPrice: {
+        dollars: BP_CONFIG.premiumDollarPrice,
+        gramm: BP_CONFIG.premiumGrammPrice
+      },
+      tasks,
+      claimed
+    });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("Battle Pass state error:", error);
+    res.status(500).json({
+      error: "Не удалось загрузить Battle Pass"
+    });
+  } finally {
+    client.release();
+  }
+});
+
+// =====================================================
+// BATTLE PASS: ПОКУПКА PREMIUM
+// =====================================================
+
+app.post("/api/battle-pass/buy-premium", auth, async (req, res) => {
+  const currency = req.body.currency;
+
+  if (currency !== "usd" && currency !== "gramm") {
+    return res.status(400).json({
+      error: "Выбери оплату долларами или GRAMM"
+    });
+  }
+
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    const season = await getActiveBPSeason(client);
+
+    const bpPlayer = await getOrCreateBPPlayer(
+      client,
+      req.player.id,
+      season.id
+    );
+
+    if (bpPlayer.premium) {
+      throw new Error("Premium уже куплен");
+    }
+
+    const playerResult = await client.query(
+      `SELECT balance, gramm_balance
+       FROM players
+       WHERE telegram_id = $1
+       FOR UPDATE`,
+      [req.player.id]
+    );
+
+    const player = playerResult.rows[0];
+
+    if (currency === "usd") {
+      if (
+        BigInt(player.balance) <
+        BigInt(BP_CONFIG.premiumDollarPrice)
+      ) {
+        throw new Error("Недостаточно долларов");
+      }
+
+      await client.query(
+        `UPDATE players
+         SET balance = balance - $1
+         WHERE telegram_id = $2`,
+        [BP_CONFIG.premiumDollarPrice, req.player.id]
+      );
+    } else {
+      if (
+        BigInt(player.gramm_balance) <
+        BigInt(BP_CONFIG.premiumGrammPrice)
+      ) {
+        throw new Error("Недостаточно GRAMM");
+      }
+
+      await client.query(
+        `UPDATE players
+         SET gramm_balance = gramm_balance - $1
+         WHERE telegram_id = $2`,
+        [BP_CONFIG.premiumGrammPrice, req.player.id]
+      );
+    }
+
+    await client.query(
+      `UPDATE player_battle_pass
+       SET premium = TRUE
+       WHERE telegram_id = $1 AND season_id = $2`,
+      [req.player.id, season.id]
+    );
+
+    await client.query("COMMIT");
+
+    res.json({
+      success: true,
+      premium: true,
+      message: "PREMIUM BATTLE PASS успешно куплен"
+    });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    res.status(400).json({ error: error.message });
+  } finally {
+    client.release();
+  }
+});
+
+// =====================================================
+// BATTLE PASS: ПОЛУЧЕНИЕ НАГРАД
+// =====================================================
+
+app.post("/api/battle-pass/claim", auth, async (req, res) => {
+  const level = Number(req.body.level);
+  const track = req.body.track;
+
+  if (
+    !Number.isInteger(level) ||
+    level < 1 ||
+    level > BP_CONFIG.maxLevel
+  ) {
+    return res.status(400).json({
+      error: "Неверный уровень"
+    });
+  }
+
+  if (track !== "free" && track !== "premium") {
+    return res.status(400).json({
+      error: "Неверная дорожка наград"
+    });
+  }
+
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    const season = await getActiveBPSeason(client);
+
+    const bpPlayer = await getOrCreateBPPlayer(
+      client,
+      req.player.id,
+      season.id
+    );
+
+    if (level > Number(bpPlayer.bp_level)) {
+      throw new Error("Этот уровень ещё не достигнут");
+    }
+
+    if (track === "premium" && !bpPlayer.premium) {
+      throw new Error("Для этой награды нужен PREMIUM");
+    }
+
+    const reward = getBPReward(level, track);
+
+    const claim = await client.query(
+      `INSERT INTO battle_pass_claims
+        (telegram_id, season_id, bp_level, track, dollars, gramm)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       ON CONFLICT (telegram_id, season_id, bp_level, track)
+       DO NOTHING
+       RETURNING id`,
+      [
+        req.player.id,
+        season.id,
+        level,
+        track,
+        reward.dollars,
+        reward.gramm
+      ]
+    );
+
+    if (!claim.rows.length) {
+      throw new Error("Эта награда уже получена");
+    }
+
+    await client.query(
+      `UPDATE players
+       SET balance = balance + $1,
+           gramm_balance = gramm_balance + $2
+       WHERE telegram_id = $3`,
+      [reward.dollars, reward.gramm, req.player.id]
+    );
+
+    await client.query("COMMIT");
+
+    res.json({
+      success: true,
+      level,
+      track,
+      dollars: reward.dollars,
+      gramm: reward.gramm,
+      message: "Награда Battle Pass получена"
+    });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    res.status(400).json({ error: error.message });
+  } finally {
+    client.release();
+  }
+});
+
+// =====================================================
+// TELEGRAM АВТОРИЗАЦИЯ
+// =====================================================
 
 function authenticate(initData) {
   if (!BOT_TOKEN || !initData) {
@@ -265,8 +808,10 @@ function getBonusState(player) {
   };
 }
 
-// Начисляет пассивный доход за всё прошедшее время.
-// Дробная часть времени сохраняется, чтобы доход не терялся.
+// =====================================================
+// БИЗНЕС: ПАССИВНЫЙ ДОХОД
+// =====================================================
+
 async function accrueBusinessIncome(client, telegramId) {
   const businesses = await client.query(
     `SELECT id, hourly_income, last_accrued_at
@@ -310,10 +855,17 @@ async function accrueBusinessIncome(client, telegramId) {
        WHERE telegram_id = $2`,
       [totalIncome.toString(), telegramId]
     );
+
+    // BATTLE PASS: задание о получении прибыли бизнеса.
+    await trackBPTask(client, telegramId, "business_profit", 1);
   }
 
   return totalIncome.toString();
 }
+
+// =====================================================
+// СТАТУС СЕРВЕРА И КАТАЛОГИ
+// =====================================================
 
 app.get("/health", (req, res) => {
   res.json({
@@ -327,10 +879,13 @@ app.get("/api/catalog", (req, res) => {
   res.json(catalog);
 });
 
-// Каталог бизнесов
 app.get("/api/businesses/catalog", auth, (req, res) => {
   res.json(businessCatalog);
 });
+
+// =====================================================
+// СОСТОЯНИЕ ИГРОКА
+// =====================================================
 
 app.get("/api/state", auth, async (req, res) => {
   const client = await pool.connect();
@@ -403,6 +958,10 @@ app.get("/api/state", auth, async (req, res) => {
   }
 });
 
+// =====================================================
+// ОСНОВНОЙ КЛИКЕР
+// =====================================================
+
 app.post("/api/click", auth, async (req, res) => {
   const client = await pool.connect();
 
@@ -430,6 +989,14 @@ app.post("/api/click", auth, async (req, res) => {
       [multiplier, req.player.id]
     );
 
+    // BATTLE PASS: учитываем заработанные кликами доллары.
+    await trackBPTask(
+      client,
+      req.player.id,
+      "click_dollars",
+      multiplier
+    );
+
     await client.query("COMMIT");
 
     res.json({
@@ -446,6 +1013,10 @@ app.post("/api/click", auth, async (req, res) => {
     client.release();
   }
 });
+
+// =====================================================
+// GRAMM CLICKER
+// =====================================================
 
 app.post("/api/gramm/click", auth, async (req, res) => {
   const client = await pool.connect();
@@ -470,6 +1041,11 @@ app.post("/api/gramm/click", auth, async (req, res) => {
       [multiplier, req.player.id]
     );
 
+    // BATTLE PASS: три задания с разными порогами.
+    await trackBPTask(client, req.player.id, "gramm_50", 1);
+    await trackBPTask(client, req.player.id, "gramm_75", 1);
+    await trackBPTask(client, req.player.id, "gramm_100", 1);
+
     await client.query("COMMIT");
 
     res.json({
@@ -484,6 +1060,10 @@ app.post("/api/gramm/click", auth, async (req, res) => {
     client.release();
   }
 });
+
+// =====================================================
+// ПОКУПКА УЛУЧШЕНИЙ
+// =====================================================
 
 app.post("/api/upgrades/buy", auth, async (req, res) => {
   const { type } = req.body;
@@ -560,16 +1140,24 @@ app.post("/api/upgrades/buy", auth, async (req, res) => {
   }
 });
 
+// =====================================================
+// ОБМЕН ДОЛЛАРОВ И GRAMM
+// =====================================================
+
 app.post("/api/gramm/exchange", auth, async (req, res) => {
   const { direction, amount } = req.body;
   const value = Number(amount);
 
   if (!Number.isSafeInteger(value) || value <= 0) {
-    return res.status(400).json({ error: "Укажи целое положительное число" });
+    return res.status(400).json({
+      error: "Укажи целое положительное число"
+    });
   }
 
   if (direction !== "toGramm" && direction !== "toDollars") {
-    return res.status(400).json({ error: "Неверное направление обмена" });
+    return res.status(400).json({
+      error: "Неверное направление обмена"
+    });
   }
 
   const client = await pool.connect();
@@ -641,7 +1229,10 @@ app.post("/api/gramm/exchange", auth, async (req, res) => {
   }
 });
 
-// Покупка бизнеса
+// =====================================================
+// ПОКУПКА БИЗНЕСА
+// =====================================================
+
 app.post("/api/businesses/buy", auth, async (req, res) => {
   const { key } = req.body;
   const business = businessCatalog.find(item => item.key === key);
@@ -710,7 +1301,10 @@ app.post("/api/businesses/buy", auth, async (req, res) => {
   }
 });
 
-// Продажа бизнеса за 70% первоначальной цены
+// =====================================================
+// ПРОДАЖА БИЗНЕСА
+// =====================================================
+
 app.post("/api/businesses/sell", auth, async (req, res) => {
   const businessId = Number(req.body.businessId);
 
@@ -729,7 +1323,6 @@ app.post("/api/businesses/sell", auth, async (req, res) => {
       [req.player.id]
     );
 
-    // Сначала начисляем доход до момента продажи
     await accrueBusinessIncome(client, req.player.id);
 
     const result = await client.query(
@@ -785,8 +1378,10 @@ app.post("/api/businesses/sell", auth, async (req, res) => {
   }
 });
 
-// Вывод денег с бизнес-счёта
-// В GRAMM переводятся доллары по курсу 10 долларов = 1 GRAMM.
+// =====================================================
+// ВЫВОД С БИЗНЕС-СЧЁТА
+// =====================================================
+
 app.post("/api/businesses/withdraw", auth, async (req, res) => {
   const { destination, amount } = req.body;
   const value = Number(amount);
@@ -826,7 +1421,6 @@ app.post("/api/businesses/withdraw", auth, async (req, res) => {
       [req.player.id]
     );
 
-    // Перед выводом начисляем весь заработанный доход
     await accrueBusinessIncome(client, req.player.id);
 
     const result = await client.query(
@@ -887,6 +1481,10 @@ app.post("/api/businesses/withdraw", auth, async (req, res) => {
   }
 });
 
+// =====================================================
+// ПОКУПКА ПРЕДМЕТОВ
+// =====================================================
+
 app.post("/api/shop/buy", auth, async (req, res) => {
   const { category, index } = req.body;
 
@@ -925,6 +1523,9 @@ app.post("/api/shop/buy", auth, async (req, res) => {
       [req.player.id, category, item.name, item.price]
     );
 
+    // BATTLE PASS: покупка любого предмета завершает задание.
+    await trackBPTask(client, req.player.id, "shop_purchase", 1);
+
     await client.query("COMMIT");
 
     const updated = await pool.query(
@@ -943,6 +1544,10 @@ app.post("/api/shop/buy", auth, async (req, res) => {
     client.release();
   }
 });
+
+// =====================================================
+// ПРОДАЖА ПРЕДМЕТОВ
+// =====================================================
 
 app.post("/api/shop/sell", auth, async (req, res) => {
   const itemId = Number(req.body.itemId);
@@ -998,6 +1603,10 @@ app.post("/api/shop/sell", auth, async (req, res) => {
   }
 });
 
+// =====================================================
+// ЕЖЕДНЕВНАЯ НАГРАДА ИГРЫ
+// =====================================================
+
 app.post("/api/daily", auth, async (req, res) => {
   const client = await pool.connect();
 
@@ -1033,6 +1642,10 @@ app.post("/api/daily", auth, async (req, res) => {
   }
 });
 
+// =====================================================
+// РЕЙТИНГ ИГРОКОВ
+// =====================================================
+
 app.get("/api/leaderboard", async (req, res) => {
   try {
     if (!databaseReady) {
@@ -1052,6 +1665,10 @@ app.get("/api/leaderboard", async (req, res) => {
     res.status(500).json({ error: "Leaderboard failed" });
   }
 });
+
+// =====================================================
+// ЗАПУСК СЕРВЕРА
+// =====================================================
 
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`UGLY CLICKER 2.0 running on port ${PORT}`);
