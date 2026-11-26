@@ -271,9 +271,6 @@ function updateHUD() {
   if ($("simIncome")) $("simIncome").textContent = "$" + Number(state.hourlyIncome || 0).toLocaleString("ru-RU") + "/ч";
   if ($("simAdLevel")) $("simAdLevel").textContent = state.adLevel || 0;
   stationGroups.forEach((g,i)=>g.visible=i<(state.stations||4));
-  if ($("simStations")) $("simStations").textContent=(state.stations||4)+" / 8";
-  if ($("simIncome")) $("simIncome").textContent="$"+Number(state.hourlyIncome||0).toLocaleString("ru-RU")+"/ч";
-  if ($("simAdLevel")) $("simAdLevel").textContent=state.adLevel||0;
 }
 async function loadState() {
   try {
