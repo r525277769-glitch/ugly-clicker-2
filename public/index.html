@@ -145,16 +145,12 @@ input{background:#090909;border:1px solid var(--gold-dark);border-radius:11px;pa
  <div class="panel"><h2>REWARD TRACK</h2><p class="small">100 УРОВНЕЙ НАГРАД</p><p><span class="bp-tag">FREE</span><span class="bp-tag">PREMIUM x2</span></p><div id="bpRewards">Загрузка наград...</div></div>
 </section>
 <section id="simulator" class="page ugly-sim-page">
- <div class="section-heading"><h2>UGLY BUSINESS</h2><p>3D STORE SIMULATOR · FIRST LOCATION</p></div>
- <div class="sim-hud"><div><small>КАССА МАГАЗИНА</small><strong id="simCash">$0</strong></div><div><small>УРОВЕНЬ МАГАЗИНА</small><strong id="simLevel">1</strong></div><div><small>КЛИЕНТЫ</small><strong id="simCustomers">0</strong></div></div>
- <div class="sim-stage"><canvas id="uglyBusinessCanvas" aria-label="3D магазин"></canvas><div class="sim-crosshair">+</div><div class="sim-hint" id="simHint">Подойди к кассе или товарным полкам</div>
-  <div class="sim-joystick" id="simJoystick"><div class="sim-stick" id="simStick"></div></div>
-  <button class="sim-action" id="simAction" type="button">ВЗАИМОДЕЙСТВОВАТЬ</button>
- </div>
- <div class="sim-controls-note">ЛЕВЫЙ ДЖОЙСТИК — ХОДЬБА · СВАЙП СПРАВА — ПОВОРОТ КАМЕРЫ · ПОДОЙДИ К ОБЪЕКТУ И НАЖМИ ДЕЙСТВИЕ</div>
- <div class="sim-actions"><button type="button" data-sim-action="checkout">ОБСЛУЖИТЬ КЛИЕНТА</button><button type="button" data-sim-action="restock" class="button-secondary">ПОПОЛНИТЬ ПОЛКИ</button></div>
- <div class="panel sim-progress"><h2>ПРОГРЕСС МАГАЗИНА</h2><div class="sim-progress-track"><div id="simXpFill"></div></div><p id="simXpText" class="small">0 / 100 опыта</p><p class="small">Пока это первая игровая версия: управление персонажем, 3D-помещение и сохранение прогресса на сервере.</p></div>
-</section>
+<div class="section-heading"><h2>UGLY BUSINESS</h2><p>3D CYBER CLUB · COMPUTER BUSINESS</p></div>
+<div class="sim-hud"><div><small>КАССА КЛУБА</small><strong id="simCash">$0</strong></div><div><small>УРОВЕНЬ КЛУБА</small><strong id="simLevel">1</strong></div><div><small>ПОСЕТИТЕЛИ</small><strong id="simCustomers">0</strong></div><div><small>ИГРОВЫЕ МЕСТА</small><strong id="simStations">4 / 8</strong></div><div><small>ДОХОД В ЧАС</small><strong id="simIncome">$0/ч</strong></div><div><small>РЕКЛАМА</small><strong id="simAdLevel">0</strong></div></div>
+<div class="sim-stage"><canvas id="uglyBusinessCanvas" aria-label="3D компьютерный клуб"></canvas><div class="sim-crosshair">+</div><div class="sim-hint" id="simHint">Добро пожаловать в UGLY CYBER CLUB</div><div class="sim-joystick" id="simJoystick"><div class="sim-stick" id="simStick"></div></div><button class="sim-action" id="simAction" type="button" disabled>ПОДОЙДИ К ПК</button></div>
+<div class="sim-controls-note">ЛЕВЫЙ ДЖОЙСТИК — ДВИЖЕНИЕ · СВАЙП СПРАВА — КАМЕРА · E / КНОПКА — УЛУЧШИТЬ ПК</div>
+<div class="sim-management"><button id="simBuyStation" type="button">＋ КУПИТЬ ИГРОВОЕ МЕСТО</button><button id="simAdvertise" type="button">📢 ЗАПУСТИТЬ РЕКЛАМУ</button><button id="simCashout" type="button">⇧ ВЫВЕСТИ В GRAMM</button></div>
+<div class="panel sim-progress"><h2>ПРОГРЕСС КОМПЬЮТЕРНОГО КЛУБА</h2><div class="sim-progress-track"><div id="simXpFill"></div></div><p id="simXpText" class="small">0 / 100 опыта</p><p class="small">Улучшай ПК, расширяй зал и привлекай посетителей рекламой. Доход клуба накапливается автоматически.</p><p class="small">Вывод в основной баланс: $100 = 1 GRAMM.</p></div></section>
 <p id="status">Подключение...</p>
 </div>
 
@@ -163,7 +159,7 @@ input{background:#090909;border:1px solid var(--gold-dark);border-radius:11px;pa
  <button class="nav-button" data-page="gramm" onclick="showPage('gramm')"><span class="nav-icon">◎</span><span>GRAMM</span></button>
  <button class="nav-button" data-page="businesses" onclick="showPage('businesses')"><span class="nav-icon">♜</span><span>БИЗНЕС</span></button>
  <button class="nav-button" data-page="game" onclick="showPage('game')"><span class="nav-icon">₿</span><span>GAME</span></button>
-  <button class="nav-button" data-page="simulator" onclick="showPage('simulator')"><span class="nav-icon">🏪</span><span>СИМУЛЯТОР</span></button>
+  <button class="nav-button" data-page="simulator" onclick="showPage('simulator')"><span class="nav-icon">🎮</span><span>СИМУЛЯТОР</span></button>
  <button class="nav-button" data-page="battlepass" onclick="showPage('battlepass')"><span class="nav-icon">♛</span><span>PASS</span></button>
 </nav>
 
