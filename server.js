@@ -73,6 +73,19 @@ const upgrades = {
 };
 
 // =====================================================
+// ПОСТОЯННЫЕ УЛУЧШЕНИЯ КЛИКА
+// =====================================================
+
+const clickUpgrades = [
+  { key: "click_2", name: "+$2 за клик", amount: 2, price: 1000 },
+  { key: "click_10", name: "+$10 за клик", amount: 10, price: 12000 },
+  { key: "click_50", name: "+$50 за клик", amount: 50, price: 150000 },
+  { key: "click_150", name: "+$150 за клик", amount: 150, price: 500000 },
+  { key: "click_1000", name: "+$1 000 за клик", amount: 1000, price: 1500000 },
+  { key: "click_10000", name: "+$10 000 за клик", amount: 10000, price: 7500000 }
+];
+
+// =====================================================
 // BATTLE PASS: НАСТРОЙКИ
 // =====================================================
 
@@ -193,6 +206,20 @@ async function initDatabase() {
     CREATE INDEX IF NOT EXISTS idx_player_businesses_telegram_id
       ON player_businesses(telegram_id);
 
+    -- ПОСТОЯННЫЕ УЛУЧШЕНИЯ КЛИКА
+
+    CREATE TABLE IF NOT EXISTS player_click_upgrades (
+      id BIGSERIAL PRIMARY KEY,
+      telegram_id BIGINT NOT NULL REFERENCES players(telegram_id),
+      upgrade_key TEXT NOT NULL,
+      amount BIGINT NOT NULL,
+      purchased_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE (telegram_id, upgrade_key)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_player_click_upgrades_telegram_id
+      ON player_click_upgrades(telegram_id);
+
     -- BATTLE PASS: сезоны
 
     CREATE TABLE IF NOT EXISTS battle_pass_seasons (
@@ -266,7 +293,6 @@ async function getActiveBPSeason(client) {
     return result.rows[0];
   }
 
-  // Защита от создания нескольких сезонов одновременно.
   await client.query("SELECT pg_advisory_xact_lock(20261126)");
 
   result = await client.query(
@@ -346,7 +372,6 @@ async function addBPExperience(client, telegramId, seasonId, amount) {
   return result.rows[0];
 }
 
-// Вызывается только внутри уже открытой транзакции.
 async function trackBPTask(client, telegramId, taskKey, amount) {
   const task = BP_TASKS.find(item => item.key === taskKey);
 
@@ -387,7 +412,6 @@ async function trackBPTask(client, telegramId, taskKey, amount) {
     [telegramId, season.id, today, taskKey, task.target]
   );
 
-  // XP начисляется только один раз при первом выполнении.
   if (completed.rows.length) {
     const xp = bpPlayer.premium
       ? BP_CONFIG.premiumTaskXP
@@ -809,6 +833,136 @@ function getBonusState(player) {
 }
 
 // =====================================================
+// API ПОСТОЯННЫХ УЛУЧШЕНИЙ КЛИКА
+// =====================================================
+
+// Получение списка улучшений и информации о покупках.
+
+app.get("/api/click-upgrades", auth, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT upgrade_key
+       FROM player_click_upgrades
+       WHERE telegram_id = $1`,
+      [req.player.id]
+    );
+
+    const ownedKeys = result.rows.map(row => row.upgrade_key);
+
+    const upgradesList = clickUpgrades.map(upgrade => ({
+      ...upgrade,
+      owned: ownedKeys.includes(upgrade.key)
+    }));
+
+    res.json({
+      success: true,
+      upgrades: upgradesList,
+      owned: ownedKeys
+    });
+  } catch (error) {
+    console.error("Click upgrades state error:", error);
+    res.status(500).json({
+      error: "Не удалось загрузить улучшения клика"
+    });
+  }
+});
+
+// Покупка постоянного улучшения.
+
+app.post("/api/click-upgrades/buy", auth, async (req, res) => {
+  const key = req.body.key;
+  const upgrade = clickUpgrades.find(item => item.key === key);
+
+  if (!upgrade) {
+    return res.status(400).json({
+      error: "Такого улучшения не существует"
+    });
+  }
+
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    // Блокируем строку игрока, чтобы исключить
+    // одновременную повторную покупку.
+
+    const playerResult = await client.query(
+      `SELECT balance
+       FROM players
+       WHERE telegram_id = $1
+       FOR UPDATE`,
+      [req.player.id]
+    );
+
+    if (!playerResult.rows.length) {
+      throw new Error("Игрок не найден");
+    }
+
+    const alreadyBought = await client.query(
+      `SELECT id
+       FROM player_click_upgrades
+       WHERE telegram_id = $1 AND upgrade_key = $2`,
+      [req.player.id, key]
+    );
+
+    if (alreadyBought.rows.length) {
+      throw new Error("Это улучшение уже куплено");
+    }
+
+    if (BigInt(playerResult.rows[0].balance) < BigInt(upgrade.price)) {
+      throw new Error("Недостаточно долларов");
+    }
+
+    await client.query(
+      `UPDATE players
+       SET balance = balance - $1
+       WHERE telegram_id = $2`,
+      [upgrade.price, req.player.id]
+    );
+
+    await client.query(
+      `INSERT INTO player_click_upgrades
+        (telegram_id, upgrade_key, amount)
+       VALUES ($1, $2, $3)`,
+      [req.player.id, upgrade.key, upgrade.amount]
+    );
+
+    const totalResult = await client.query(
+      `SELECT COALESCE(SUM(amount), 0)::text AS total
+       FROM player_click_upgrades
+       WHERE telegram_id = $1`,
+      [req.player.id]
+    );
+
+    const updatedPlayer = await client.query(
+      `SELECT balance
+       FROM players
+       WHERE telegram_id = $1`,
+      [req.player.id]
+    );
+
+    await client.query("COMMIT");
+
+    const clickUpgradeBonus = Number(totalResult.rows[0].total);
+
+    res.json({
+      success: true,
+      message: "Улучшение успешно куплено",
+      balance: Number(updatedPlayer.rows[0].balance),
+      purchased: upgrade.key,
+      clickUpgradeBonus,
+      clickBase: 1 + clickUpgradeBonus
+    });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    res.status(400).json({ error: error.message });
+  } finally {
+    client.release();
+  }
+});
+
+// =====================================================
 // БИЗНЕС: ПАССИВНЫЙ ДОХОД
 // =====================================================
 
@@ -856,7 +1010,6 @@ async function accrueBusinessIncome(client, telegramId) {
       [totalIncome.toString(), telegramId]
     );
 
-    // BATTLE PASS: задание о получении прибыли бизнеса.
     await trackBPTask(client, telegramId, "business_profit", 1);
   }
 
@@ -932,9 +1085,26 @@ app.get("/api/state", auth, async (req, res) => {
       [req.player.id]
     );
 
+    // Сумма всех приобретённых улучшений клика.
+
+    const clickUpgradeResult = await client.query(
+      `SELECT
+         COALESCE(SUM(amount), 0)::text AS total,
+         COALESCE(
+           ARRAY_AGG(upgrade_key),
+           ARRAY[]::text[]
+         ) AS owned
+       FROM player_click_upgrades
+       WHERE telegram_id = $1`,
+      [req.player.id]
+    );
+
     await client.query("COMMIT");
 
     const p = player.rows[0];
+    const clickUpgradeBonus = Number(clickUpgradeResult.rows[0].total);
+    const clickBase = 1 + clickUpgradeBonus;
+    const multiplier = getMultiplier(p);
 
     res.json({
       balance: Number(p.balance),
@@ -947,7 +1117,13 @@ app.get("/api/state", auth, async (req, res) => {
       lastDaily: p.last_daily,
       inventory: inventory.rows,
       bonuses: getBonusState(p),
-      multiplier: getMultiplier(p)
+      multiplier,
+
+      // Новые данные улучшений клика.
+      clickUpgradeBonus,
+      clickBase,
+      clickReward: clickBase * multiplier,
+      ownedClickUpgrades: clickUpgradeResult.rows[0].owned
     });
   } catch (error) {
     await client.query("ROLLBACK");
@@ -976,7 +1152,24 @@ app.post("/api/click", auth, async (req, res) => {
     );
 
     const p = player.rows[0];
+
+    // Получаем сумму всех постоянных улучшений.
+
+    const clickUpgradeResult = await client.query(
+      `SELECT COALESCE(SUM(amount), 0)::text AS total
+       FROM player_click_upgrades
+       WHERE telegram_id = $1`,
+      [req.player.id]
+    );
+
+    const clickUpgradeBonus = Number(clickUpgradeResult.rows[0].total);
+    const clickBase = 1 + clickUpgradeBonus;
+
+    // Сначала рассчитываем множитель,
+    // затем применяем его к общей сумме клика.
+
     const multiplier = getMultiplier(p);
+    const clickReward = clickBase * multiplier;
 
     const result = await client.query(
       `UPDATE players
@@ -986,15 +1179,16 @@ app.post("/api/click", auth, async (req, res) => {
            last_active = NOW()
        WHERE telegram_id = $2
        RETURNING balance, experience, level`,
-      [multiplier, req.player.id]
+      [clickReward, req.player.id]
     );
 
-    // BATTLE PASS: учитываем заработанные кликами доллары.
+    // Battle Pass учитывает фактически заработанные доллары.
+
     await trackBPTask(
       client,
       req.player.id,
       "click_dollars",
-      multiplier
+      clickReward
     );
 
     await client.query("COMMIT");
@@ -1003,7 +1197,10 @@ app.post("/api/click", auth, async (req, res) => {
       balance: Number(result.rows[0].balance),
       experience: Number(result.rows[0].experience),
       level: result.rows[0].level,
-      multiplier
+      multiplier,
+      clickBase,
+      clickUpgradeBonus,
+      clickReward
     });
   } catch (error) {
     await client.query("ROLLBACK");
@@ -1041,7 +1238,6 @@ app.post("/api/gramm/click", auth, async (req, res) => {
       [multiplier, req.player.id]
     );
 
-    // BATTLE PASS: три задания с разными порогами.
     await trackBPTask(client, req.player.id, "gramm_50", 1);
     await trackBPTask(client, req.player.id, "gramm_75", 1);
     await trackBPTask(client, req.player.id, "gramm_100", 1);
@@ -1062,7 +1258,7 @@ app.post("/api/gramm/click", auth, async (req, res) => {
 });
 
 // =====================================================
-// ПОКУПКА УЛУЧШЕНИЙ
+// ПОКУПКА СТАРЫХ УЛУЧШЕНИЙ x2, x4, x10
 // =====================================================
 
 app.post("/api/upgrades/buy", auth, async (req, res) => {
@@ -1523,7 +1719,6 @@ app.post("/api/shop/buy", auth, async (req, res) => {
       [req.player.id, category, item.name, item.price]
     );
 
-    // BATTLE PASS: покупка любого предмета завершает задание.
     await trackBPTask(client, req.player.id, "shop_purchase", 1);
 
     await client.query("COMMIT");
