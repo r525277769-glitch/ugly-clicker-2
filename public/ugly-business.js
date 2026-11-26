@@ -145,13 +145,13 @@ function makePerson(x,z,shirt,isPlayer=false,variant=0){
  const accent=mat(["#ffd34f","#34d8ff","#ff6a8a","#9b79ff"][variant%4],.35,.15,{emissive:["#5b3b00","#003d55","#501020","#28104d"][variant%4],emissiveIntensity:.35});
  const torsoPivot=new THREE.Group();torsoPivot.position.set(0,1.12,0);root.add(torsoPivot);
  addMesh(torsoPivot,new THREE.CapsuleGeometry(.31,.48,5,12),clothes,[0,0,0]);
- box(torsoPivot,.42,.24,.055,0,.08,.285,accent,false);box(torsoPivot,.47,.09,.34,0,-.29,0,mat("#202633"),false);
+ box(torsoPivot,.42,.24,.055,0,.08,-.285,accent,false);box(torsoPivot,.47,.09,.34,0,-.29,0,mat("#202633"),false);
  cylinder(root,.105,.12,.18,0,1.48,0,skin,14);
  const head=new THREE.Group();head.position.set(0,1.77,0);root.add(head);sphere(head,.255,0,0,0,skin,24,18);
  const hair=mat(["#28202b","#4a2b1c","#171b28","#b77b35"][variant%4]);
  const cap=sphere(head,.26,0,.13,-.015,hair,20,12);cap.scale.set(1,.58,1.02);
- for(const side of [-1,1]){sphere(head,.075,side*.245,-.015,0,skin,12,10);sphere(head,.036,side*.09,.025,.222,mat("#fffdf4"),12,10);sphere(head,.019,side*.09,.022,.253,mat("#20212b"),10,8);box(head,.09,.018,.025,side*.09,.105,.235,mat("#3a2925"),false).rotation.z=side*-.12;}
- sphere(head,.04,0,-.045,.25,skin,12,8);
+ for(const side of [-1,1]){sphere(head,.072,side*.245,-.015,0,skin,12,10);sphere(head,.041,side*.09,.025,-.218,mat("#fffdf4"),12,10);sphere(head,.022,side*.09,.022,-.252,mat("#20212b"),10,8);box(head,.09,.018,.025,side*.09,.105,-.235,mat("#3a2925"),false).rotation.z=side*-.12;}
+ sphere(head,.04,0,-.045,-.255,skin,12,8);
  if(variant%3===0){box(head,.55,.075,.34,0,.22,-.015,accent,false);box(head,.09,.16,.08,0,.14,.16,accent,false);}
  const limbs=[];
  for(const side of [-1,1]){
@@ -160,7 +160,7 @@ function makePerson(x,z,shirt,isPlayer=false,variant=0){
   const shoe=new THREE.Group();shoe.position.set(0,-.56,-.08);leg.add(shoe);box(shoe,.27,.16,.42,0,0,-.035,mat(variant%2?"#171c29":"#f2f0e9"),false);box(shoe,.28,.045,.4,0,-.085,-.035,accent,false);
   limbs.push({arm,leg,side});
  }
- box(root,.43,.48,.2,0,1.05,-.29,mat(isPlayer?"#1e3659":"#29364b"),true);box(root,.28,.12,.22,0,1.2,-.4,accent,false);
+ box(root,.43,.48,.2,0,1.05,.29,mat(isPlayer?"#1e3659":"#29364b"),true);box(root,.28,.12,.22,0,1.2,.4,accent,false);
  animated.push({type:"character",root,torsoPivot,limbs,phase:variant*.71,isPlayer});return root;
 }
 function makeGamingPC(parent,x,y,z,tier=1){
@@ -259,14 +259,14 @@ function animate() {
     const targetYaw = Math.atan2(-tempMove.x, -tempMove.z);
     let diff = targetYaw - player.rotation.y;
     diff = Math.atan2(Math.sin(diff), Math.cos(diff));
-    player.rotation.y += diff * Math.min(1, dt * 12);
+    player.rotation.y += diff * (1-Math.exp(-dt*9));
   }
   player.position.x = clamp(player.position.x, -7.15, 7.15);
   player.position.z = clamp(player.position.z, -7.15, 7.15);
   const moving = input.length > .08;
   for (const a of animated) {
     if (a.type === "idle") a.mesh.position.y = Math.sin(performance.now() * .0017 + a.phase) * .025;
-    if(a.type==="character"){const phase=performance.now()*.009+a.phase,characterMoving=a.isPlayer?moving:clubNPCs.some(n=>n.mesh===a.root&&n.mode!=="play"),stride=characterMoving?.72:.035;a.torsoPivot.position.y=1.12+(moving?Math.abs(Math.sin(phase))*.045:Math.sin(phase*.6)*.012);a.torsoPivot.rotation.z=moving?Math.sin(phase)*.035:0;a.limbs.forEach(l=>{l.leg.rotation.x=Math.sin(phase+l.side*Math.PI)*stride;l.arm.rotation.x=-Math.sin(phase+l.side*Math.PI)*stride*.72;});}
+    if(a.type==="character"){const npc=clubNPCs.find(n=>n.mesh===a.root),characterMoving=a.isPlayer?moving:!!npc&&npc.mode==="walk",speed=a.isPlayer?(moving?Math.max(.25,input.length)*3.65:0):(characterMoving?1.35:0);a.phase=(a.phase+dt*(characterMoving||moving?speed*2.7:1.1))%(Math.PI*2);const phase=a.phase,stride=characterMoving||moving?Math.min(.58,speed*.19):.018;a.torsoPivot.position.y=1.12+(stride>.05?Math.abs(Math.sin(phase*2))*.035:Math.sin(phase)*.008);a.torsoPivot.rotation.z=stride>.05?Math.sin(phase)*.025:0;a.limbs.forEach(l=>{l.leg.rotation.x=Math.sin(phase+l.side*Math.PI)*stride;l.arm.rotation.x=-Math.sin(phase+l.side*Math.PI)*stride*.78;});}
   }
   const now = performance.now();
   for (const npc of clubNPCs) {
@@ -274,7 +274,7 @@ function animate() {
     if (npc.mode === "walk") {
       const spots = [[-5.1,-2.2],[-1.8,-2.2],[1.8,-2.2],[5.1,-2.2],[-5.1,3.2],[-1.8,3.2],[1.8,3.2],[5.1,3.2]];
       const p = spots[npc.station % spots.length], dest = new THREE.Vector3(p[0],0,p[1]);
-      npc.mesh.position.lerp(dest, Math.min(1,dt*1.15));
+      const delta=dest.clone().sub(npc.mesh.position),distance=delta.length();if(distance>.02){const target=Math.atan2(-delta.x,-delta.z);let turn=Math.atan2(Math.sin(target-npc.mesh.rotation.y),Math.cos(target-npc.mesh.rotation.y));npc.mesh.rotation.y+=turn*Math.min(1,dt*7);npc.mesh.position.addScaledVector(delta.normalize(),Math.min(distance,dt*1.25));}
       if (npc.mesh.position.distanceTo(dest) < .35) { npc.mode="play"; npc.timer=120+Math.random()*180; }
     } else if (npc.mode === "play") {
       npc.mesh.position.y = Math.sin(now*.006+npc.phase)*.02;
