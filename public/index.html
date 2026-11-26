@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -470,7 +469,7 @@ button.button-success{animation:buttonSuccess .45s ease}
 
 .item:last-child{border-bottom:0}
 
-/* BUSINESS CARDS */
+/* BUSINESS CARDS — БЕЗ ФОТОГРАФИЙ */
 
 .business-number{
  font-size:26px;
@@ -486,57 +485,10 @@ button.button-success{animation:buttonSuccess .45s ease}
  background:linear-gradient(145deg,#1b1811,#111);
  text-align:left;
  transition:border-color .2s,transform .2s;
- overflow:hidden;
 }
 
 .business-card:active{transform:scale(.99)}
 .business-card b{color:var(--gold2)}
-
-.business-image-wrap{
- position:relative;
- width:calc(100% + 30px);
- height:155px;
- margin:-15px -15px 14px;
- overflow:hidden;
- background:linear-gradient(145deg,#30230e,#111);
-}
-
-.business-image{
- display:block;
- width:100%;
- height:100%;
- object-fit:cover;
- object-position:center;
- transition:transform .4s ease,filter .3s ease;
- filter:brightness(.85) contrast(1.08);
-}
-
-.business-card:active .business-image{
- transform:scale(1.04);
- filter:brightness(1);
-}
-
-.business-image-wrap::after{
- content:"";
- position:absolute;
- inset:45% 0 0;
- background:linear-gradient(transparent,rgba(8,8,8,.65));
- pointer-events:none;
-}
-
-.business-image-fallback{
- display:none;
- width:100%;
- height:100%;
- place-items:center;
- color:var(--gold2);
- font-size:55px;
- background:radial-gradient(circle,#382b13,#111);
-}
-
-.business-image-fallback:not([hidden]){
- display:grid;
-}
 
 .business-card-content{
  padding:0 0 2px;
@@ -748,7 +700,6 @@ input:focus{border-color:var(--gold2)}
  .balance-value{font-size:19px}
  .bp-columns{grid-template-columns:1fr}
  .brand-name{font-size:18px}
- .business-image-wrap{height:135px}
 }
 
 @media(prefers-reduced-motion:reduce){
@@ -1066,73 +1017,6 @@ let businessCatalog=[];
 let bpState=null;
 let clickUpgradeData=[];
 
-/* BUSINESS IMAGE CATALOG */
-
-const BUSINESS_IMAGES={
- kiosk:"https://prod-image.cetih.eu/image/portes/neptune/ambiance-2.jpg?1730968354=&p=product_detail",
-
- cafe:"https://metrocaffe-ks.com/assets/cafe-exterior-DWHOAQ8p.jpg",
-
- hookah:"https://auraloungehouston.com/assets/hero-lounge-DGB83fjX.jpg",
-
- tech_store:"https://www.protegez-vous.ca/var/protegez_vous/storage/images/_aliases/blog_thumb_1024x620/medias/illustrations-et-images/photo-magasin-electronique/2644206-1-fre-CA/c0b8de98ad9f-photo-magasin-electronique.jpg",
-
- wb_network:"https://c.furgonetka.pl/public.furgonetka.pl/f_punkt_photos/4846081/4874_1600x1600.jpg",
-
- basement_club:"https://www.dates-md.de/downloads/63943/download/DownTownClub_%28c%29AntonSolovyov-%287%29.jpg?cb=abd61607fa34a6fff02d558607e1d850&w=1200",
-
- gta_club:"https://media.them.us/photos/5f7201efa1680c3018fea8e9/master/w_1600%2Cc_limit/5c5af0da56e3322caab2d067_thebeat.jpg",
-
- tiktok_company:"https://henryjlyons.com/imager/uploads/images/3148/BOYA9_eb4d0c2cc0f9fcf26bcfdff86b4e21cd.jpg",
-
- ferrari_sales:"https://www.talacrest.com/blobs/stock/13742/images/13edea40-e4e8-4970-9e86-73a4f07ab44a.jpeg"
-};
-
-const BUSINESS_KEY_BY_NAME={
- "Ларёк":"kiosk",
- "Кафе":"cafe",
- "Кальянка":"hookah",
- "Магазин техники":"tech_store",
- "Сеть пунктов выдачи WB":"wb_network",
- "Стрипуха в подвале":"basement_club",
- "Стрипуха из GTA 6":"gta_club",
- "Компания TikTok":"tiktok_company",
- "Продажа транспорта Ferrari":"ferrari_sales"
-};
-
-function getBusinessImage(item){
- const name=item.business_name||item.name||"";
-
- const key=
-  item.business_key||
-  item.key||
-  BUSINESS_KEY_BY_NAME[name];
-
- return BUSINESS_IMAGES[key]||"";
-}
-
-function businessImageHTML(item){
- const src=getBusinessImage(item);
- const name=item.business_name||item.name||"Бизнес";
-
- return `
-  <div class="business-image-wrap">
-   ${
-    src
-    ?`<img
-       class="business-image"
-       src="${escapeHTML(src)}"
-       alt="${escapeHTML(name)}"
-       loading="lazy"
-       onerror="this.hidden=true;this.nextElementSibling.hidden=false"
-      >`
-    :""
-   }
-   <div class="business-image-fallback" ${src?"hidden":""}>♜</div>
-  </div>
- `;
-}
-
 const money=n=>Number(n||0).toLocaleString("ru-RU");
 
 function escapeHTML(value){
@@ -1341,6 +1225,8 @@ function render(){
  renderClickUpgrades();
 }
 
+/* BUSINESS RENDER — БЕЗ ИЗОБРАЖЕНИЙ */
+
 function renderOwnedBusinesses(){
  const container=document.getElementById("ownedBusinesses");
 
@@ -1351,9 +1237,6 @@ function renderOwnedBusinesses(){
 
  container.innerHTML=state.businesses.map(item=>`
   <div class="business-card">
-
-   ${businessImageHTML(item)}
-
    <div class="business-card-content">
     <b>${escapeHTML(item.business_name||item.name||"Бизнес")}</b>
     <p>Цена покупки: $${money(item.purchase_price)}</p>
@@ -1363,7 +1246,6 @@ function renderOwnedBusinesses(){
      ПРОДАТЬ ЗА $${money(Math.floor(Number(item.purchase_price)*0.7))}
     </button>
    </div>
-
   </div>
  `).join("");
 }
@@ -1378,9 +1260,6 @@ function renderBusinessCatalog(){
 
  container.innerHTML=businessCatalog.map(item=>`
   <div class="business-card">
-
-   ${businessImageHTML(item)}
-
    <div class="business-card-content">
     <b>${escapeHTML(item.name)}</b>
     <p>Цена: $${money(item.price)}</p>
@@ -1389,7 +1268,6 @@ function renderBusinessCatalog(){
      КУПИТЬ БИЗНЕС
     </button>
    </div>
-
   </div>
  `).join("");
 }
@@ -2082,4 +1960,3 @@ setInterval(async()=>{
 </script>
 </body>
 </html>
-
