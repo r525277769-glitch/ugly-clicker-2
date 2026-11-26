@@ -181,11 +181,11 @@ function makeGamingPC(parent,x,y,z,tier=1,cpuTier=1,ramTier=1){
 function makeGamingStation(x,z,index,data){
  const g=new THREE.Group();g.position.set(x,0,z);scene.add(g);
  const c=data.components||{},levels=Object.values(c).map(Number).filter(v=>v>0),tier=levels.length?Math.min(4,...levels):Math.max(1,Number(data.tier)||1);
- const gpu=clamp(Number(c.gpu)||tier,1,4),cpu=clamp(Number(c.cpu)||tier,1,4),ram=clamp(Number(c.ram)||tier,1,4),monitor=clamp(Number(c.monitor)||tier,1,4),keyboard=clamp(Number(c.keyboard)||tier,1,4),mouse=clamp(Number(c.mouse)||tier,1,4),chairLevel=clamp(Number(c.chair)||tier,1,4);
+ const gpu=clamp(Number(c.gpu)||tier,1,4),cpu=clamp(Number(c.cpu)||tier,1,4),ram=clamp(Number(c.ram)||tier,1,4),monitor=clamp(Number(c.monitor)||tier,1,4),keyboard=clamp(Number(c.keyboard)||tier,1,4),mouse=clamp(Number(c.mouse)||tier,1,4),chairLevel=clamp(Number(c.chair)||tier,1,4),deskLevel=clamp(Number(c.desk)||tier,1,4);
  const palette=["#ffbd45","#24cfff","#42e6a5","#bf82ff"],emit=["#704000","#00618a","#087a4d","#4a1a83"],trim=mat(palette[gpu-1],.26,.42,{emissive:emit[gpu-1],emissiveIntensity:.55});
  const screenMat=mat("#fff",.24,.05,{map:canvasTexture((ctx,w,h)=>{const gr=ctx.createLinearGradient(0,0,w,h);gr.addColorStop(0,["#12314c","#0a5276","#104a38","#48265f"][monitor-1]);gr.addColorStop(1,["#07111f","#142b5a","#102b25","#211333"][monitor-1]);ctx.fillStyle=gr;ctx.fillRect(0,0,w,h);ctx.fillStyle="#fff";ctx.font="bold 38px Arial";ctx.fillText("UGLY",18,57);ctx.font="16px Arial";ctx.fillText("GAMING ARENA / PC "+(index+1),18,83);ctx.fillStyle=palette[monitor-1];ctx.fillRect(18,104,w*.72,7);},256,160),emissive:palette[monitor-1],emissiveIntensity:.12+monitor*.055});
- const deskShell=mat(["#26374b","#174d68","#18513f","#49315f"][gpu-1],.3,.42);box(g,2.1,.15,.92,0,.78,0,deskShell);box(g,2.12,.045,.94,0,.87,0,trim,false);
- for(const sx of [-.9,.9]){box(g,.12,.76,.13,sx,.38,0,mat(["#71869c","#2b9ab5","#398b6c","#9270b8"][gpu-1],.28,.62));box(g,.13,.035,.14,sx,.72,.03,trim,false);}
+ const deskPalette=["#26374b","#174d68","#18513f","#49315f"],deskGlow=["#71869c","#2b9ab5","#398b6c","#9270b8"],deskShell=mat(deskPalette[deskLevel-1],.3,.42);box(g,2.1,.15,.92,0,.78,0,deskShell);box(g,2.12,.045,.94,0,.87,0,mat(palette[deskLevel-1],.26,.15,{emissive:emit[deskLevel-1],emissiveIntensity:.28+deskLevel*.1}),false);
+ for(const sx of [-.9,.9]){box(g,.12,.76,.13,sx,.38,0,mat(deskGlow[deskLevel-1],.28,.62));box(g,.13,.035,.14,sx,.72,.03,mat(palette[deskLevel-1],.26,.15,{emissive:emit[deskLevel-1],emissiveIntensity:.35}),false);}
  box(g,.88,.56,.11,0,1.28,-.36,mat("#111b2b",.2,.42));box(g,.76,.42,.016,0,1.29,-.422,screenMat,false);
  box(g,.12,.17,.13,0,1.02,-.34,mat("#71849a",.26,.58));box(g,.34,.035,.25,0,.98,-.19,mat("#182536",.3,.35));
  const boardGlow=mat(palette[keyboard-1],.3,.15,{emissive:emit[keyboard-1],emissiveIntensity:.2+keyboard*.12});
@@ -201,8 +201,8 @@ function makeGamingStation(x,z,index,data){
  cylinder(chair,.065,.075,.48,0,.28,0,mat("#71849a",.25,.6),14);cylinder(chair,.42,.42,.1,0,.07,0,mat("#182332",.35,.2),24);
  box(chair,.65,.65,.17,0,.72,.12,chairMat);box(chair,.5,.12,.18,0,1.1,.1,trim,false);
  for(const sx of [-1,1]){box(chair,.08,.38,.48,sx*.37,.48,.02,chairMat,false);box(chair,.1,.08,.34,sx*.37,.67,.02,trim,false);}
- makeLabel(g,"PC "+String(index+1).padStart(2,"0"),0,2.15,-.4,1.3,.3);g.userData={index,tier,components:{gpu,cpu,ram,monitor,keyboard,mouse,chair:chairLevel}};stationGroups.push(g);
- const keys=["gpu","cpu","ram","monitor","keyboard","mouse","chair"],names=["Видеокарта","Процессор","ОЗУ","Монитор","Клавиатура","Мышь","Кресло"];
+ makeLabel(g,"PC "+String(index+1).padStart(2,"0"),0,2.15,-.4,1.3,.3);g.userData={index,tier,components:{gpu,cpu,ram,monitor,keyboard,mouse,chair:chairLevel,desk:deskLevel}};stationGroups.push(g);
+ const keys=["gpu","cpu","ram","monitor","keyboard","mouse","chair","desk"],names=["Видеокарта","Процессор","ОЗУ","Монитор","Клавиатура","Мышь","Кресло","Стол"];
  keys.forEach((key,k)=>interactables.push({position:new THREE.Vector3(x+((k%4)-1.5)*.3,0,z+1.15+Math.floor(k/4)*.28),name:names[k],hint:"Улучшение компонента ПК · "+names[k],action:"upgrade_component",station:index,component:key,radius:1.9}));
 }
 function buildStore(){
@@ -358,7 +358,7 @@ function renderClubPanels(){
    const status=document.createElement("span");status.textContent=free.length?"Готов к оформлению на ноутбуке администратора":"Нет свободных компьютеров";row.appendChild(status);qb.appendChild(row);
   });
  }
- const names={gpu:"Видеокарта",cpu:"Процессор",ram:"ОЗУ",monitor:"Монитор",keyboard:"Клавиатура",mouse:"Мышь",chair:"Кресло"};
+ const names={gpu:"Видеокарта",cpu:"Процессор",ram:"ОЗУ",monitor:"Монитор",keyboard:"Клавиатура",mouse:"Мышь",chair:"Кресло",desk:"Стол"};
  if(ub){
   ub.innerHTML="";
   stations.forEach((st,i)=>{
@@ -366,11 +366,11 @@ function renderClubPanels(){
    const head=document.createElement("b");head.textContent="ИГРОВОЕ МЕСТО №"+(i+1);wrap.appendChild(head);
    const grid=document.createElement("div");grid.className="sim-component-grid";
    Object.keys(names).forEach(k=>{
-    const lv=Number((st.components||{})[k]||st.tier||1),price=[0,500,2500,11000,24000][lv]||0;
+    const lv=Number((st.components||{})[k]||st.tier||1),next=lv+1,price=[0,500,2500,11000,24000][next]||0;
     const item=document.createElement("div");item.className="sim-component";
     const title=document.createElement("span");title.textContent=names[k];
     const level=document.createElement("b");level.textContent="LVL "+lv+"/4";
-    const button=document.createElement("button");button.type="button";button.dataset.upgradeStation=i;button.dataset.upgradeComponent=k;button.disabled=lv>=4;button.textContent=lv>=4?"MAX":"УЛУЧШИТЬ · $"+price.toLocaleString("ru-RU");
+    const button=document.createElement("button");button.type="button";button.dataset.upgradeStation=i;button.dataset.upgradeComponent=k;button.disabled=lv>=4;button.textContent=lv>=4?"MAX":"УЛУЧШИТЬ ДО LVL "+next+" · $"+price.toLocaleString("ru-RU");
     item.append(title,level,button);grid.appendChild(item);
    });
    wrap.appendChild(grid);ub.appendChild(wrap);
@@ -406,7 +406,7 @@ function renderReceptionModal(){
  const select=$("simReceptionStation");$("simReceptionGuest").textContent=guest.name||"Посетитель";
  $("simReceptionDuration").textContent=Math.floor(receptionDuration/60)+" мин "+String(receptionDuration%60).padStart(2,"0")+" сек";
  select.innerHTML="";
- stations.forEach((st,i)=>{if(busy.has(i))return;const c=st.components||{},tier=Math.max(1,Math.min(4,...["gpu","cpu","ram","monitor","keyboard","mouse","chair"].map(k=>Number(c[k]||st.tier||1))));const base=[0,25,55,100,180][tier],reward=Math.max(1,Math.round(base*receptionDuration/180*(1+Number(state.adLevel||0)*.025)));const opt=document.createElement("option");opt.value=i;opt.dataset.reward=reward;opt.textContent="ПК №"+(i+1)+" · "+["","Бюджет","Средний","Высокий","Премиум"][tier]+" · оплата $"+reward.toLocaleString("ru-RU");select.appendChild(opt);});
+ stations.forEach((st,i)=>{if(busy.has(i))return;const c=st.components||{},tier=Math.max(1,Math.min(4,...["gpu","cpu","ram","monitor","keyboard","mouse","chair","desk"].map(k=>Number(c[k]||st.tier||1))));const base=[0,25,55,100,180][tier],reward=Math.max(1,Math.round(base*receptionDuration/180*(1+Number(state.adLevel||0)*.025)));const opt=document.createElement("option");opt.value=i;opt.dataset.reward=reward;opt.textContent="ПК №"+(i+1)+" · "+["","Бюджет","Средний","Высокий","Премиум"][tier]+" · оплата $"+reward.toLocaleString("ru-RU");select.appendChild(opt);});
  const update=()=>{const opt=select.selectedOptions[0],reward=Number(opt?.dataset.reward||0);$("simReceptionPrice").textContent=reward?"$"+reward.toLocaleString("ru-RU"):"—";$("simReceptionConfirm").disabled=!opt;$("simReceptionHint").textContent=opt?"Выдай посетителю свободный ПК. Оплата поступит в кассу после окончания сессии.":"Свободных ПК нет — дождись освобождения места.";};select.onchange=update;update();
 }
 function rebuildClubScene(){
