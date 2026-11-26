@@ -531,7 +531,7 @@ function animate() {
     // Console visitors use the doorway in the right-side wall, not a straight path through it.
     const roomHalf=(18+Number(state.clubData.roomLevel||0)*4)/2;
     if(npc.queueType==="console" && npc.mesh.position.x<roomHalf+1.4){
-      dest=npc.mesh.position.x<roomHalf-2.8
+      dest=npc.mesh.position.x<roomHalf-3.4
         ?new THREE.Vector3(roomHalf-3.2,0,0)
         :new THREE.Vector3(roomHalf+1.55,0,0);
     }
