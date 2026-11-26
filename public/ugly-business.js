@@ -3,13 +3,13 @@ import * as THREE from "three";
 const $ = id => document.getElementById(id);
 const initData = window.Telegram?.WebApp?.initData || "";
 const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
-const state = { cash:0, level:1, customers:0, xp:0, stations:4, adLevel:0, hourlyIncome:0, clubData:{stations:[]} };
+const state = { cash:0, level:1, customers:0, xp:0, stations:4, adLevel:0, hourlyIncome:0, clubData:{stations:[],queue:[],sessions:[]} };
 let renderer, scene, camera, player, clock, ready = false, raf = 0;
 let yaw = 0, moveX = 0, moveY = 0, activeObject = null, actionBusy = false;
 let joyPointer = null, lookPointer = null, lookLastX = 0, joyCenter = { x: 0, y: 0 };
 let joystickRadius = 48, cameraDistance = 5.8, cameraHeight = 3.2;
 const interactables = [], animated = [], keys = Object.create(null);
-const stationGroups=[], clubNPCs=[];
+const stationGroups=[], clubNPCs=[];let statePollTimer=0;
 const tempForward = new THREE.Vector3(), tempRight = new THREE.Vector3(), tempMove = new THREE.Vector3();
 const _v = new THREE.Vector3();
 
@@ -181,7 +181,7 @@ function makeGamingStation(x,z,index,data){
  box(g,.76,.42,.012,0,1.29,-.295,mat("#fff",.3,0,{map:tex,emissive:"#4d91c5",emissiveIntensity:.32}),false);
  box(g,.12,.17,.13,0,1.02,-.34,mat("#71849a",.3,.5));box(g,.55,.035,.22,0,.98,.18,mat("#151e2b",.35,.2));
  for(let k=0;k<5;k++)box(g,.065,.012,.13,-.22+k*.11,1.002,.18,trim,false);
- box(g,.38,.045,.22,-.59,1.01,.17,mat("#172332",.35,.2));makeGamingPC(g,.78,.24,.12,tier);
+ box(g,.38,.045,.22,-.59,1.01,.17,mat("#172332",.35,.2));box(g,.32,.018,.25,-.58,1.04,.17,trim,false);makeGamingPC(g,.78,.24,.12,tier);
  const chair=new THREE.Group();chair.position.set(0,0,1.05);g.add(chair);cylinder(chair,.065,.075,.48,0,.28,0,mat("#71849a",.25,.6),14);cylinder(chair,.42,.42,.1,0,.07,0,mat("#182332",.35,.2),24);
  box(chair,.65,.65,.17,0,.72,.12,mat("#202d42",.42,.12));box(chair,.5,.12,.18,0,1.1,.1,trim,false);
  for(const sx of [-1,1]){box(chair,.08,.38,.48,sx*.37,.48,.02,mat("#27394e"),false);box(chair,.1,.08,.34,sx*.37,.67,.02,trim,false);}
@@ -208,8 +208,7 @@ function buildStore(){
  for(const x of [-6,0,6])for(const z of [-6,0,6]){box(scene,1.8,.07,.38,x,4.65,z,mat("#dcecff",.2,.1,{emissive:"#8bdcff",emissiveIntensity:1}),false);const l=new THREE.PointLight("#77bfff",28,8);l.position.set(x,4.05,z);scene.add(l);}
  for(const x of [-7.8,7.8]){box(scene,.05,2.4,4.4,x,2.25,-1,mat("#12253b",.25,.25));for(let i=0;i<5;i++)box(scene,.035,.12,.55,x+(x<0?.04:-.04),1.4+i*.35,-1.8+i*.75,mat(i%2?"#21d5ff":"#b66cff",.22,.3,{emissive:i%2?"#0780a5":"#6125a0",emissiveIntensity:.9}),false);}
  player=makePerson(0,7.7,"#2877c9",true,0);makeLabel(scene,"YOU",0,2.3,7.7,1,.28);
- const shirts=["#e45d48","#43a77b","#8357b9","#e2a33b","#347db7","#d65b9a","#4d9aa0","#b1a04a"];
- for(let i=0;i<Math.min(8,3+Math.floor((state.adLevel||0)/2));i++){const home=new THREE.Vector3(-7+i*.5,0,7.1),npc=makePerson(home.x,home.z,shirts[i%shirts.length],false,i+1);clubNPCs.push({mesh:npc,phase:i*.8,station:i%Math.max(1,state.stations||4),mode:"walk",timer:6+Math.random()*8,home});}
+ syncClubNPCs();
 }
 function resize() {
   const canvas = $("uglyBusinessCanvas");
@@ -266,24 +265,20 @@ function animate() {
   const moving = input.length > .08;
   for (const a of animated) {
     if (a.type === "idle") a.mesh.position.y = Math.sin(performance.now() * .0017 + a.phase) * .025;
-    if(a.type==="character"){const npc=clubNPCs.find(n=>n.mesh===a.root),characterMoving=a.isPlayer?moving:!!npc&&npc.mode==="walk",speed=a.isPlayer?(moving?Math.max(.25,input.length)*3.65:0):(characterMoving?1.35:0);a.phase=(a.phase+dt*(characterMoving||moving?speed*2.7:1.1))%(Math.PI*2);const phase=a.phase,stride=characterMoving||moving?Math.min(.58,speed*.19):.018;a.torsoPivot.position.y=1.12+(stride>.05?Math.abs(Math.sin(phase*2))*.035:Math.sin(phase)*.008);a.torsoPivot.rotation.z=stride>.05?Math.sin(phase)*.025:0;a.limbs.forEach(l=>{l.leg.rotation.x=Math.sin(phase+l.side*Math.PI)*stride;l.arm.rotation.x=-Math.sin(phase+l.side*Math.PI)*stride*.78;});}
+    if(a.type==="character"){const npc=clubNPCs.find(n=>n.mesh===a.root),characterMoving=a.isPlayer?moving:!!npc&&npc.mode==="toSeat",speed=a.isPlayer?(moving?Math.max(.25,input.length)*3.65:0):(characterMoving?1.35:0);a.phase=(a.phase+dt*(characterMoving||moving?speed*2.7:1.1))%(Math.PI*2);const phase=a.phase,stride=characterMoving||moving?Math.min(.58,speed*.19):.018;a.torsoPivot.position.y=1.12+(stride>.05?Math.abs(Math.sin(phase*2))*.035:Math.sin(phase)*.008);a.torsoPivot.rotation.z=stride>.05?Math.sin(phase)*.025:0;a.limbs.forEach(l=>{l.leg.rotation.x=Math.sin(phase+l.side*Math.PI)*stride;l.arm.rotation.x=-Math.sin(phase+l.side*Math.PI)*stride*.78;});}
   }
   const now = performance.now();
   for (const npc of clubNPCs) {
-    npc.timer -= dt;
-    if (npc.mode === "walk") {
-      const spots = [[-5.1,-2.2],[-1.8,-2.2],[1.8,-2.2],[5.1,-2.2],[-5.1,3.2],[-1.8,3.2],[1.8,3.2],[5.1,3.2]];
-      const p = spots[npc.station % spots.length], dest = new THREE.Vector3(p[0],0,p[1]);
-      const delta=dest.clone().sub(npc.mesh.position),distance=delta.length();if(distance>.02){const target=Math.atan2(-delta.x,-delta.z);let turn=Math.atan2(Math.sin(target-npc.mesh.rotation.y),Math.cos(target-npc.mesh.rotation.y));npc.mesh.rotation.y+=turn*Math.min(1,dt*7);npc.mesh.position.addScaledVector(delta.normalize(),Math.min(distance,dt*1.25));}
-      if (npc.mesh.position.distanceTo(dest) < .35) { npc.mode="play"; npc.timer=120+Math.random()*180; }
-    } else if (npc.mode === "play") {
-      npc.mesh.position.y = Math.sin(now*.006+npc.phase)*.02;
-      if (npc.timer <= 0) npc.mode="exit";
-    } else {
-      npc.mesh.position.lerp(npc.home,Math.min(1,dt*1.1));
-      if (npc.mesh.position.distanceTo(npc.home) < .35) { npc.mesh.position.set(-7+Math.random()*2,0,7.1); npc.station=Math.floor(Math.random()*Math.max(1,state.stations||4)); npc.mode="walk"; }
-    }
+    const qi=(state.clubData?.queue||[]).findIndex(q=>q.id===npc.id),session=(state.clubData?.sessions||[]).find(q=>q.id===npc.id);let dest;
+    if(session){const spots=[[-5.1,-3.4],[-1.8,-3.4],[1.8,-3.4],[5.1,-3.4],[-5.1,2],[-1.8,2],[1.8,2],[5.1,2]],p=spots[session.station]||spots[0];dest=new THREE.Vector3(p[0],0,p[1]+1.05);if(npc.mode!=="play")npc.mode="toSeat";}
+    else if(qi>=0){dest=new THREE.Vector3(-.85+(qi%3)*.85,0,5.45+Math.floor(qi/3)*.48);npc.mode="queue";}
+    else{npc.mode="exit";dest=new THREE.Vector3(0,0,8.5);}
+    const delta=dest.clone().sub(npc.mesh.position),distance=delta.length();
+    if(distance>.09){const target=Math.atan2(-delta.x,-delta.z);let turn=Math.atan2(Math.sin(target-npc.mesh.rotation.y),Math.cos(target-npc.mesh.rotation.y));npc.mesh.rotation.y+=turn*Math.min(1,dt*7);npc.mesh.position.addScaledVector(delta.normalize(),Math.min(distance,dt*1.5));}
+    else if(session){npc.mode="play";npc.mesh.rotation.y=0;npc.mesh.scale.y=.82;const a=animated.find(x=>x.root===npc.mesh);if(a)a.limbs.forEach(l=>{l.arm.rotation.x=-.72;l.leg.rotation.x=.9;});}
+    else if(npc.mode==="queue")npc.mesh.position.y=Math.sin(now*.004+npc.phase)*.018;
   }
+  for(let i=clubNPCs.length-1;i>=0;i--){if(clubNPCs[i].mode==="exit"&&clubNPCs[i].mesh.position.z>8.25){scene.remove(clubNPCs[i].mesh);const ai=animated.findIndex(a=>a.root===clubNPCs[i].mesh);if(ai>=0)animated.splice(ai,1);clubNPCs.splice(i,1);}}
   stationGroups.forEach((g,i)=>g.visible=i<(state.stations||4));
   updateCamera(dt);
   activeObject = findInteractable();
@@ -292,6 +287,241 @@ function animate() {
   $("simAction").textContent = activeObject ? "УЛУЧШИТЬ · " + activeObject.name.toUpperCase() : "ПОДОЙДИ БЛИЖЕ";
   if (renderer) renderer.render(scene, camera);
 }
+function syncClubNPCs(){
+ const desired=[...(state.clubData?.queue||[]).map(q=>({...q,kind:"queue"})),...(state.clubData?.sessions||[]).map(q=>({...q,kind:"session"}))];
+ for(const d of desired){if(clubNPCs.some(n=>n.id===d.id))continue;const mesh=makePerson(0,7.8,["#e45d48","#43a77b","#8357b9","#e2a33b","#347db7","#d65b9a"][clubNPCs.length%6],false,clubNPCs.length+1);clubNPCs.push({id:d.id,mesh,phase:Math.random()*6,mode:d.kind==="session"?"toSeat":"queue",station:d.station});}
+ for(let i=clubNPCs.length-1;i>=0;i--){if(!desired.some(d=>d.id===clubNPCs[i].id)){if(scene)scene.remove(clubNPCs[i].mesh);const ai=animated.findIndex(a=>a.root===clubNPCs[i].mesh);if(ai>=0)animated.splice(ai,1);clubNPCs.splice(i,1);}}
+}
+function renderClubPanels(){
+ const qb=$("simQueue"),ub=$("simUpgradePanel"),sb=$("simSessions"),queue=state.clubData?.queue||[],sessions=state.clubData?.sessions||[],stations=state.clubData?.stations||[],busy=new Set(sessions.map(x=>Number(x.station))),free=stations.map((_,i)=>i).filter(i=>!busy.has(i));
+ if(qb)qb.innerHTML=queue.length?queue.map((q,i)=>'<div class="sim-queue-row"><div><b>'+String(q.name||"Посетитель").replace(/[&<>"]/g,"")+'</b><small>Ожидает у стойки · №'+(i+1)+'</small></div><div class="sim-queue-actions"><select data-station-for="'+q.id+'">'+free.map(n=>'<option value="'+n+'">ПК №'+(n+1)+'</option>').join("")+'</select><button type="button" data-confirm-guest="'+q.id+'" '+(!free.length?'disabled':'')+'>ПОДТВЕРДИТЬ</button></div></div>').join(""):'<p class="small">Пока никого нет. Посетители будут подходить к стойке автоматически.</p>';
+ const names={gpu:"Видеокарта",cpu:"Процессор",ram:"ОЗУ",monitor:"Монитор",keyboard:"Клавиатура",mouse:"Мышь",chair:"Кресло"},keys=Object.keys(names);
+ if(ub)ub.innerHTML=stations.map((st,i)=>{const c=st.components||{},min=Math.min(...keys.map(k=>Number(c[k]||st.tier||1)));return '<div class="sim-upgrade-station"><div class="sim-upgrade-head"><b>ИГРОВОЕ МЕСТО №'+(i+1)+'</b><span>Слабейший компонент: '+min+'/4</span></div><div class="sim-component-grid">'+keys.map(k=>{const lv=Number(c[k]||st.tier||1),price=[0,500,2500,11000,24000][lv+1]||0;return '<div class="sim-component"><span>'+names[k]+'</span><b>LVL '+lv+'/4</b><button type="button" data-upgrade-station="'+i+'" data-upgrade-component="'+k+'" '+(lv>=4?'disabled':'')+'>'+(lv>=4?'MAX':'УЛУЧШИТЬ · 
+  $("simCash").textContent = "$" + Number(state.cash || 0).toLocaleString("ru-RU");
+  $("simLevel").textContent = state.level || 1;
+  $("simCustomers").textContent = state.customers || 0;
+  $("simXpText").textContent = (Number(state.xp || 0) % 100) + " / 100 опыта";
+  $("simXpFill").style.width = (Number(state.xp || 0) % 100) + "%";
+  if ($("simStations")) $("simStations").textContent = (state.stations || 4) + " / 8";
+  if ($("simIncome")) $("simIncome").textContent = "$" + Number(state.hourlyIncome || 0).toLocaleString("ru-RU") + "/ч";
+  if ($("simAdLevel")) $("simAdLevel").textContent = state.adLevel || 0;
+  stationGroups.forEach((g,i)=>g.visible=i<(state.stations||4));
+}
+async function loadState() {
+  try {
+    const data = await api("/api/simulator/state");
+    Object.assign(state, data.state || {}); updateHUD();
+  } catch (error) { $("simHint").textContent = error.message; }
+}
+async function doAction(action,extra={}){if(actionBusy)return;actionBusy=true;$("simAction").disabled=true;try{const d=await api("/api/simulator/action",{method:"POST",body:JSON.stringify({action,...extra})});Object.assign(state,d.state||{});updateHUD();toast(d.message||"Готово");$("simHint").textContent=d.message||"Готово";}catch(e){toast(e.message,"error");}finally{actionBusy=false;$("simAction").disabled=!activeObject;}}
+function joystickPoint(event) {
+  const dx = event.clientX - joyCenter.x, dy = event.clientY - joyCenter.y;
+  const length = Math.hypot(dx, dy), deadZone = 5;
+  const max = joystickRadius;
+  const scaled = length <= deadZone ? 0 : Math.min(1, (length - deadZone) / (max - deadZone));
+  const angleScale = length > 0 ? scaled / length : 0;
+  const x = dx * angleScale * max, y = dy * angleScale * max;
+  $("simStick").style.transform = "translate(" + x + "px," + y + "px)";
+  moveX = x / max; moveY = y / max;
+}
+function bindControls() {
+  const joy = $("simJoystick"), canvas = $("uglyBusinessCanvas"), stick = $("simStick");
+  joy.addEventListener("pointerdown", event => {
+    event.preventDefault(); event.stopPropagation();
+    if (joyPointer !== null) return;
+    joyPointer = event.pointerId; joy.setPointerCapture(event.pointerId);
+    const rect = joy.getBoundingClientRect();
+    joyCenter = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+    joystickPoint(event);
+  });
+  joy.addEventListener("pointermove", event => {
+    if (event.pointerId !== joyPointer) return;
+    event.preventDefault(); joystickPoint(event);
+  });
+  const releaseJoy = event => {
+    if (event.pointerId !== joyPointer) return;
+    joyPointer = null; moveX = 0; moveY = 0; stick.style.transform = "translate(0,0)";
+  };
+  joy.addEventListener("pointerup", releaseJoy);
+  joy.addEventListener("pointercancel", releaseJoy);
+  joy.addEventListener("lostpointercapture", releaseJoy);
+  // Swipe on the right side of the scene to orbit the camera without stealing the joystick.
+  canvas.addEventListener("pointerdown", event => {
+    if (event.pointerType === "mouse" && event.button !== 0) return;
+    if (event.clientX < canvas.getBoundingClientRect().left + canvas.clientWidth * .42) return;
+    lookPointer = event.pointerId; lookLastX = event.clientX;
+    try { canvas.setPointerCapture(event.pointerId); } catch (_) {}
+  });
+  canvas.addEventListener("pointermove", event => {
+    if (event.pointerId !== lookPointer) return;
+    const dx = event.clientX - lookLastX; lookLastX = event.clientX;
+    yaw -= dx * .0065;
+  });
+  const releaseLook = event => { if (event.pointerId === lookPointer) lookPointer = null; };
+  canvas.addEventListener("pointerup", releaseLook);
+  canvas.addEventListener("pointercancel", releaseLook);
+  $("simAction").addEventListener("click",()=>{if(activeObject)doAction(activeObject.action||"upgrade_station",{station:activeObject.station??activeObject.index,component:activeObject.component});});
+  $("simTapButton")?.addEventListener("click",tapClub);
+  $("simQueue")?.addEventListener("click",event=>{const b=event.target.closest("[data-confirm-guest]");if(!b)return;const id=b.dataset.confirmGuest,sel=$("simQueue").querySelector('[data-station-for="'+id+'"]');if(sel)doAction("start_session",{queueId:id,station:Number(sel.value)});});
+  $("simUpgradePanel")?.addEventListener("click",event=>{const b=event.target.closest("[data-upgrade-component]");if(!b)return;doAction("upgrade_component",{station:Number(b.dataset.upgradeStation),component:b.dataset.upgradeComponent});});
+  $("simBuyStation")?.addEventListener("click",()=>doAction("buy_station"));
+  $("simAdvertise")?.addEventListener("click",()=>doAction("advertise"));
+  $("simCashout")?.addEventListener("click",async()=>{try{const d=await api("/api/simulator/exchange",{method:"POST",body:JSON.stringify({currency:"gramm"})});Object.assign(state,d.state||{});updateHUD();toast("Зачислено "+d.gramm+" GRAMM на основной баланс");}catch(e){toast(e.message,"error");}});
+  window.addEventListener("keydown", event => {
+    if (["KeyW","KeyA","KeyS","KeyD","ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].includes(event.code)) {
+      keys[event.code] = true; event.preventDefault();
+    }
+    if (event.code === "KeyE" && activeObject) doAction(activeObject.action||"upgrade_station",{station:activeObject.station??activeObject.index,component:activeObject.component});
+  });
+  window.addEventListener("keyup", event => { keys[event.code] = false; });
+  window.addEventListener("blur", () => { Object.keys(keys).forEach(key => keys[key] = false); moveX = moveY = 0; });
+}
+window.initUglyBusiness = async function() {
+  if (ready) { resize(); return; }
+  if (!initData) { $("simHint").textContent = "Открой игру через Telegram"; return; }
+  try {
+    const canvas = $("uglyBusinessCanvas");
+    renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: "high-performance" });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+    renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.12;
+    await loadState(); buildStore(); clock = new THREE.Clock(); bindControls(); ready = true; resize();
+    if(statePollTimer)clearInterval(statePollTimer);statePollTimer=setInterval(()=>{if(ready&&$("simulator")?.classList.contains("active"))loadState();},5000);
+    yaw = 0; camera.position.set(0, 3.2, 11.2); camera.lookAt(player.position.x, 1, player.position.z);
+    animate();
+  } catch (error) {
+    $("simHint").textContent = "Не удалось запустить 3D: " + error.message;
+    console.error("UGLY BUSINESS 3D:", error);
+  }
+};
+const page = $("simulator");
+if (page) {
+  const observer = new MutationObserver(() => {
+    if (page.classList.contains("active")) window.initUglyBusiness();
+    else if (raf) { cancelAnimationFrame(raf); raf = 0; }
+  });
+  observer.observe(page, { attributes: true, attributeFilter: ["class"] });
+  if (page.classList.contains("active")) window.initUglyBusiness();
+}
+window.addEventListener("resize", resize);
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden && raf) { cancelAnimationFrame(raf); raf = 0; }
+  else if (!document.hidden && ready && $("simulator")?.classList.contains("active") && !raf) { clock.start(); animate(); }
+});
++price.toLocaleString("ru-RU"))+'</button></div>';}).join("")+'</div></div>';}).join("");
+ if(sb)sb.innerHTML=sessions.length?sessions.map(x=>{const left=Math.max(0,Math.ceil((new Date(x.endsAt).getTime()-Date.now())/1000));return '<div class="sim-session-row"><b>'+String(x.name||"Посетитель").replace(/[&<>"]/g,"")+' · ПК №'+(Number(x.station)+1)+'</b><span>Осталось '+Math.floor(left/60)+':'+String(left%60).padStart(2,"0")+' · оплата 
+  $("simCash").textContent = "$" + Number(state.cash || 0).toLocaleString("ru-RU");
+  $("simLevel").textContent = state.level || 1;
+  $("simCustomers").textContent = state.customers || 0;
+  $("simXpText").textContent = (Number(state.xp || 0) % 100) + " / 100 опыта";
+  $("simXpFill").style.width = (Number(state.xp || 0) % 100) + "%";
+  if ($("simStations")) $("simStations").textContent = (state.stations || 4) + " / 8";
+  if ($("simIncome")) $("simIncome").textContent = "$" + Number(state.hourlyIncome || 0).toLocaleString("ru-RU") + "/ч";
+  if ($("simAdLevel")) $("simAdLevel").textContent = state.adLevel || 0;
+  stationGroups.forEach((g,i)=>g.visible=i<(state.stations||4));
+}
+async function loadState() {
+  try {
+    const data = await api("/api/simulator/state");
+    Object.assign(state, data.state || {}); updateHUD();
+  } catch (error) { $("simHint").textContent = error.message; }
+}
+async function doAction(action,extra={}){if(actionBusy)return;actionBusy=true;$("simAction").disabled=true;try{const d=await api("/api/simulator/action",{method:"POST",body:JSON.stringify({action,...extra})});Object.assign(state,d.state||{});updateHUD();toast(d.message||"Готово");$("simHint").textContent=d.message||"Готово";}catch(e){toast(e.message,"error");}finally{actionBusy=false;$("simAction").disabled=!activeObject;}}
+function joystickPoint(event) {
+  const dx = event.clientX - joyCenter.x, dy = event.clientY - joyCenter.y;
+  const length = Math.hypot(dx, dy), deadZone = 5;
+  const max = joystickRadius;
+  const scaled = length <= deadZone ? 0 : Math.min(1, (length - deadZone) / (max - deadZone));
+  const angleScale = length > 0 ? scaled / length : 0;
+  const x = dx * angleScale * max, y = dy * angleScale * max;
+  $("simStick").style.transform = "translate(" + x + "px," + y + "px)";
+  moveX = x / max; moveY = y / max;
+}
+function bindControls() {
+  const joy = $("simJoystick"), canvas = $("uglyBusinessCanvas"), stick = $("simStick");
+  joy.addEventListener("pointerdown", event => {
+    event.preventDefault(); event.stopPropagation();
+    if (joyPointer !== null) return;
+    joyPointer = event.pointerId; joy.setPointerCapture(event.pointerId);
+    const rect = joy.getBoundingClientRect();
+    joyCenter = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+    joystickPoint(event);
+  });
+  joy.addEventListener("pointermove", event => {
+    if (event.pointerId !== joyPointer) return;
+    event.preventDefault(); joystickPoint(event);
+  });
+  const releaseJoy = event => {
+    if (event.pointerId !== joyPointer) return;
+    joyPointer = null; moveX = 0; moveY = 0; stick.style.transform = "translate(0,0)";
+  };
+  joy.addEventListener("pointerup", releaseJoy);
+  joy.addEventListener("pointercancel", releaseJoy);
+  joy.addEventListener("lostpointercapture", releaseJoy);
+  // Swipe on the right side of the scene to orbit the camera without stealing the joystick.
+  canvas.addEventListener("pointerdown", event => {
+    if (event.pointerType === "mouse" && event.button !== 0) return;
+    if (event.clientX < canvas.getBoundingClientRect().left + canvas.clientWidth * .42) return;
+    lookPointer = event.pointerId; lookLastX = event.clientX;
+    try { canvas.setPointerCapture(event.pointerId); } catch (_) {}
+  });
+  canvas.addEventListener("pointermove", event => {
+    if (event.pointerId !== lookPointer) return;
+    const dx = event.clientX - lookLastX; lookLastX = event.clientX;
+    yaw -= dx * .0065;
+  });
+  const releaseLook = event => { if (event.pointerId === lookPointer) lookPointer = null; };
+  canvas.addEventListener("pointerup", releaseLook);
+  canvas.addEventListener("pointercancel", releaseLook);
+  $("simAction").addEventListener("click",()=>{if(activeObject)doAction(activeObject.action||"upgrade_station",{station:activeObject.station??activeObject.index,component:activeObject.component});});
+  $("simBuyStation")?.addEventListener("click",()=>doAction("buy_station"));
+  $("simAdvertise")?.addEventListener("click",()=>doAction("advertise"));
+  $("simCashout")?.addEventListener("click",async()=>{try{const d=await api("/api/simulator/exchange",{method:"POST",body:JSON.stringify({currency:"gramm"})});Object.assign(state,d.state||{});updateHUD();toast("Зачислено "+d.gramm+" GRAMM на основной баланс");}catch(e){toast(e.message,"error");}});
+  window.addEventListener("keydown", event => {
+    if (["KeyW","KeyA","KeyS","KeyD","ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].includes(event.code)) {
+      keys[event.code] = true; event.preventDefault();
+    }
+    if (event.code === "KeyE" && activeObject) doAction(activeObject.action||"upgrade_station",{station:activeObject.station??activeObject.index,component:activeObject.component});
+  });
+  window.addEventListener("keyup", event => { keys[event.code] = false; });
+  window.addEventListener("blur", () => { Object.keys(keys).forEach(key => keys[key] = false); moveX = moveY = 0; });
+}
+window.initUglyBusiness = async function() {
+  if (ready) { resize(); return; }
+  if (!initData) { $("simHint").textContent = "Открой игру через Telegram"; return; }
+  try {
+    const canvas = $("uglyBusinessCanvas");
+    renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: "high-performance" });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+    renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.12;
+    await loadState(); buildStore(); clock = new THREE.Clock(); bindControls(); ready = true; resize();
+    yaw = 0; camera.position.set(0, 3.2, 11.2); camera.lookAt(player.position.x, 1, player.position.z);
+    animate();
+  } catch (error) {
+    $("simHint").textContent = "Не удалось запустить 3D: " + error.message;
+    console.error("UGLY BUSINESS 3D:", error);
+  }
+};
+const page = $("simulator");
+if (page) {
+  const observer = new MutationObserver(() => {
+    if (page.classList.contains("active")) window.initUglyBusiness();
+    else if (raf) { cancelAnimationFrame(raf); raf = 0; }
+  });
+  observer.observe(page, { attributes: true, attributeFilter: ["class"] });
+  if (page.classList.contains("active")) window.initUglyBusiness();
+}
+window.addEventListener("resize", resize);
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden && raf) { cancelAnimationFrame(raf); raf = 0; }
+  else if (!document.hidden && ready && $("simulator")?.classList.contains("active") && !raf) { clock.start(); animate(); }
+});
++Number(x.reward||0).toLocaleString("ru-RU")+'</span></div>';}).join(""):'<p class="small">Сейчас нет активных игровых сессий.</p>';
+}
+async function tapClub(){const b=$("simTapButton");if(b)b.disabled=true;try{const d=await api("/api/simulator/tap",{method:"POST",body:"{}"});Object.assign(state,d.state||{});updateHUD();if(b){b.classList.remove("tap-pop");void b.offsetWidth;b.classList.add("tap-pop");}toast("+$"+d.reward+" на счёт клуба");}catch(e){toast(e.message,"error");}finally{if(b)b.disabled=false;}}
 function updateHUD() {
   $("simCash").textContent = "$" + Number(state.cash || 0).toLocaleString("ru-RU");
   $("simLevel").textContent = state.level || 1;
@@ -302,6 +532,7 @@ function updateHUD() {
   if ($("simIncome")) $("simIncome").textContent = "$" + Number(state.hourlyIncome || 0).toLocaleString("ru-RU") + "/ч";
   if ($("simAdLevel")) $("simAdLevel").textContent = state.adLevel || 0;
   stationGroups.forEach((g,i)=>g.visible=i<(state.stations||4));
+  renderClubPanels();if(scene)syncClubNPCs();
 }
 async function loadState() {
   try {
