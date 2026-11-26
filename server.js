@@ -2391,7 +2391,7 @@ app.post("/api/simulator/action",auth,async(req,res)=>{
    if(!guest)throw Error("Этот посетитель уже ушёл из очереди");
    if(!Number.isInteger(i)||!d.stations[i])throw Error("Игровое место не найдено");
    if((d.sessions||[]).some(x=>Number(x.station)===i))throw Error("Это место уже занято");
-   const duration=120+Math.floor(Math.random()*181),tier=clubStationLevel(d.stations[i]);
+   const requestedDuration=Number(req.body.duration),duration=Number.isInteger(requestedDuration)&&requestedDuration>=120&&requestedDuration<=300?requestedDuration:120+Math.floor(Math.random()*181),tier=clubStationLevel(d.stations[i]);
    const base=[0,25,55,100,180][tier],reward=Math.max(1,Math.round(base*duration/180*(1+d.adLevel*.025)));
    d.queue=d.queue.filter(x=>x.id!==queueId);
    d.sessions.push({id:queueId,name:guest.name,station:i,duration,reward,startedAt:new Date().toISOString(),endsAt:new Date(Date.now()+duration*1000).toISOString()});
