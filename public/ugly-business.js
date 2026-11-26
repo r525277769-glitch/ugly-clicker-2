@@ -251,20 +251,58 @@ function buildStore(){
  for(let i=0;i<7;i++){const p=box(scene,.12,3.6,.08,-7.2+i*2.4,2.25,-8.78,mat(i%2?"#1bd5ff":"#a56cff",.32,.25,{emissive:i%2?"#087a9d":"#4d1684",emissiveIntensity:.55}),false);p.rotation.z=i%2?.18:-.18;}
  box(scene,7,.95,.22,0,4.12,-8.72,mat("#121d31",.3,.3));const sign=new THREE.Mesh(new THREE.PlaneGeometry(6.5,.72),signMaterial("UGLY CYBER CLUB","PLAY • COMPETE • LEVEL UP"));sign.position.set(0,4.12,-8.57);scene.add(sign);
  for(const z of [-6,-1,4]){box(scene,17,.08,.16,0,3.45,z,mat("#20cfff",.28,.4,{emissive:"#087fa8",emissiveIntensity:.9}),false);box(scene,17,.06,.14,0,3.28,z+.12,mat("#a55cff",.28,.4,{emissive:"#4a138c",emissiveIntensity:.75}),false);}
- // Premium reception desk and an interactive admin laptop.
+ // Reception counter with a clear staff position behind it.
  const reception=new THREE.Group();reception.position.set(0,0,7.1);scene.add(reception);
- box(reception,3.8,.92,.78,0,.52,0,surfaceMat("#14243a","plastic",.32,.38));
- box(reception,3.92,.12,.9,0,1.04,0,surfaceMat("#263d58","wood",.3,.24));
- box(reception,3.55,.035,.045,0,.94,.405,mat("#25dfff",.2,.3,{emissive:"#0788aa",emissiveIntensity:1.15}),false);
- box(reception,3.55,.045,.055,0,.19,.405,mat("#a56cff",.22,.3,{emissive:"#5c21a5",emissiveIntensity:.9}),false);
- for(const x of [-1.42,1.42]){box(reception,.12,.72,.7,x,.52,0,mat("#304c69",.3,.45));box(reception,.16,.08,.72,x,.12,0,mat("#21cfff",.2,.3,{emissive:"#087d9d",emissiveIntensity:.8}),false);}
- const laptop=new THREE.Group();laptop.position.set(.18,1.12,.12);laptop.rotation.y=Math.PI;laptop.scale.set(.78,.78,.78);reception.add(laptop);
- box(laptop,.9,.045,.58,0,.02,0,mat("#8798aa",.25,.72));
+ // Raised counter top, front fascia and side cheeks leave the staff side open.
+ box(reception,3.95,.13,1.02,0,1.04,0,surfaceMat("#263d58","wood",.3,.24));
+ box(reception,3.72,.66,.12,0,.59,-.43,surfaceMat("#14243a","plastic",.32,.38));
+ box(reception,3.78,.045,.055,0,.91,-.36,mat("#25dfff",.2,.3,{emissive:"#0788aa",emissiveIntensity:1.15}),false);
+ box(reception,3.78,.045,.055,0,.22,-.36,mat("#a56cff",.22,.3,{emissive:"#5c21a5",emissiveIntensity:.9}),false);
+ for(const x of [-1.87,1.87]){
+   box(reception,.14,.82,.94,x,.53,0,mat("#304c69",.3,.45));
+   box(reception,.17,.07,.96,x,.12,0,mat("#21cfff",.2,.3,{emissive:"#087d9d",emissiveIntensity:.8}),false);
+   box(reception,.12,.08,.78,x,.98,0,M.gold,false);
+ }
+ // Staff-side laptop: the display faces the open standing area (+Z).
+ const laptop=new THREE.Group();laptop.position.set(.05,1.12,-.08);laptop.rotation.y=0;laptop.scale.set(.82,.82,.82);reception.add(laptop);
+ box(laptop,.92,.045,.59,0,.02,0,surfaceMat("#8798aa","metal",.25,.72));
  box(laptop,.86,.48,.035,0,.275,-.255,mat("#202b3a",.2,.55));
  box(laptop,.78,.39,.012,0,.28,-.232,mat("#0a1b2d",.18,.2,{emissive:"#087ba5",emissiveIntensity:.4}),false);
  box(laptop,.58,.012,.2,0,.052,.12,mat("#263c52",.3,.35),false);
  box(laptop,.2,.008,.11,0,.052,.28,mat("#7894aa",.25,.55),false);
  const laptopScreen=new THREE.Mesh(new THREE.PlaneGeometry(.72,.32),signMaterial("UGLY ADMIN","TAP TO MANAGE GUESTS"));laptopScreen.material.side=THREE.DoubleSide;laptopScreen.material.needsUpdate=true;laptopScreen.position.set(0,.28,-.222);laptop.add(laptopScreen);
+ // Small desk accessories: collectible figures, paperwork, pen and cash bundles.
+ const figureA=new THREE.Group();figureA.position.set(-1.28,1.12,.12);reception.add(figureA);
+ cylinder(figureA,.13,.15,.055,0,.025,0,M.dark,20);
+ const mascotBody=mat("#23cfff",.38,.12,{emissive:"#07506c",emissiveIntensity:.3});
+ sphere(figureA,.105,0,.17,0,mascotBody,16,12);sphere(figureA,.082,0,.34,0,mat("#f0b58a"),16,12);
+ for(const sx of [-1,1]){box(figureA,.045,.15,.05,sx*.13,.16,0,mascotBody,false);box(figureA,.055,.12,.06,sx*.07,.07,0,M.gold,false);}
+ sphere(figureA,.018,-.03,.36,.071,mat("#20232b"),10,8);sphere(figureA,.018,.03,.36,.071,mat("#20232b"),10,8);
+ const figureB=new THREE.Group();figureB.position.set(1.28,1.12,.12);reception.add(figureB);
+ cylinder(figureB,.12,.14,.05,0,.025,0,M.dark,20);
+ sphere(figureB,.105,0,.16,0,mat("#a56cff",.35,.15,{emissive:"#4d1684",emissiveIntensity:.35}),16,12);
+ sphere(figureB,.085,0,.31,0,mat("#e6b18a"),16,12);
+ sphere(figureB,.11,0,.39,0,mat("#283449"),16,10).scale.set(1,.42,1);
+ // Forms and a clipboard laid out on the right-hand side.
+ const paper=mat("#f3eddd",.9),ink=mat("#34465b",.8);
+ for(let i=0;i<3;i++){
+   const sheet=box(reception,.42,.012,.54,.78+i*.035,1.115,.24-i*.025,paper,false);
+   sheet.rotation.y=-.12+i*.035;sheet.rotation.x=-.025;
+   for(let line=0;line<4;line++)box(reception,.25,.004,.008,.78+i*.035,1.124,.08+line*.075,ink,false);
+ }
+ box(reception,.47,.025,.59,.78,1.14,.24,mat("#b58b4f",.55,.18),false);
+ box(reception,.18,.012,.025,.78,1.158,-.035,M.steel,false);
+ // Cash bundles with visible paper bands.
+ for(let stack=0;stack<3;stack++){
+   const x=-.62+stack*.22,z=.34+(stack%2)*.08,y=1.13+Math.floor(stack/2)*.055;
+   box(reception,.19,.055,.11,x,y,z,mat("#548b62",.82),false);
+   box(reception,.195,.012,.018,x,y+.006,z,mat("#e8d8a8",.72),false);
+   for(let note=0;note<3;note++)box(reception,.17,.006,.095,x,y+.03+note*.006,z,mat(note%2?"#8caf73":"#67966d",.82),false);
+ }
+ // Pen and desk cup finish the working reception setup.
+ const pen=cylinder(reception,.012,.012,.28,-.15,1.16,.31,mat("#202b3a",.3,.55),10);pen.rotation.z=-.32;
+ cylinder(reception,.085,.085,.13,1.58,1.12,.27,mat("#d9e3ec",.3,.3),18);
+ cylinder(reception,.065,.065,.012,1.58,1.19,.27,mat("#263d58",.3,.25),18);
  makeLabel(scene,"RECEPTION",0,2.12,6.48,2.5,.4);
  interactables.push({position:new THREE.Vector3(0,0,7.22),name:"Ноутбук администратора",hint:"НОУТБУК РЕСЕПШЕНА · НАЖМИ, ЧТОБЫ ПРИНЯТЬ ПОСЕТИТЕЛЯ",action:"open_reception",radius:2.25});
  const spots=[[-5.1,-3.4],[-1.8,-3.4],[1.8,-3.4],[5.1,-3.4],[-5.1,2],[-1.8,2],[1.8,2],[5.1,2]];
