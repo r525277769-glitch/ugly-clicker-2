@@ -2351,7 +2351,7 @@ async function getClub(client,id,lock=false){
   for(const session of finished){cash+=Number(session.reward||0);xp+=15;customers++;}
   d.sessions=d.sessions.filter(x=>new Date(x.endsAt).getTime()>now);dirty=true;
  }
- if(!d.nextArrivalAt)d.nextArrivalAt=new Date(now+8000).toISOString();
+ if(!d.nextArrivalAt){d.nextArrivalAt=new Date(now+8000).toISOString();dirty=true;}
  const free=clubFreeStations(d);
  if(now>=new Date(d.nextArrivalAt).getTime()&&d.queue.length<Math.min(5,free.length+2)){
   d.queue.push({id:require("crypto").randomBytes(6).toString("hex"),name:CLUB_NAMES[Math.floor(Math.random()*CLUB_NAMES.length)],arrivedAt:new Date(now).toISOString()});
