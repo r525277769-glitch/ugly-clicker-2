@@ -267,18 +267,18 @@ function animate() {
   const moving = input.length > .08;
   for (const a of animated) {
     if (a.type === "idle") a.mesh.position.y = Math.sin(performance.now() * .0017 + a.phase) * .025;
-    if(a.type==="character"){const npc=clubNPCs.find(n=>n.mesh===a.root),characterMoving=a.isPlayer?moving:!!npc&&npc.mode==="toSeat",speed=a.isPlayer?(moving?Math.max(.25,input.length)*3.65:0):(characterMoving?1.35:0);a.phase=(a.phase+dt*(characterMoving||moving?speed*2.7:1.1))%(Math.PI*2);const phase=a.phase,stride=characterMoving||moving?Math.min(.58,speed*.19):.018;a.torsoPivot.position.y=1.12+(stride>.05?Math.abs(Math.sin(phase*2))*.035:Math.sin(phase)*.008);a.torsoPivot.rotation.z=stride>.05?Math.sin(phase)*.025:0;a.limbs.forEach(l=>{l.leg.rotation.x=Math.sin(phase+l.side*Math.PI)*stride;l.arm.rotation.x=-Math.sin(phase+l.side*Math.PI)*stride*.78;});}
+    if(a.type==="character"){const npc=clubNPCs.find(n=>n.mesh===a.root),characterMoving=a.isPlayer?moving:!!npc&&(npc.mode==="toSeat"||npc.mode==="toQueue"),speed=a.isPlayer?(moving?Math.max(.25,input.length)*3.65:0):(characterMoving?1.35:0);a.phase=(a.phase+dt*(characterMoving||moving?speed*2.7:1.1))%(Math.PI*2);const phase=a.phase,stride=characterMoving||moving?Math.min(.58,speed*.19):.018;a.torsoPivot.position.y=1.12+(stride>.05?Math.abs(Math.sin(phase*2))*.035:Math.sin(phase)*.008);a.torsoPivot.rotation.z=stride>.05?Math.sin(phase)*.025:0;a.limbs.forEach(l=>{l.leg.rotation.x=Math.sin(phase+l.side*Math.PI)*stride;l.arm.rotation.x=-Math.sin(phase+l.side*Math.PI)*stride*.78;});}
   }
   const now = performance.now();
   for (const npc of clubNPCs) {
     const qi=(state.clubData?.queue||[]).findIndex(q=>q.id===npc.id),session=(state.clubData?.sessions||[]).find(q=>q.id===npc.id);let dest;
     if(session){const spots=[[-5.1,-3.4],[-1.8,-3.4],[1.8,-3.4],[5.1,-3.4],[-5.1,2],[-1.8,2],[1.8,2],[5.1,2]],p=spots[session.station]||spots[0];dest=new THREE.Vector3(p[0],npc.mode==="play"?.25:0,p[1]+1.05);if(npc.mode!=="play")npc.mode="toSeat";}
-    else if(qi>=0){dest=new THREE.Vector3(-.85+(qi%3)*.85,0,5.45+Math.floor(qi/3)*.48);npc.mode="queue";}
+    else if(qi>=0){dest=new THREE.Vector3(-.85+(qi%3)*.85,0,5.45+Math.floor(qi/3)*.48);if(npc.mode!=="queue")npc.mode="toQueue";}
     else{npc.mode="exit";dest=new THREE.Vector3(0,0,8.5);}
     const delta=dest.clone().sub(npc.mesh.position),distance=delta.length();
     if(distance>.09){const target=Math.atan2(-delta.x,-delta.z);let turn=Math.atan2(Math.sin(target-npc.mesh.rotation.y),Math.cos(target-npc.mesh.rotation.y));npc.mesh.rotation.y+=turn*Math.min(1,dt*7);npc.mesh.position.addScaledVector(delta.normalize(),Math.min(distance,dt*1.5));}
     else if(session){npc.mode="play";npc.mesh.position.y=.25;npc.mesh.rotation.y=0;npc.mesh.scale.y=.82;const a=animated.find(x=>x.root===npc.mesh);if(a)a.limbs.forEach(l=>{l.arm.rotation.x=-.72;l.leg.rotation.x=.9;});}
-    else if(npc.mode==="queue")npc.mesh.position.y=Math.sin(now*.004+npc.phase)*.018;
+    else if(qi>=0){npc.mode="queue";npc.mesh.position.y=Math.sin(now*.004+npc.phase)*.018;}
   }
   for(let i=clubNPCs.length-1;i>=0;i--){if(clubNPCs[i].mode==="exit"&&clubNPCs[i].mesh.position.z>8.25){scene.remove(clubNPCs[i].mesh);const ai=animated.findIndex(a=>a.root===clubNPCs[i].mesh);if(ai>=0)animated.splice(ai,1);clubNPCs.splice(i,1);}}
   stationGroups.forEach((g,i)=>g.visible=i<(state.stations||4));
@@ -291,7 +291,7 @@ function animate() {
 }
 function syncClubNPCs(){
  const desired=[...(state.clubData?.queue||[]).map(q=>({...q,kind:"queue"})),...(state.clubData?.sessions||[]).map(q=>({...q,kind:"session"}))];
- for(const d of desired){if(clubNPCs.some(n=>n.id===d.id))continue;const mesh=makePerson(3.4,8.1,["#e45d48","#43a77b","#8357b9","#e2a33b","#347db7","#d65b9a"][clubNPCs.length%6],false,clubNPCs.length+1);clubNPCs.push({id:d.id,mesh,phase:Math.random()*6,mode:d.kind==="session"?"toSeat":"queue",station:d.station});}
+ for(const d of desired){if(clubNPCs.some(n=>n.id===d.id))continue;const mesh=makePerson(3.4,8.1,["#e45d48","#43a77b","#8357b9","#e2a33b","#347db7","#d65b9a"][clubNPCs.length%6],false,clubNPCs.length+1);clubNPCs.push({id:d.id,mesh,phase:Math.random()*6,mode:d.kind==="session"?"toSeat":"toQueue",station:d.station});}
  for(let i=clubNPCs.length-1;i>=0;i--){if(!desired.some(d=>d.id===clubNPCs[i].id)){if(scene)scene.remove(clubNPCs[i].mesh);const ai=animated.findIndex(a=>a.root===clubNPCs[i].mesh);if(ai>=0)animated.splice(ai,1);clubNPCs.splice(i,1);}}
 }
 function renderClubPanels(){
