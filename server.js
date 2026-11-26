@@ -324,6 +324,16 @@ async function initDatabase() {
 
     CREATE INDEX IF NOT EXISTS idx_btc_farm_equipment_player
       ON bitcoin_farm_equipment(telegram_id);
+
+    CREATE TABLE IF NOT EXISTS ugly_simulator_players (
+      telegram_id BIGINT PRIMARY KEY REFERENCES players(telegram_id),
+      shop_cash BIGINT NOT NULL DEFAULT 0,
+      shop_xp BIGINT NOT NULL DEFAULT 0,
+      customers_served BIGINT NOT NULL DEFAULT 0,
+      shelves_stocked BIGINT NOT NULL DEFAULT 0,
+      last_action_at TIMESTAMPTZ,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
   `);
 
   databaseReady = true;
@@ -2305,6 +2315,41 @@ app.post("/api/bitcoin-farm/exchange", auth, async (req, res) => {
   } finally {
     client.release();
   }
+});
+
+
+/* UGLY BUSINESS SIMULATOR */
+app.get("/api/simulator/state", auth, async (req, res) => {
+  try {
+    await pool.query(`INSERT INTO ugly_simulator_players (telegram_id) VALUES ($1) ON CONFLICT (telegram_id) DO NOTHING`, [req.player.id]);
+    const r = await pool.query(`SELECT shop_cash, shop_xp, customers_served, shelves_stocked FROM ugly_simulator_players WHERE telegram_id = $1`, [req.player.id]);
+    const p = r.rows[0], xp = Number(p.shop_xp);
+    res.json({ success:true, state:{ cash:Number(p.shop_cash), xp, level:Math.floor(xp/100)+1, customers:Number(p.customers_served), stocked:Number(p.shelves_stocked) } });
+  } catch(e) { console.error("Simulator state:",e); res.status(500).json({error:"Не удалось загрузить прогресс симулятора"}); }
+});
+app.post("/api/simulator/action", auth, async (req, res) => {
+  const action=req.body.action;
+  if(!["checkout","restock"].includes(action)) return res.status(400).json({error:"Неизвестное действие"});
+  const client=await pool.connect();
+  try {
+    await client.query("BEGIN");
+    await client.query(`INSERT INTO ugly_simulator_players (telegram_id) VALUES ($1) ON CONFLICT (telegram_id) DO NOTHING`,[req.player.id]);
+    const lock=await client.query(`SELECT last_action_at FROM ugly_simulator_players WHERE telegram_id=$1 FOR UPDATE`,[req.player.id]);
+    const last=lock.rows[0].last_action_at;
+    if(last && Date.now()-new Date(last).getTime()<5000) throw new Error("Подожди несколько секунд перед следующим действием");
+    if(action==="checkout"){
+      await client.query(`UPDATE ugly_simulator_players SET shop_cash=shop_cash+25, shop_xp=shop_xp+10, customers_served=customers_served+1, last_action_at=NOW(), updated_at=NOW() WHERE telegram_id=$1`,[req.player.id]);
+    } else {
+      await client.query(`UPDATE ugly_simulator_players SET shop_cash=shop_cash-LEAST(shop_cash,5), shop_xp=shop_xp+5, shelves_stocked=shelves_stocked+1, last_action_at=NOW(), updated_at=NOW() WHERE telegram_id=$1`,[req.player.id]);
+    }
+    const r=await client.query(`SELECT shop_cash,shop_xp,customers_served,shelves_stocked FROM ugly_simulator_players WHERE telegram_id=$1`,[req.player.id]);
+    await client.query("COMMIT");
+    const p=r.rows[0],xp=Number(p.shop_xp);
+    res.json({success:true,state:{cash:Number(p.shop_cash),xp,level:Math.floor(xp/100)+1,customers:Number(p.customers_served),stocked:Number(p.shelves_stocked)}});
+  } catch(e) {
+    await client.query("ROLLBACK");
+    res.status(400).json({error:e.message});
+  } finally { client.release(); }
 });
 
 // =====================================================
