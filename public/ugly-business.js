@@ -243,13 +243,13 @@ function animate() {
     if (npc.mode === "walk") {
       const spots = [[-5.1,-2.2],[-1.8,-2.2],[1.8,-2.2],[5.1,-2.2]];
       const p = spots[npc.station % spots.length], dest = new THREE.Vector3(p[0],0,p[1]);
-      npc.mesh.position.lerp(dest, Math.min(1,dt*.22));
+      npc.mesh.position.lerp(dest, Math.min(1,dt*1.15));
       if (npc.mesh.position.distanceTo(dest) < .35) { npc.mode="play"; npc.timer=8+Math.random()*12; }
     } else if (npc.mode === "play") {
       npc.mesh.position.y = Math.sin(now*.006+npc.phase)*.02;
       if (npc.timer <= 0) npc.mode="exit";
     } else {
-      npc.mesh.position.lerp(npc.home,Math.min(1,dt*.28));
+      npc.mesh.position.lerp(npc.home,Math.min(1,dt*1.1));
       if (npc.mesh.position.distanceTo(npc.home) < .35) { npc.mesh.position.set(-7+Math.random()*2,0,7.1); npc.station=Math.floor(Math.random()*Math.max(1,state.stations||4)); npc.mode="walk"; }
     }
   }
