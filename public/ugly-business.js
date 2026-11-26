@@ -79,10 +79,10 @@ function surfaceTexture(kind) {
   if (surfaceMaps[kind]) return surfaceMaps[kind];
   const texture = canvasTexture((ctx,w,h) => {
     const palettes = {
-      floor:["#29384b","#35475d"], wall:["#b9c6d1","#d4dce2"],
+      floor:["#29384b","#35475d"], wall:["#101b31","#1c3150"],
       wood:["#765039","#a87950"], metal:["#8798a8","#bac5cf"],
       fabric:["#202d40","#34465d"], plastic:["#182638","#293c52"],
-      rubber:["#171e29","#252e3a"], ceiling:["#172235","#243249"]
+      rubber:["#171e29","#252e3a"], ceiling:["#101827","#1b2940"]
     };
     const p=palettes[kind]||palettes.plastic;
     ctx.fillStyle=p[0];ctx.fillRect(0,0,w,h);
@@ -103,9 +103,22 @@ function surfaceTexture(kind) {
     } else if(kind==="fabric"){
       for(let y=0;y<h;y+=5)for(let x=0;x<w;x+=5){ctx.fillStyle=((x+y)%10===0)?"rgba(255,255,255,.075)":"rgba(0,0,0,.12)";ctx.fillRect(x,y,2,2);}
       ctx.strokeStyle="rgba(190,215,238,.08)";ctx.lineWidth=1;for(let i=0;i<w;i+=16){ctx.beginPath();ctx.moveTo(i,0);ctx.lineTo(i,h);ctx.stroke();}
-    } else if(kind==="wall"||kind==="ceiling"){
+    } else if(kind==="wall"){
+      const bg=ctx.createLinearGradient(0,0,w,h);bg.addColorStop(0,"#182943");bg.addColorStop(.52,"#0d1729");bg.addColorStop(1,"#223958");ctx.fillStyle=bg;ctx.fillRect(0,0,w,h);
+      const panelW=128;
+      for(let x=0;x<w;x+=panelW){
+        const pg=ctx.createLinearGradient(x,0,x+panelW,0);pg.addColorStop(0,"rgba(255,255,255,.055)");pg.addColorStop(.12,"rgba(255,255,255,.012)");pg.addColorStop(.88,"rgba(0,0,0,.12)");pg.addColorStop(1,"rgba(255,255,255,.045)");
+        ctx.fillStyle=pg;ctx.fillRect(x+3,4,panelW-6,h-8);
+        ctx.strokeStyle="rgba(105,166,211,.22)";ctx.lineWidth=2;ctx.strokeRect(x+7,9,panelW-14,h-18);
+        ctx.fillStyle="rgba(34,207,255,.28)";ctx.fillRect(x+12,18,3,h-36);
+        ctx.fillStyle="rgba(177,111,255,.2)";ctx.fillRect(x+panelW-16,18,2,h-36);
+        for(const yy of [22,h-22]){ctx.fillStyle="rgba(195,220,245,.35)";ctx.beginPath();ctx.arc(x+panelW/2,yy,2.5,0,Math.PI*2);ctx.fill();}
+        ctx.strokeStyle="rgba(180,210,240,.09)";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(x+24,h*.34);ctx.lineTo(x+panelW-24,h*.34);ctx.moveTo(x+24,h*.68);ctx.lineTo(x+panelW-24,h*.68);ctx.stroke();
+      }
+      ctx.fillStyle="rgba(20,210,255,.22)";ctx.fillRect(0,0,w,7);ctx.fillStyle="rgba(155,91,255,.2)";ctx.fillRect(0,h-7,w,7);
+      for(let i=0;i<1800;i++){const a=Math.random()*.045;ctx.fillStyle=Math.random()>.5?"rgba(255,255,255,"+a+")":"rgba(0,0,0,"+a+")";ctx.fillRect(Math.random()*w,Math.random()*h,1,1);}
+    } else if(kind==="ceiling"){
       for(let i=0;i<5200;i++){const v=Math.random(),a=.025+Math.random()*.07;ctx.fillStyle=v>.5?"rgba(255,255,255,"+a+")":"rgba(0,0,0,"+a+")";ctx.fillRect(Math.random()*w,Math.random()*h,1+Math.random()*2,1+Math.random()*2);}
-      if(kind==="wall"){ctx.strokeStyle="rgba(35,55,75,.13)";ctx.lineWidth=3;for(let x=128;x<w;x+=128){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke();}}
     } else {
       for(let i=0;i<4200;i++){const a=Math.random()*.08;ctx.fillStyle=Math.random()>.5?"rgba(255,255,255,"+a+")":"rgba(0,0,0,"+a+")";ctx.fillRect(Math.random()*w,Math.random()*h,1+Math.random()*2,1+Math.random()*2);}
     }
@@ -243,10 +256,27 @@ function makeGamingStation(x,z,index,data){
 function makeConsoleStation(x,z,index,data){
  const g=new THREE.Group();g.position.set(x,0,z);scene.add(g);
  const lv=k=>clamp(Number(data[k]||1),1,4),tv=lv("tv"),con=lv("console"),sofa=lv("sofa"),colors=["#e4b65b","#29c9ff","#42dfa0","#b77cff"],fabric=surfaceMat(["#26374b","#174d68","#18513f","#49315f"][sofa-1],"fabric",.86,.02);
- box(g,1.85,.12,.62,0,.22,-.82,mat("#202a3b",.35,.45));box(g,1.62,1,.12,0,1.65,-.9,mat("#20252e",.25,.4));box(g,1.48,.82,.025,0,1.66,-.825,mat("#fff",.2,.08,{emissive:["#17324b","#12445a","#164a39","#38224f"][tv-1],emissiveIntensity:.5+tv*.12}));box(g,1.55,.045,.04,0,2.19,-.79,mat(colors[tv-1],.25,.35,{emissive:colors[tv-1],emissiveIntensity:.7}),false);
- box(g,.58,.13,.36,0,.43,-.22,mat(["#202b3a","#184d68","#18513f","#49315f"][con-1],.3,.5));box(g,.46,.045,.28,0,.52,-.22,mat(colors[con-1],.25,.35,{emissive:colors[con-1],emissiveIntensity:.45}),false);
- box(g,1.95,.3,.82,0,.48,.92,fabric);box(g,2,.72,.2,0,.88,1.27,fabric);for(const sx of [-.91,.91])box(g,.18,.62,.82,sx,.73,.92,fabric);for(const sx of [-.58,0,.58])box(g,.58,.12,.12,sx,.68,.49,mat(colors[sofa-1],.5,.08),false);
- makeLabel(g,"CONSOLE "+String(index+1).padStart(2,"0"),0,2.55,-.92,1.8,.32);g.userData={consoleIndex:index};consoleGroups.push(g);
+ const tableMat=surfaceMat(["#26384e","#174b66","#18513f","#49315f"][tv-1],"wood",.38,.22),metalLeg=mat("#8295aa",.3,.68),tvGlow=colors[tv-1];
+ // TV console table with four legs and a lower shelf.
+ box(g,1.9,.13,.72,0,.72,-.92,tableMat);
+ for(const sx of [-.78,.78])for(const sz of [-.26,.26])box(g,.075,.68,.075,sx,.34,-.92+sz,metalLeg);
+ box(g,1.62,.07,.55,0,.27,-.92,mat("#172538",.42,.45));
+ // TV and its feet rest directly on the tabletop.
+ box(g,.16,.12,.18,0,.84,-.92,mat("#202a3b",.32,.55));
+ box(g,1.62,.9,.12,0,1.37,-.92,mat("#101722",.22,.55));
+ box(g,1.49,.76,.025,0,1.39,-.852,mat("#fff",.18,.08,{emissive:["#17324b","#12445a","#164a39","#38224f"][tv-1],emissiveIntensity:.5+tv*.12}));
+ box(g,1.55,.045,.04,0,1.86,-.84,mat(tvGlow,.25,.35,{emissive:tvGlow,emissiveIntensity:.7}),false);
+ // Console device rests on the same table beside the TV.
+ box(g,.42,.11,.28,.58,.84,-.55,mat(["#202b3a","#184d68","#18513f","#49315f"][con-1],.3,.5));
+ box(g,.32,.025,.2,.58,.91,-.55,mat(colors[con-1],.25,.35,{emissive:colors[con-1],emissiveIntensity:.45}),false);
+ // Sofa is grounded on the floor with short feet, seat, back and armrests.
+ for(const sx of [-.82,.82])for(const sz of [.63,1.18])box(g,.09,.16,.09,sx,.08,sz,mat("#202a38",.38,.55));
+ box(g,1.95,.22,.82,0,.22,.92,fabric);
+ box(g,1.95,.16,.72,0,.39,.9,surfaceMat(["#34465d","#23627b","#28664e","#61417b"][sofa-1],"fabric",.9,.02));
+ box(g,2,.7,.2,0,.76,1.27,fabric);
+ for(const sx of [-.91,.91])box(g,.18,.54,.82,sx,.53,.92,fabric);
+ for(const sx of [-.58,0,.58])box(g,.58,.11,.12,sx,.51,.49,mat(colors[sofa-1],.5,.08),false);
+ makeLabel(g,"CONSOLE "+String(index+1).padStart(2,"0"),0,2.12,-.92,1.8,.32);g.userData={consoleIndex:index};consoleGroups.push(g);
  for(const key of ["tv","console","sofa"])interactables.push({position:new THREE.Vector3(x+(key==="tv"?-.65:key==="console"?.65:0),0,z+(key==="sofa"?1.2:-.8)),name:({tv:"Телевизор",console:"Приставка",sofa:"Диван"})[key],hint:"КОНСОЛЬНАЯ ЗОНА · "+({tv:"ТЕЛЕВИЗОР",console:"ПРИСТАВКА",sofa:"ДИВАН"})[key]+" · НАЖМИ ДЛЯ УЛУЧШЕНИЯ",action:"upgrade_console_component",station:index,component:key,radius:1.8});
 }
 function buildStore(){
@@ -262,7 +292,7 @@ function buildStore(){
  box(scene,9.5,5,.3,wingX,2.35,-11,surfaceMat("#ffffff","wall",.88,0));box(scene,9.5,5,.3,wingX,2.35,11,surfaceMat("#ffffff","wall",.88,0));box(scene,.3,5,22,roomHalf+9.5,2.35,0,surfaceMat("#ffffff","wall",.88,0));box(scene,9.5,.25,22,wingX,5,0,surfaceMat("#ffffff","ceiling",.82,.08));
  box(scene,.12,3.5,.18,roomHalf+.08,2.1,-2.3,mat("#21cfff",.2,.3,{emissive:"#087fa8",emissiveIntensity:1}),false);box(scene,.12,3.5,.18,roomHalf+.08,2.1,2.3,mat("#a55cff",.2,.3,{emissive:"#4a138c",emissiveIntensity:1}),false);
  const wingSign=new THREE.Mesh(new THREE.PlaneGeometry(3.4,.65),signMaterial("CONSOLE LOUNGE","PLAYSTATION • XBOX"));wingSign.position.set(roomHalf+4.75,3.7,-10.78);scene.add(wingSign);
- box(scene,.12,2.5,3.2,-2.45,1.25,6.0,surfaceMat("#263d58","plastic",.35,.3));box(scene,.12,2.5,3.2,2.45,1.25,6.0,surfaceMat("#263d58","plastic",.35,.3));box(scene,4.9,2.5,.12,0,1.25,4.35,surfaceMat("#263d58","plastic",.35,.3));
+ box(scene,.12,2.5,3.2,-2.45,1.25,6.0,surfaceMat("#263d58","plastic",.35,.3));box(scene,.12,2.5,3.2,2.45,1.25,6.0,surfaceMat("#263d58","plastic",.35,.3));// Keep the entrance-to-club passage open: rear reception partition removed.
  for(let i=0;i<7;i++){const p=box(scene,.12,3.6,.08,-7.2+i*2.4,2.25,-8.78,mat(i%2?"#1bd5ff":"#a56cff",.32,.25,{emissive:i%2?"#087a9d":"#4d1684",emissiveIntensity:.55}),false);p.rotation.z=i%2?.18:-.18;}
  box(scene,7,.95,.22,0,4.12,-8.72,mat("#121d31",.3,.3));const sign=new THREE.Mesh(new THREE.PlaneGeometry(6.5,.72),signMaterial("UGLY CYBER CLUB","PLAY • COMPETE • LEVEL UP"));sign.position.set(0,4.12,-8.57);scene.add(sign);
  for(const z of [-6,-1,4]){box(scene,17,.08,.16,0,3.45,z,mat("#20cfff",.28,.4,{emissive:"#087fa8",emissiveIntensity:.9}),false);box(scene,17,.06,.14,0,3.28,z+.12,mat("#a55cff",.28,.4,{emissive:"#4a138c",emissiveIntensity:.75}),false);}
