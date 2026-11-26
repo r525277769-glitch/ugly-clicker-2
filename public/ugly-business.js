@@ -194,9 +194,10 @@ function buildStore(){
  scene.add(new THREE.HemisphereLight("#c8eaff","#22233d",1.8));
  const key=new THREE.DirectionalLight("#fff0d4",2.8);key.position.set(-6,12,7);key.castShadow=true;key.shadow.mapSize.set(1536,1536);key.shadow.camera.left=-15;key.shadow.camera.right=15;key.shadow.camera.top=15;key.shadow.camera.bottom=-15;scene.add(key);
  for(const [color,intensity,pos] of [["#21cfff",70,[-5,3,-4]],["#9c4dff",65,[6,3,2]],["#ff4e9b",35,[0,3,7]]]){const l=new THREE.PointLight(color,intensity,20,2);l.position.set(...pos);scene.add(l);}
- box(scene,18,.35,18,0,-.18,0,mat("#263449",.72,.18));
+ const roomSize=18+Number(state.clubData?.roomLevel||0)*4,roomHalf=roomSize/2;
+ box(scene,roomSize,.35,roomSize,0,-.18,0,mat("#263449",.72,.18));
  for(let x=-8;x<=8;x+=2)for(let z=-8;z<=8;z+=2)box(scene,1.96,.018,1.96,x,.008,z,mat((x+z)%4?"#293b53":"#202f45",.68,.12),false);
- box(scene,18,5,.32,0,2.35,-9,mat("#263b59"));box(scene,.32,5,18,-9,2.35,0,mat("#263b59"));box(scene,.32,5,18,9,2.35,0,mat("#263b59"));box(scene,18,.25,18,0,5,0,mat("#111a2b"));
+ box(scene,roomSize,5,.32,0,2.35,-roomHalf,mat("#263b59"));box(scene,.32,5,roomSize,-roomHalf,2.35,0,mat("#263b59"));box(scene,.32,5,roomSize,roomHalf,2.35,0,mat("#263b59"));box(scene,roomSize,.25,roomSize,0,5,0,mat("#111a2b"));
  for(let i=0;i<7;i++){const p=box(scene,.12,3.6,.08,-7.2+i*2.4,2.25,-8.78,mat(i%2?"#1bd5ff":"#a56cff",.32,.25,{emissive:i%2?"#087a9d":"#4d1684",emissiveIntensity:.55}),false);p.rotation.z=i%2?.18:-.18;}
  box(scene,7,.95,.22,0,4.12,-8.72,mat("#121d31",.3,.3));const sign=new THREE.Mesh(new THREE.PlaneGeometry(6.5,.72),signMaterial("UGLY CYBER CLUB","PLAY • COMPETE • LEVEL UP"));sign.position.set(0,4.12,-8.57);scene.add(sign);
  for(const z of [-6,-1,4]){box(scene,17,.08,.16,0,3.45,z,mat("#20cfff",.28,.4,{emissive:"#087fa8",emissiveIntensity:.9}),false);box(scene,17,.06,.14,0,3.28,z+.12,mat("#a55cff",.28,.4,{emissive:"#4a138c",emissiveIntensity:.75}),false);}
@@ -260,8 +261,9 @@ function animate() {
     diff = Math.atan2(Math.sin(diff), Math.cos(diff));
     player.rotation.y += diff * (1-Math.exp(-dt*9));
   }
-  player.position.x = clamp(player.position.x, -7.15, 7.15);
-  player.position.z = clamp(player.position.z, -7.15, 7.15);
+  const roomBound=7.15+Number(state.clubData?.roomLevel||0)*2;
+  player.position.x = clamp(player.position.x, -roomBound, roomBound);
+  player.position.z = clamp(player.position.z, -roomBound, roomBound);
   const moving = input.length > .08;
   for (const a of animated) {
     if (a.type === "idle") a.mesh.position.y = Math.sin(performance.now() * .0017 + a.phase) * .025;
@@ -365,6 +367,7 @@ function bindControls() {
   $("simQueue")?.addEventListener("click",event=>{const b=event.target.closest("[data-confirm-guest]");if(!b)return;const id=b.dataset.confirmGuest,sel=$("simQueue").querySelector('[data-station-for="'+id+'"]');if(sel)doAction("start_session",{queueId:id,station:Number(sel.value)});});
   $("simUpgradePanel")?.addEventListener("click",event=>{const b=event.target.closest("[data-upgrade-component]");if(!b)return;doAction("upgrade_component",{station:Number(b.dataset.upgradeStation),component:b.dataset.upgradeComponent});});
   $("simBuyStation")?.addEventListener("click",()=>doAction("buy_station"));
+  $("simExpandRoom")?.addEventListener("click",()=>doAction("expand_room"));
   $("simAdvertise")?.addEventListener("click",()=>doAction("advertise"));
   $("simCashout")?.addEventListener("click",async()=>{try{const d=await api("/api/simulator/exchange",{method:"POST",body:JSON.stringify({currency:"gramm"})});Object.assign(state,d.state||{});updateHUD();toast("Зачислено "+d.gramm+" GRAMM на основной баланс");}catch(e){toast(e.message,"error");}});
   window.addEventListener("keydown", event => {
