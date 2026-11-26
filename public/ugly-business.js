@@ -240,6 +240,15 @@ function makeGamingStation(x,z,index,data){
  const keys=["gpu","cpu","ram","monitor","keyboard","mouse","chair","desk"],names=["Видеокарта","Процессор","ОЗУ","Монитор","Клавиатура","Мышь","Кресло","Стол"];
  keys.forEach((key,k)=>interactables.push({position:new THREE.Vector3(x+((k%4)-1.5)*.3,0,z+1.15+Math.floor(k/4)*.28),name:names[k],hint:"Улучшение компонента ПК · "+names[k],action:"upgrade_component",station:index,component:key,radius:1.9}));
 }
+function makeConsoleStation(x,z,index,data){
+ const g=new THREE.Group();g.position.set(x,0,z);scene.add(g);
+ const lv=k=>clamp(Number(data[k]||1),1,4),tv=lv("tv"),con=lv("console"),sofa=lv("sofa"),colors=["#e4b65b","#29c9ff","#42dfa0","#b77cff"],fabric=surfaceMat(["#26374b","#174d68","#18513f","#49315f"][sofa-1],"fabric",.86,.02);
+ box(g,1.85,.12,.62,0,.22,-.82,mat("#202a3b",.35,.45));box(g,1.62,1,.12,0,1.65,-.9,mat("#20252e",.25,.4));box(g,1.48,.82,.025,0,1.66,-.825,mat("#fff",.2,.08,{emissive:["#17324b","#12445a","#164a39","#38224f"][tv-1],emissiveIntensity:.5+tv*.12}));box(g,1.55,.045,.04,0,2.19,-.79,mat(colors[tv-1],.25,.35,{emissive:colors[tv-1],emissiveIntensity:.7}),false);
+ box(g,.58,.13,.36,0,.43,-.22,mat(["#202b3a","#184d68","#18513f","#49315f"][con-1],.3,.5));box(g,.46,.045,.28,0,.52,-.22,mat(colors[con-1],.25,.35,{emissive:colors[con-1],emissiveIntensity:.45}),false);
+ box(g,1.95,.3,.82,0,.48,.92,fabric);box(g,2,.72,.2,0,.88,1.27,fabric);for(const sx of [-.91,.91])box(g,.18,.62,.82,sx,.73,.92,fabric);for(const sx of [-.58,0,.58])box(g,.58,.12,.12,sx,.68,.49,mat(colors[sofa-1],.5,.08),false);
+ makeLabel(g,"CONSOLE "+String(index+1).padStart(2,"0"),0,2.55,-.92,1.8,.32);g.userData={consoleIndex:index};stationGroups.push(g);
+ for(const key of ["tv","console","sofa"])interactables.push({position:new THREE.Vector3(x+(key==="tv"?-.65:key==="console"?.65:0),0,z+(key==="sofa"?1.2:-.8)),name:({tv:"Телевизор",console:"Приставка",sofa:"Диван"})[key],hint:"КОНСОЛЬНАЯ ЗОНА · "+({tv:"ТЕЛЕВИЗОР",console:"ПРИСТАВКА",sofa:"ДИВАН"})[key]+" · НАЖМИ ДЛЯ УЛУЧШЕНИЯ",action:"upgrade_console_component",station:index,component:key,radius:1.8});
+}
 function buildStore(){
  scene=new THREE.Scene();scene.background=new THREE.Color("#101a32");scene.fog=new THREE.Fog("#101a32",27,52);camera=new THREE.PerspectiveCamera(58,1,.1,100);
  scene.add(new THREE.HemisphereLight("#c8eaff","#22233d",1.8));
@@ -248,6 +257,12 @@ function buildStore(){
  const roomSize=18+Number(state.clubData.roomLevel||0)*4,roomHalf=roomSize/2;
  box(scene,roomSize,.35,roomSize,0,-.18,0,surfaceMat("#ffffff","floor",.32,.18));
  box(scene,roomSize,5,.32,0,2.35,-roomHalf,surfaceMat("#ffffff","wall",.88,0));box(scene,.32,5,roomSize,-roomHalf,2.35,0,surfaceMat("#ffffff","wall",.88,0));box(scene,.32,5,roomSize,roomHalf,2.35,0,surfaceMat("#ffffff","wall",.88,0));box(scene,roomSize,.25,roomSize,0,5,0,surfaceMat("#ffffff","ceiling",.82,.08));
+ const wingX=roomHalf+4.75;
+ box(scene,9.5,.3,12,wingX,-.18,0,surfaceMat("#ffffff","floor",.32,.18));
+ box(scene,9.5,5,.3,wingX,2.35,-6,surfaceMat("#ffffff","wall",.88,0));box(scene,9.5,5,.3,wingX,2.35,6,surfaceMat("#ffffff","wall",.88,0));box(scene,.3,5,12,roomHalf+9.5,2.35,0,surfaceMat("#ffffff","wall",.88,0));box(scene,9.5,.25,12,wingX,5,0,surfaceMat("#ffffff","ceiling",.82,.08));
+ box(scene,.12,3.5,.18,roomHalf+.08,2.1,-2.3,mat("#21cfff",.2,.3,{emissive:"#087fa8",emissiveIntensity:1}),false);box(scene,.12,3.5,.18,roomHalf+.08,2.1,2.3,mat("#a55cff",.2,.3,{emissive:"#4a138c",emissiveIntensity:1}),false);
+ const wingSign=new THREE.Mesh(new THREE.PlaneGeometry(3.4,.65),signMaterial("CONSOLE LOUNGE","PLAYSTATION • XBOX"));wingSign.position.set(roomHalf+4.75,3.7,-5.78);scene.add(wingSign);
+ box(scene,.12,2.5,3.2,-2.45,1.25,6.0,surfaceMat("#263d58","plastic",.35,.3));box(scene,.12,2.5,3.2,2.45,1.25,6.0,surfaceMat("#263d58","plastic",.35,.3));box(scene,4.9,2.5,.12,0,1.25,4.35,surfaceMat("#263d58","plastic",.35,.3));
  for(let i=0;i<7;i++){const p=box(scene,.12,3.6,.08,-7.2+i*2.4,2.25,-8.78,mat(i%2?"#1bd5ff":"#a56cff",.32,.25,{emissive:i%2?"#087a9d":"#4d1684",emissiveIntensity:.55}),false);p.rotation.z=i%2?.18:-.18;}
  box(scene,7,.95,.22,0,4.12,-8.72,mat("#121d31",.3,.3));const sign=new THREE.Mesh(new THREE.PlaneGeometry(6.5,.72),signMaterial("UGLY CYBER CLUB","PLAY • COMPETE • LEVEL UP"));sign.position.set(0,4.12,-8.57);scene.add(sign);
  for(const z of [-6,-1,4]){box(scene,17,.08,.16,0,3.45,z,mat("#20cfff",.28,.4,{emissive:"#087fa8",emissiveIntensity:.9}),false);box(scene,17,.06,.14,0,3.28,z+.12,mat("#a55cff",.28,.4,{emissive:"#4a138c",emissiveIntensity:.75}),false);}
@@ -368,6 +383,7 @@ function buildStore(){
  interactables.push({position:new THREE.Vector3(0,0,7.22),name:"Ноутбук администратора",hint:"НОУТБУК РЕСЕПШЕНА · НАЖМИ, ЧТОБЫ ПРИНЯТЬ ПОСЕТИТЕЛЯ",action:"open_reception",radius:2.25});
  const spots=[[-5.1,-3.4],[-1.8,-3.4],[1.8,-3.4],[5.1,-3.4],[-5.1,2],[-1.8,2],[1.8,2],[5.1,2]];
  for(let i=0;i<8;i++)makeGamingStation(spots[i][0],spots[i][1],i,state.clubData?.stations?.[i]||{tier:1});
+ (state.clubData?.consoleStations||[]).forEach((st,i)=>makeConsoleStation(roomHalf+2.5+(i%2)*4.2,-2.5+Math.floor(i/2)*5,i,st));
  for(const x of [-7,-3,3,7]){box(scene,.13,4.5,.13,x,2.5,-5.2,mat("#71849a",.28,.65));box(scene,1.8,.07,.3,x,4.55,-5.2,mat("#f2f7ff",.2,.1,{emissive:"#cceeff",emissiveIntensity:1.2}),false);}
  for(const x of [-6,0,6])for(const z of [-6,0,6]){box(scene,1.8,.07,.38,x,4.65,z,mat("#dcecff",.2,.1,{emissive:"#8bdcff",emissiveIntensity:1}),false);const l=new THREE.PointLight("#77bfff",28,8);l.position.set(x,4.05,z);scene.add(l);}
  for(const x of [-7.8,7.8]){box(scene,.05,2.4,4.4,x,2.25,-1,mat("#12253b",.25,.25));for(let i=0;i<5;i++)box(scene,.035,.12,.55,x+(x<0?.04:-.04),1.4+i*.35,-1.8+i*.75,mat(i%2?"#21d5ff":"#b66cff",.22,.3,{emissive:i%2?"#0780a5":"#6125a0",emissiveIntensity:.9}),false);}
@@ -425,8 +441,8 @@ function animate() {
     player.rotation.y += diff * (1-Math.exp(-dt*9));
   }
   const roomBound=7.15+Number(state.clubData.roomLevel||0)*2;
-  player.position.x = clamp(player.position.x, -roomBound, roomBound);
-  player.position.z = clamp(player.position.z, -roomBound, roomBound);
+  player.position.x = clamp(player.position.x, -roomBound, roomBound+9.5);
+  player.position.z = clamp(player.position.z, -Math.max(roomBound,6), Math.max(roomBound,6));
   const moving = input.length > .08;
   for (const a of animated) {
     if (a.type === "idle") a.mesh.position.y = Math.sin(performance.now() * .0017 + a.phase) * .025;
@@ -483,7 +499,7 @@ function animate() {
   }
   for(let i=clubNPCs.length-1;i>=0;i--){if(clubNPCs[i].mode==="exit"&&clubNPCs[i].mesh.position.z>8.25){scene.remove(clubNPCs[i].mesh);const ai=animated.findIndex(a=>a.root===clubNPCs[i].mesh);if(ai>=0)animated.splice(ai,1);clubNPCs.splice(i,1);}}
 
-  stationGroups.forEach((g,i)=>g.visible=i<(state.stations||4));
+  stationGroups.forEach((g,i)=>g.visible=i<(state.stations||4)+(state.clubData.consoleStations||[]).length);
   updateCamera(dt);
   activeObject = findInteractable();
   $("simHint").textContent = activeObject ? activeObject.hint : "Двигайся по клубу. Подойди к ресепшену или игровому месту.";
@@ -515,48 +531,14 @@ function syncClubNPCs(){
  }
 }
 function renderClubPanels(){
- const qb=$("simQueue"),ub=$("simUpgradePanel"),sb=$("simSessions");
- const queue=state.clubData.queue||[],sessions=state.clubData.sessions||[],stations=state.clubData.stations||[];
- const busy=new Set(sessions.map(x=>Number(x.station)));
- const free=stations.map((x,i)=>i).filter(i=>!busy.has(i));
- if(qb){
-  qb.innerHTML="";
-  if(!queue.length)qb.textContent="Ожидаем посетителей у стойки ресепшена.";
-  queue.forEach((q,i)=>{
-   const row=document.createElement("div");row.className="sim-queue-row";
-   const label=document.createElement("b");label.textContent="🧍 "+(q.name||"Посетитель")+" · ожидает у стойки №"+(i+1);row.appendChild(label);
-   const status=document.createElement("span");status.textContent=state.clubData.adminEnabled?(free.length?"Автоадминистратор назначит свободный ПК":"Ожидает свободный ПК"):free.length?"Готов к оформлению на ноутбуке администратора":"Нет свободных компьютеров";row.appendChild(status);qb.appendChild(row);
-  });
- }
+ const qb=$("simQueue"),ub=$("simUpgradePanel"),sb=$("simSessions"),cb=$("simConsoleUpgradePanel");
+ const queue=state.clubData.queue||[],sessions=state.clubData.sessions||[],stations=state.clubData.stations||[],cs=state.clubData.consoleStations||[],css=state.clubData.consoleSessions||[];
+ const busy=new Set(sessions.map(x=>Number(x.station))),free=stations.map((x,i)=>i).filter(i=>!busy.has(i)),cbusy=new Set(css.map(x=>Number(x.station))),cfree=cs.map((x,i)=>i).filter(i=>!cbusy.has(i));
+ if(qb){qb.innerHTML="";if(!queue.length)qb.textContent="Ожидаем посетителей у стойки ресепшена.";queue.forEach((q,i)=>{const row=document.createElement("div");row.className="sim-queue-row";const label=document.createElement("b");label.textContent="🧍 "+(q.name||"Посетитель")+" · очередь №"+(i+1);row.appendChild(label);const status=document.createElement("span");status.textContent=state.clubData.adminEnabled?(free.length||cfree.length?"Администратор назначит свободное место":"Все места заняты"):free.length||cfree.length?"Готов к оформлению на ресепшене":"Нет свободных мест";row.appendChild(status);qb.appendChild(row);});}
  const names={gpu:"Видеокарта",cpu:"Процессор",ram:"ОЗУ",monitor:"Монитор",keyboard:"Клавиатура",mouse:"Мышь",chair:"Кресло",desk:"Стол"};
- if(ub){
-  ub.innerHTML="";
-  stations.forEach((st,i)=>{
-   const wrap=document.createElement("div");wrap.className="sim-upgrade-station";
-   const head=document.createElement("b");head.textContent="ИГРОВОЕ МЕСТО №"+(i+1);wrap.appendChild(head);
-   const grid=document.createElement("div");grid.className="sim-component-grid";
-   Object.keys(names).forEach(k=>{
-    const lv=Number((st.components||{})[k]||st.tier||1),next=lv+1,price=[0,500,2500,11000,24000][next]||0;
-    const item=document.createElement("div");item.className="sim-component";
-    const title=document.createElement("span");title.textContent=names[k];
-    const level=document.createElement("b");level.textContent="LVL "+lv+"/4";
-    const button=document.createElement("button");button.type="button";button.dataset.upgradeStation=i;button.dataset.upgradeComponent=k;button.disabled=lv>=4;button.textContent=lv>=4?"MAX":"УЛУЧШИТЬ ДО LVL "+next+" · $"+price.toLocaleString("ru-RU");
-    item.append(title,level,button);grid.appendChild(item);
-   });
-   wrap.appendChild(grid);ub.appendChild(wrap);
-  });
- }
- if(sb){
-  sb.innerHTML="";
-  if(!sessions.length)sb.textContent="Сейчас никто не играет.";
-  sessions.forEach(x=>{
-   const left=Math.max(0,Math.ceil((new Date(x.endsAt).getTime()-Date.now())/1000));
-   const row=document.createElement("div");row.className="sim-session-row";
-   const title=document.createElement("b");title.textContent=(x.name||"Посетитель")+" · ПК №"+(Number(x.station)+1);
-   const time=document.createElement("span");time.textContent="Осталось "+Math.floor(left/60)+":"+String(left%60).padStart(2,"0")+" · оплата $"+Number(x.reward||0).toLocaleString("ru-RU");
-   row.append(title,time);sb.appendChild(row);
-  });
- }
+ if(ub){ub.innerHTML="";stations.forEach((st,i)=>{const wrap=document.createElement("div");wrap.className="sim-upgrade-station";const head=document.createElement("b");head.textContent="ИГРОВОЕ МЕСТО №"+(i+1);wrap.appendChild(head);const grid=document.createElement("div");grid.className="sim-component-grid";Object.keys(names).forEach(k=>{const lv=Number((st.components||{})[k]||st.tier||1),next=lv+1,price=[0,500,2500,11000,24000][next]||0,item=document.createElement("div");item.className="sim-component";const title=document.createElement("span");title.textContent=names[k];const level=document.createElement("b");level.textContent="LVL "+lv+"/4";const button=document.createElement("button");button.type="button";button.dataset.upgradeStation=i;button.dataset.upgradeComponent=k;button.disabled=lv>=4;button.textContent=lv>=4?"MAX":"УЛУЧШИТЬ ДО LVL "+next+" · $"+price.toLocaleString("ru-RU");item.append(title,level,button);grid.appendChild(item);});wrap.appendChild(grid);ub.appendChild(wrap);});}
+ if(cb){cb.innerHTML="";const labels={tv:"Телевизор",console:"Приставка",sofa:"Диван"};cs.forEach((st,i)=>{const wrap=document.createElement("div");wrap.className="sim-upgrade-station";const head=document.createElement("b");head.textContent=(st.name||"КОНСОЛЬ")+" №"+(i+1);wrap.appendChild(head);const grid=document.createElement("div");grid.className="sim-component-grid";Object.keys(labels).forEach(k=>{const lv=Number(st[k]||1),next=lv+1,price=[0,1800,6500,18000,45000][next]||0,item=document.createElement("div");item.className="sim-component";const title=document.createElement("span");title.textContent=labels[k];const level=document.createElement("b");level.textContent="LVL "+lv+"/4";const button=document.createElement("button");button.type="button";button.dataset.consoleUpgradeStation=i;button.dataset.consoleUpgradeComponent=k;button.disabled=lv>=4;button.textContent=lv>=4?"MAX":"УЛУЧШИТЬ ДО LVL "+next+" · $"+price.toLocaleString("ru-RU");item.append(title,level,button);grid.appendChild(item);});wrap.appendChild(grid);cb.appendChild(wrap);});}
+ if(sb){sb.innerHTML="";const all=[...sessions.map(x=>({...x,kind:"ПК"})),...css.map(x=>({...x,kind:"КОНСОЛЬ"}))];if(!all.length)sb.textContent="Сейчас никто не играет.";all.forEach(x=>{const left=Math.max(0,Math.ceil((new Date(x.endsAt).getTime()-Date.now())/1000)),row=document.createElement("div");row.className="sim-session-row";const title=document.createElement("b");title.textContent=(x.name||"Посетитель")+" · "+x.kind+" №"+(Number(x.station)+1);const time=document.createElement("span");time.textContent="Осталось "+Math.floor(left/60)+":"+String(left%60).padStart(2,"0")+" · оплата $"+Number(x.reward||0).toLocaleString("ru-RU");row.append(title,time);sb.appendChild(row);});}
 }
 async function tapClub(){
  const button=$("simTapButton");if(button)button.disabled=true;
@@ -576,7 +558,8 @@ function renderReceptionModal(){
  const select=$("simReceptionStation");$("simReceptionGuest").textContent=guest.name||"Посетитель";
  $("simReceptionDuration").textContent=Math.floor(receptionDuration/60)+" мин "+String(receptionDuration%60).padStart(2,"0")+" сек";
  select.innerHTML="";
- stations.forEach((st,i)=>{if(busy.has(i))return;const c=st.components||{},tier=Math.max(1,Math.min(4,...["gpu","cpu","ram","monitor","keyboard","mouse","chair","desk"].map(k=>Number(c[k]||st.tier||1))));const paymentRange=[null,[500,1000],[2000,4000],[5000,7000],[10000,15000]][tier];const opt=document.createElement("option");opt.value=i;const quotedReward=paymentRange[0]+Math.floor(Math.random()*(paymentRange[1]-paymentRange[0]+1));opt.dataset.reward=quotedReward;opt.textContent="ПК №"+(i+1)+" · "+["","Бюджет","Средний","Высокий","Премиум"][tier]+" · оплата $"+quotedReward.toLocaleString("ru-RU");select.appendChild(opt);});
+ stations.forEach((st,i)=>{if(busy.has(i))return;const c=st.components||{},tier=Math.max(1,Math.min(4,...["gpu","cpu","ram","monitor","keyboard","mouse","chair","desk"].map(k=>Number(c[k]||st.tier||1))));const paymentRange=[null,[500,1000],[2000,4000],[5000,7000],[10000,15000]][tier];const opt=document.createElement("option");opt.value=i;const quotedReward=paymentRange[0]+Math.floor(Math.random()*(paymentRange[1]-paymentRange[0]+1));opt.dataset.reward=quotedReward;opt.textContent="ПК №"+(i+1)+" · оплата $"+quotedReward.toLocaleString("ru-RU");select.appendChild(opt);});
+ (state.clubData.consoleStations||[]).forEach((st,i)=>{if((state.clubData.consoleSessions||[]).some(x=>Number(x.station)===i))return;const opt=document.createElement("option");opt.value="console:"+i;const range=[650,950],quoted=range[0]+Math.floor(Math.random()*(range[1]-range[0]+1));opt.dataset.reward=quoted;opt.textContent=(st.name||"Консоль")+" №"+(i+1)+" · 1 час · оплата $"+quoted.toLocaleString("ru-RU");select.appendChild(opt);});
  const update=()=>{const opt=select.selectedOptions[0],reward=Number(opt?.dataset.reward||0);$("simReceptionPrice").textContent=opt?"$"+reward.toLocaleString("ru-RU"):"—";$("simReceptionConfirm").disabled=!opt;$("simReceptionHint").textContent=opt?"Выдай посетителю свободный ПК. Оплата поступит в кассу после окончания сессии.":"Свободных ПК нет — дождись освобождения места.";};select.onchange=update;update();
 }
 function rebuildClubScene(){
@@ -604,7 +587,7 @@ async function loadState() {
     Object.assign(state, data.state || {}); updateHUD();
   } catch (error) { $("simHint").textContent = error.message; }
 }
-async function doAction(action,extra={}){if(actionBusy)return;actionBusy=true;$("simAction").disabled=true;try{const d=await api("/api/simulator/action",{method:"POST",body:JSON.stringify({action,...extra})});Object.assign(state,d.state||{});updateHUD();if(["expand_room","upgrade_component","buy_station"].includes(action)&&scene)rebuildClubScene();if(action==="start_session")closeReception();toast(d.message||"Готово");$("simHint").textContent=d.message||"Готово";}catch(e){toast(e.message,"error");}finally{actionBusy=false;$("simAction").disabled=!activeObject;}}
+async function doAction(action,extra={}){if(actionBusy)return;actionBusy=true;$("simAction").disabled=true;try{const d=await api("/api/simulator/action",{method:"POST",body:JSON.stringify({action,...extra})});Object.assign(state,d.state||{});updateHUD();if(["expand_room","upgrade_component","buy_station","upgrade_console_component","buy_console_station"].includes(action)&&scene)rebuildClubScene();if(action==="start_session")closeReception();toast(d.message||"Готово");$("simHint").textContent=d.message||"Готово";}catch(e){toast(e.message,"error");}finally{actionBusy=false;$("simAction").disabled=!activeObject;}}
 function joystickPoint(event) {
   const dx = event.clientX - joyCenter.x, dy = event.clientY - joyCenter.y;
   const length = Math.hypot(dx, dy), deadZone = 5;
@@ -658,6 +641,8 @@ function bindControls() {
   $("simTapButton")?.addEventListener("click",tapClub);
   $("simQueue")?.addEventListener("click",event=>{const b=event.target.closest("[data-confirm-guest]");if(!b)return;const id=b.dataset.confirmGuest,sel=$("simQueue").querySelector('[data-station-for="'+id+'"]');if(sel)doAction("start_session",{queueId:id,station:Number(sel.value)});});
   $("simUpgradePanel")?.addEventListener("click",event=>{const b=event.target.closest("[data-upgrade-component]");if(!b)return;doAction("upgrade_component",{station:Number(b.dataset.upgradeStation),component:b.dataset.upgradeComponent});});
+  $("simConsoleUpgradePanel")?.addEventListener("click",event=>{const b=event.target.closest("[data-console-upgrade-component]");if(!b)return;doAction("upgrade_console_component",{station:Number(b.dataset.consoleUpgradeStation),component:b.dataset.consoleUpgradeComponent});});
+  $("simBuyConsoleStation")?.addEventListener("click",()=>doAction("buy_console_station"));
   $("simBuyStation")?.addEventListener("click",()=>doAction("buy_station"));
   $("simHireAdmin")?.addEventListener("click",()=>doAction("buy_admin"));
   $("simExpandRoom")?.addEventListener("click",()=>doAction("expand_room"));
