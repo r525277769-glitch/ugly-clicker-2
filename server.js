@@ -2330,8 +2330,10 @@ async function getClub(client,id,lock=false){
  if(Number(r.shop_cash)===0&&Number(r.shop_xp)===0&&Number(r.customers_served)===0){await client.query("UPDATE ugly_simulator_players SET shop_cash=5000 WHERE telegram_id=$1",[id]);r.shop_cash=5000;}
  const d=r.club_data||{stations:[{tier:1},{tier:1},{tier:1},{tier:1}],adLevel:0};
  d.stations=Array.isArray(d.stations)&&d.stations.length?d.stations:[{tier:1},{tier:1},{tier:1},{tier:1}];
+ const componentDefaults={gpu:1,cpu:1,ram:1,monitor:1,keyboard:1,mouse:1,chair:1};
+ d.stations=d.stations.map(st=>{if(!st.components)st.components={...componentDefaults,...Object.fromEntries(Object.keys(componentDefaults).map(k=>[k,Number(st.tier)||1]))};return st;});
  d.adLevel=Number(d.adLevel||0);
- const hourly=Math.round(d.stations.reduce((n,s)=>n+(CLUB_TIER_RATE[Number(s.tier)||1]||20),0)*(1+d.adLevel*.12));
+ const hourly=Math.round(d.stations.reduce((n,s)=>{const c=s.components||{};const levels=Object.keys(c).length?Object.values(c).map(Number):[Number(s.tier)||1];return n+(CLUB_TIER_RATE[Math.min(...levels)]||20);},0)*(1+d.adLevel*.12));
  const elapsed=Math.max(0,(Date.now()-new Date(r.last_income_at).getTime())/3600000);
  const earned=Math.floor(hourly*elapsed);
  const visitors=Math.max(1,Math.floor(elapsed*d.stations.length*(1+d.adLevel*.25)*2));
@@ -2367,6 +2369,15 @@ app.post("/api/simulator/action",auth,async(req,res)=>{
    st.tier=t;
    await c.query("UPDATE ugly_simulator_players SET shop_cash=shop_cash-$1,club_data=$2::jsonb,shop_xp=shop_xp+35 WHERE telegram_id=$3",[price,JSON.stringify(d),req.player.id]);
    msg="ПК №"+(i+1)+" улучшен: "+["","БЮДЖЕТ","СРЕДНИЙ","ВЫСОКИЙ","ПРЕМИУМ"][t];
+  }else if(a==="upgrade_component"){
+   const i=Number(req.body.station),key=String(req.body.component||""),st=d.stations[i],allowed=["gpu","cpu","ram","monitor","keyboard","mouse","chair"];
+   if(!Number.isInteger(i)||!st||!allowed.includes(key))throw Error("Компонент ПК не найден");
+   st.components=st.components||{gpu:st.tier||1,cpu:st.tier||1,ram:st.tier||1,monitor:st.tier||1,keyboard:st.tier||1,mouse:st.tier||1,chair:st.tier||1};
+   const next=Number(st.components[key]||1)+1;if(next>4)throw Error("Этот компонент уже премиум-класса");
+   const price=CLUB_TIER_PRICE[next];if(s.cash<price)throw Error("Нужно $"+price.toLocaleString("ru-RU")+" для улучшения компонента");
+   st.components[key]=next;st.tier=Math.min(...Object.values(st.components).map(Number));
+   await c.query("UPDATE ugly_simulator_players SET shop_cash=shop_cash-$1,club_data=$2::jsonb,shop_xp=shop_xp+12 WHERE telegram_id=$3",[price,JSON.stringify(d),req.player.id]);
+   msg="Компонент "+key.toUpperCase()+" ПК №"+(i+1)+" улучшен до уровня "+next;
   }else if(a==="advertise"){
    const price=500*(d.adLevel+1);
    if(d.adLevel>=10)throw Error("Реклама максимального уровня");
