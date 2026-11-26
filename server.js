@@ -2375,9 +2375,9 @@ app.post("/api/simulator/tap",auth,async(req,res)=>{
  try{
   await c.query("BEGIN");
   await getClub(c,req.player.id,true);
-  await c.query("UPDATE ugly_simulator_players SET shop_cash=shop_cash+5,shop_xp=shop_xp+1,last_action_at=NOW(),updated_at=NOW() WHERE telegram_id=$1",[req.player.id]);
+  await c.query("UPDATE ugly_simulator_players SET shop_cash=shop_cash+100,shop_xp=shop_xp+1,last_action_at=NOW(),updated_at=NOW() WHERE telegram_id=$1",[req.player.id]);
   const state=await getClub(c,req.player.id,true);
-  await c.query("COMMIT");res.json({success:true,reward:5,state});
+  await c.query("COMMIT");res.json({success:true,reward:100,state});
  }catch(e){await c.query("ROLLBACK");res.status(400).json({error:e.message});}
  finally{c.release();}
 });
