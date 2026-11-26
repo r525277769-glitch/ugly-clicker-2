@@ -251,6 +251,67 @@ function buildStore(){
  for(let i=0;i<7;i++){const p=box(scene,.12,3.6,.08,-7.2+i*2.4,2.25,-8.78,mat(i%2?"#1bd5ff":"#a56cff",.32,.25,{emissive:i%2?"#087a9d":"#4d1684",emissiveIntensity:.55}),false);p.rotation.z=i%2?.18:-.18;}
  box(scene,7,.95,.22,0,4.12,-8.72,mat("#121d31",.3,.3));const sign=new THREE.Mesh(new THREE.PlaneGeometry(6.5,.72),signMaterial("UGLY CYBER CLUB","PLAY • COMPETE • LEVEL UP"));sign.position.set(0,4.12,-8.57);scene.add(sign);
  for(const z of [-6,-1,4]){box(scene,17,.08,.16,0,3.45,z,mat("#20cfff",.28,.4,{emissive:"#087fa8",emissiveIntensity:.9}),false);box(scene,17,.06,.14,0,3.28,z+.12,mat("#a55cff",.28,.4,{emissive:"#4a138c",emissiveIntensity:.75}),false);}
+ // Wall art: custom cyber-club posters with distinct graphics and slogans.
+ const poster=(x,y,z,title,subtitle,accent,variant=0)=>{
+   const tex=canvasTexture((ctx,w,h)=>{
+     const grad=ctx.createLinearGradient(0,0,w,h);grad.addColorStop(0,"#101b32");grad.addColorStop(1,"#283c59");ctx.fillStyle=grad;ctx.fillRect(0,0,w,h);
+     ctx.fillStyle=accent;ctx.fillRect(0,0,w,18);ctx.fillRect(0,h-18,w,18);
+     ctx.strokeStyle=accent;ctx.lineWidth=8;ctx.strokeRect(12,12,w-24,h-24);
+     ctx.save();ctx.translate(w/2,h*.43);ctx.strokeStyle=accent;ctx.lineWidth=12;
+     if(variant%3===0){ctx.beginPath();ctx.arc(0,0,58,0,Math.PI*2);ctx.stroke();ctx.beginPath();ctx.moveTo(-78,58);ctx.lineTo(78,-58);ctx.stroke();}
+     else if(variant%3===1){ctx.beginPath();ctx.moveTo(-72,60);ctx.lineTo(0,-76);ctx.lineTo(72,60);ctx.closePath();ctx.stroke();ctx.fillStyle=accent;ctx.fillRect(-12,-15,24,100);}
+     else{for(let i=0;i<5;i++){ctx.beginPath();ctx.moveTo(-88+i*40,-62);ctx.lineTo(-48+i*40,62);ctx.stroke();}}
+     ctx.restore();ctx.textAlign="center";ctx.fillStyle="#fff4db";ctx.font="bold 38px Arial";ctx.fillText(title,w/2,h*.79);
+     ctx.fillStyle=accent;ctx.font="bold 18px Arial";ctx.fillText(subtitle,w/2,h*.9);
+   },256,384);
+   const frame=box(scene,.94,1.42,.09,x,y,z,mat("#17263b",.32,.55),false);
+   const art=new THREE.Mesh(new THREE.PlaneGeometry(.84,1.32),new THREE.MeshStandardMaterial({map:tex,roughness:.72,side:THREE.DoubleSide}));
+   art.position.set(x,y,z+.052);scene.add(art);
+ };
+ poster(-5.5,2.75,-roomHalf+.19,"PLAY HARD","NO LIMITS","#20dfff",0);
+ poster(-3.45,2.75,-roomHalf+.19,"LEVEL UP","NEXT STAGE","#b66cff",1);
+ poster(3.45,2.75,-roomHalf+.19,"CYBER ZONE","GAME ON","#ff5d9e",2);
+ poster(5.5,2.75,-roomHalf+.19,"VICTORY","STAY SHARP","#ffc45b",0);
+ // Lounge corner: padded two-seat sofa and a low coffee table.
+ const lounge=new THREE.Group();lounge.position.set(-4.55,0,-roomHalf+1.12);scene.add(lounge);
+ const sofaFabric=surfaceMat("#263c59","fabric",.86,.02),sofaTrim=mat("#21cfff",.3,.18,{emissive:"#087d9d",emissiveIntensity:.35});
+ box(lounge,2.65,.28,.92,0,.42,0,sofaFabric);
+ box(lounge,2.72,.72,.2,0,.83,-.36,sofaFabric);
+ for(const sx of [-1,1]){box(lounge,.22,.62,.92,sx*1.25,.68,0,sofaFabric);box(lounge,.24,.07,.88,sx*1.25,.98,0,sofaTrim,false);}
+ for(const sx of [-.83,0,.83]){box(lounge,.78,.16,.12,sx,.72,.36,surfaceMat("#344f70","fabric",.9,.01));}
+ for(const sx of [-1,1])for(const sz of [-1,1])box(lounge,.09,.28,.09,sx*1.13,.14,sz*.34,mat("#8798aa",.3,.62));
+ const coffee=new THREE.Group();coffee.position.set(-4.55,0,-roomHalf+2.35);scene.add(coffee);
+ box(coffee,1.55,.11,.82,0,.52,0,surfaceMat("#765039","wood",.35,.12));
+ for(const sx of [-.62,.62])for(const sz of [-.29,.29])box(coffee,.07,.5,.07,sx,.25,sz,mat("#8798aa",.3,.65));
+ // Cigarette packet, lighter and phone as small tabletop props.
+ const pack=new THREE.Group();pack.position.set(-.42,.61,.02);coffee.add(pack);
+ box(pack,.19,.28,.075,0,.14,0,mat("#e8e0cc",.62,.02),false);
+ box(pack,.195,.07,.078,0,.245,0,mat("#c94b43",.48,.05),false);
+ box(pack,.14,.12,.006,0,.13,.041,mat("#f5eee0",.8),false);
+ const lighter=new THREE.Group();lighter.position.set(.02,.61,.13);coffee.add(lighter);
+ box(lighter,.09,.17,.055,0,.085,0,mat("#d4a63f",.28,.62),false);
+ box(lighter,.095,.025,.06,0,.18,0,M.steel,false);
+ box(lighter,.018,.035,.018,.025,.205,0,mat("#20232b",.3,.45),false);
+ const phone=new THREE.Group();phone.position.set(.43,.61,-.13);phone.rotation.y=-.22;coffee.add(phone);
+ box(phone,.16,.29,.025,0,.15,0,mat("#111923",.25,.45),false);
+ box(phone,.135,.245,.008,0,.153,.017,mat("#172d45",.2,.12,{emissive:"#087ba5",emissiveIntensity:.28}),false);
+ box(phone,.045,.006,.006,0,.035,.023,M.steel,false);
+ // Four leafy potted plants bring greenery into the room corners.
+ const addPlant=(x,z,scale=1)=>{
+   const pot=new THREE.Group();pot.position.set(x,0,z);pot.scale.setScalar(scale);scene.add(pot);
+   cylinder(pot,.34,.25,.48,0,.24,0,mat("#bd754d",.72,.04),20);
+   cylinder(pot,.35,.35,.07,0,.49,0,mat("#d99567",.62,.04),20);
+   cylinder(pot,.29,.29,.035,0,.53,0,mat("#342a25",1),20);
+   cylinder(pot,.035,.045,.82,0,.91,0,mat("#6b4b31",.95),10);
+   const greens=["#347d50","#4b9a5e","#71b86c","#236a49","#8bc66d"];
+   for(let i=0;i<9;i++){
+     const angle=i*Math.PI*2/9,leaf=new THREE.Group();leaf.position.set(Math.cos(angle)*.12,.83+((i%3)*.12),Math.sin(angle)*.12);leaf.rotation.z=Math.cos(angle)*-.62;leaf.rotation.y=-angle;pot.add(leaf);
+     const blade=sphere(leaf,.16,0,.22,0,mat(greens[i%greens.length],.82),12,10);blade.scale.set(.62,1.8,.42);
+   }
+   for(let i=0;i<4;i++){const leaf=sphere(pot,.15,(i-1.5)*.09,1.22+(i%2)*.08,(i%2?1:-1)*.08,mat(greens[(i+2)%greens.length],.82),12,10);leaf.scale.set(.55,1.5,.42);}
+ };
+ addPlant(-roomHalf+1,-roomHalf+1,.92);addPlant(roomHalf-1,-roomHalf+1,.92);
+ addPlant(-roomHalf+1,roomHalf-1,.92);addPlant(roomHalf-1,roomHalf-1,.92);
  // Reception counter with a clear staff position behind it.
  const reception=new THREE.Group();reception.position.set(0,0,7.1);scene.add(reception);
  // Raised counter top, front fascia and side cheeks leave the staff side open.
