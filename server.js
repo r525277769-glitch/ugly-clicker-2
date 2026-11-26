@@ -2322,9 +2322,9 @@ app.post("/api/bitcoin-farm/exchange", auth, async (req, res) => {
 /* UGLY BUSINESS — COMPUTER CLUB */
 const CLUB_TIER_PRICE=[0,500,2500,11000,24000];
 const CLUB_TIER_RATE=[0,20,42,78,125];
-const CLUB_COMPONENTS=["gpu","cpu","ram","monitor","keyboard","mouse","chair"];
+const CLUB_COMPONENTS=["gpu","cpu","ram","monitor","keyboard","mouse","chair","desk"];
 const CLUB_NAMES=["Алекс","Макс","Даня","Марк","Илья","Никита","Саша","Рома","Егор","Тим"];
-const CLUB_COMPONENT_DEFAULTS={gpu:1,cpu:1,ram:1,monitor:1,keyboard:1,mouse:1,chair:1};
+const CLUB_COMPONENT_DEFAULTS={gpu:1,cpu:1,ram:1,monitor:1,keyboard:1,mouse:1,chair:1,desk:1};
 function clubStationLevel(st){
  const c=st.components||CLUB_COMPONENT_DEFAULTS;
  return Math.max(1,Math.min(4,...CLUB_COMPONENTS.map(k=>Number(c[k]||st.tier||1))));
