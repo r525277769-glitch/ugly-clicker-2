@@ -528,6 +528,13 @@ function animate() {
     if(session||consoleSession){if(consoleSession){const ci=Number(consoleSession.station),x=9+Number(state.clubData.roomLevel||0)*2+2.5+(ci%2)*4.2,z=-7.5+Math.floor(ci/2)*5;dest=new THREE.Vector3(x,.24,z+.85);}else{const spots=[[-5.1,-3.4],[-1.8,-3.4],[1.8,-3.4],[5.1,-3.4],[-5.1,2],[-1.8,2],[1.8,2],[5.1,2]],p=spots[session.station]||spots[0];dest=new THREE.Vector3(p[0],npc.mode==="play"?.24:0,p[1]+1.05);}if(npc.mode!=="play")npc.mode="toSeat";}
     else if(qi>=0){dest=npc.queueType==="console"?new THREE.Vector3(9+Number(state.clubData.roomLevel||0)*2+4.75,0,7.7+Number(state.clubData.consoleRoomLevel||0)*4+Math.floor(qi/3)*.42):new THREE.Vector3(-.9+(qi%3)*.9,0,5.82+Math.floor(qi/3)*.42);if(npc.mode!=="queue")npc.mode="toQueue";}
     else{npc.mode="exit";dest=new THREE.Vector3(0,0,8.5);}
+    // Console visitors use the doorway in the right-side wall, not a straight path through it.
+    const roomHalf=(18+Number(state.clubData.roomLevel||0)*4)/2;
+    if(npc.queueType==="console" && npc.mesh.position.x<roomHalf+1.4){
+      dest=npc.mesh.position.x<roomHalf-2.8
+        ?new THREE.Vector3(roomHalf-3.2,0,0)
+        :new THREE.Vector3(roomHalf+1.55,0,0);
+    }
     const delta=dest.clone().sub(npc.mesh.position),distance=delta.length();
     if(distance>.09){const target=Math.atan2(-delta.x,-delta.z);let turn=Math.atan2(Math.sin(target-npc.mesh.rotation.y),Math.cos(target-npc.mesh.rotation.y));npc.mesh.rotation.y+=turn*Math.min(1,dt*7);npc.mesh.position.addScaledVector(delta.normalize(),Math.min(distance,dt*1.5));}
     else if(session){npc.mode="play";npc.mesh.position.y=.24;npc.mesh.rotation.y=0;npc.mesh.scale.y=.82;const a=animated.find(x=>x.root===npc.mesh);if(a)a.limbs.forEach(l=>{l.arm.rotation.x=-.7;l.leg.rotation.x=.8;});}
@@ -606,7 +613,7 @@ function updateHUD() {
   $("simLevel").textContent = state.level || 1;
   $("simCustomers").textContent = state.customers || 0;
   $("simXpText").textContent = (Number(state.xp || 0) % 100) + " / 100 опыта";
-  $("simXpFill").style.width = (Number(state.xp || 0) % 100) + "%";if($("simConsoleCount"))$("simConsoleCount").textContent=(state.clubData.consoleStations||[]).length;
+  $("simXpFill").style.width = (Number(state.xp || 0) % 100) + "%";if($("simConsoleCount"))$("simConsoleCount").textContent=(state.clubData.consoleStations||[]).length+" / 8";
   if ($("simStations")) $("simStations").textContent = (state.stations || 4) + " / 8";
   if ($("simIncome")) $("simIncome").textContent = "$" + Number(state.hourlyIncome || 0).toLocaleString("ru-RU") + "/ч";
   if ($("simAdLevel")) $("simAdLevel").textContent = state.adLevel || 0;
