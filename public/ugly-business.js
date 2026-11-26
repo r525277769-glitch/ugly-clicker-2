@@ -161,7 +161,7 @@ function makePerson(x,z,shirt,isPlayer=false,variant=0){
  }
  animated.push({type:"character",root,torsoPivot,limbs,phase:variant*.71,isPlayer});return root;
 }
-function makeGamingPC(parent,x,y,z,tier=1){
+function makeGamingPC(parent,x,y,z,tier=1,cpuTier=1,ramTier=1){
  const g=new THREE.Group();g.position.set(x,y,z);parent.add(g);
  const colors=["#202d3d","#15506d","#17634e","#56377c"],lights=["#27c8ff","#7c69ff","#35f0c0","#ffbf45"],emissives=["#0877a8","#3820a1","#087b55","#9c5700"],idx=clamp((tier||1)-1,0,3);
  const glow=mat(lights[idx],.24,.15,{emissive:emissives[idx],emissiveIntensity:1.55});
@@ -170,6 +170,12 @@ function makeGamingPC(parent,x,y,z,tier=1){
  for(let i=0;i<3;i++){const fan=cylinder(g,.078,.078,.022,0,.56-i*.19,-.224,glow,24);fan.rotation.x=Math.PI/2;const hub=cylinder(g,.025,.025,.026,0,.56-i*.19,-.24,mat("#d9f7ff",.2,.45),16);hub.rotation.x=Math.PI/2;}
  box(g,.31,.025,.018,0,.69,-.225,mat("#d8eaff",.22,.35),false);box(g,.12,.035,.025,.14,.69,-.23,glow,false);
  for(let i=0;i<4;i++)box(g,.025,.19,.012,-.14+i*.045,.36,.219,mat("#9fb3c8",.3,.65),false);
+ const cpuIndex=clamp(cpuTier,1,4)-1,ramIndex=clamp(ramTier,1,4)-1;
+ const partColors=["#ffbd45","#24cfff","#42e6a5","#bf82ff"],partEmits=["#704000","#00618a","#087a4d","#4a1a83"];
+ const cpuGlow=mat(partColors[cpuIndex],.24,.2,{emissive:partEmits[cpuIndex],emissiveIntensity:.35+cpuTier*.15});
+ const ramGlow=mat(partColors[ramIndex],.24,.2,{emissive:partEmits[ramIndex],emissiveIntensity:.35+ramTier*.15});
+ box(g,.055,.22,.018,.14,.36,-.225,cpuGlow,false);
+ for(let i=0;i<Math.min(4,ramTier);i++)box(g,.035,.16,.018,-.12+i*.07,.35,-.226,ramGlow,false);
  return g;
 }
 function makeGamingStation(x,z,index,data){
@@ -180,7 +186,7 @@ function makeGamingStation(x,z,index,data){
  const screenMat=mat("#fff",.24,.05,{map:canvasTexture((ctx,w,h)=>{const gr=ctx.createLinearGradient(0,0,w,h);gr.addColorStop(0,["#12314c","#0a5276","#104a38","#48265f"][monitor-1]);gr.addColorStop(1,["#07111f","#142b5a","#102b25","#211333"][monitor-1]);ctx.fillStyle=gr;ctx.fillRect(0,0,w,h);ctx.fillStyle="#fff";ctx.font="bold 38px Arial";ctx.fillText("UGLY",18,57);ctx.font="16px Arial";ctx.fillText("GAMING ARENA / PC "+(index+1),18,83);ctx.fillStyle=palette[monitor-1];ctx.fillRect(18,104,w*.72,7);},256,160),emissive:palette[monitor-1],emissiveIntensity:.12+monitor*.055});
  box(g,2.1,.15,.92,0,.78,0,mat("#27374b",.34,.32));box(g,2.12,.045,.94,0,.87,0,trim,false);
  for(const sx of [-.9,.9])box(g,.12,.76,.13,sx,.38,0,mat("#71869c",.28,.62));
- box(g,.88,.56,.11,0,1.28,-.36,mat("#111b2b",.2,.42));box(g,.76,.42,.016,0,1.29,-.295,screenMat,false);
+ box(g,.88,.56,.11,0,1.28,-.36,mat("#111b2b",.2,.42));box(g,.76,.42,.016,0,1.29,-.422,screenMat,false);
  box(g,.12,.17,.13,0,1.02,-.34,mat("#71849a",.26,.58));box(g,.34,.035,.25,0,.98,-.19,mat("#182536",.3,.35));
  const boardGlow=mat(palette[keyboard-1],.3,.15,{emissive:emit[keyboard-1],emissiveIntensity:.2+keyboard*.12});
  box(g,.64,.045,.24,-.12,.925,.22,mat("#121b29",.3,.3));
@@ -189,7 +195,8 @@ function makeGamingStation(x,z,index,data){
  box(g,.31,.025,.25,.57,.91,.235,mat("#101a29",.45,.12));box(g,.32,.012,.26,.57,.925,.235,mat("#203d57",.38,.15,{emissive:palette[mouse-1],emissiveIntensity:.12+mouse*.08}),false);
  const mouseBody=sphere(g,.075,.57,.98,.22,mat(["#222d3c","#1a526e","#1d674f","#563c79"][mouse-1],.28,.25),18,12);mouseBody.scale.set(.72,.42,1.12);
  box(g,.012,.025,.065,.57,.997,.16,mat("#d8e8f6",.24,.3),false);cylinder(g,.018,.018,.022,.57,1.005,.215,mat(palette[mouse-1],.25,.1,{emissive:emit[mouse-1],emissiveIntensity:.8}),12).rotation.x=Math.PI/2;
- makeGamingPC(g,.78,.9,.02,gpu);
+ makeGamingPC(g,.78,.9,.02,gpu,cpu,ram);
+ const rgbLight=new THREE.PointLight(palette[gpu-1],1.8,2.2,2);rgbLight.position.set(x+.78,1.35,z-.32);scene.add(rgbLight);
  const chair=new THREE.Group();chair.position.set(0,0,1.05);g.add(chair);const chairMat=mat(["#222d3c","#173e58","#174b3b","#3e2b58"][chairLevel-1],.38,.18);
  cylinder(chair,.065,.075,.48,0,.28,0,mat("#71849a",.25,.6),14);cylinder(chair,.42,.42,.1,0,.07,0,mat("#182332",.35,.2),24);
  box(chair,.65,.65,.17,0,.72,.12,chairMat);box(chair,.5,.12,.18,0,1.1,.1,trim,false);
