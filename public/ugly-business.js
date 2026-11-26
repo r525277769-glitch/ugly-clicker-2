@@ -538,7 +538,7 @@ function animate() {
     const step=tempMove.clone().multiplyScalar(dt*3.65*Math.max(.25,input.length));
     const roomHalfForCollision=(18+Number(state.clubData.roomLevel||0)*4)/2;
     const nextX=player.position.x+step.x,nextZ=player.position.z+step.z;
-    const crossesPartition=(player.position.x<roomHalfForCollision&&nextX>=roomHalfForCollision)||(player.position.x>roomHalfForCollision&&nextX<=roomHalfForCollision);
+    const crossesPartition=(player.position.x<=roomHalfForCollision&&nextX>roomHalfForCollision)||(player.position.x>=roomHalfForCollision&&nextX<roomHalfForCollision);
     if(crossesPartition&&Math.abs(nextZ)>1.34)step.x=0;
     player.position.add(step);
     const targetYaw = Math.atan2(-tempMove.x, -tempMove.z);
