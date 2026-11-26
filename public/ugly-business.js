@@ -534,6 +534,7 @@ function updateHUD() {
   if ($("simStations")) $("simStations").textContent = (state.stations || 4) + " / 8";
   if ($("simIncome")) $("simIncome").textContent = "$" + Number(state.hourlyIncome || 0).toLocaleString("ru-RU") + "/ч";
   if ($("simAdLevel")) $("simAdLevel").textContent = state.adLevel || 0;
+  const expandButton=$("simExpandRoom"),roomLevel=Number(state.clubData?.roomLevel||0),roomPrices=[12000,25000,50000];if(expandButton){expandButton.disabled=roomLevel>=3;expandButton.textContent=roomLevel>=3?"🏢 ЗАЛ МАКСИМАЛЬНОГО УРОВНЯ":"🏢 РАСШИРИТЬ ЗАЛ · $"+roomPrices[roomLevel].toLocaleString("ru-RU");}
   stationGroups.forEach((g,i)=>g.visible=i<(state.stations||4));
   renderClubPanels();if(scene)syncClubNPCs();
 }
