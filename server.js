@@ -116,9 +116,6 @@ const BP_TASKS = [
 // TYCOON CRYPTOCURRENCY FARM — BITCOIN
 // =====================================================
 
-// BTC хранится с точностью до 12 знаков после запятой.
-// Все вычисления количества BTC выполняются через BigInt.
-
 const BTC_SCALE = 1000000000000n;
 
 const BTC_EXCHANGE_RATES = {
@@ -307,8 +304,6 @@ async function initDatabase() {
       claimed_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       UNIQUE (telegram_id, season_id, bp_level, track)
     );
-
-    -- BITCOIN FARM
 
     CREATE TABLE IF NOT EXISTS bitcoin_farm_players (
       telegram_id BIGINT PRIMARY KEY REFERENCES players(telegram_id),
@@ -2080,6 +2075,7 @@ app.get("/api/bitcoin-farm/state", auth, async (req, res) => {
 
 // =====================================================
 // BITCOIN FARM: ПОКУПКА ОБОРУДОВАНИЯ
+// ИСПРАВЛЕНО: ОПЛАТА С ОСНОВНОГО USD-БАЛАНСА
 // =====================================================
 
 app.post("/api/bitcoin-farm/buy", auth, async (req, res) => {
@@ -2100,6 +2096,20 @@ app.post("/api/bitcoin-farm/buy", auth, async (req, res) => {
 
     await ensureBitcoinFarm(client, req.player.id);
 
+    // Блокируем основной баланс игрока.
+    const playerResult = await client.query(
+      `SELECT balance
+       FROM players
+       WHERE telegram_id = $1
+       FOR UPDATE`,
+      [req.player.id]
+    );
+
+    if (!playerResult.rows.length) {
+      throw new Error("Игрок не найден");
+    }
+
+    // Блокируем запись фермы и начисляем накопленный BTC.
     await client.query(
       `SELECT telegram_id
        FROM bitcoin_farm_players
@@ -2110,24 +2120,23 @@ app.post("/api/bitcoin-farm/buy", auth, async (req, res) => {
 
     await accrueBitcoinFarm(client, req.player.id);
 
-    const farmResult = await client.query(
-      `SELECT farm_cash
-       FROM bitcoin_farm_players
-       WHERE telegram_id = $1`,
-      [req.player.id]
-    );
+    // Проверяем основной долларовый баланс.
+    const balance = BigInt(playerResult.rows[0].balance);
+    const price = BigInt(equipment.price);
 
-    if (BigInt(farmResult.rows[0].farm_cash) < BigInt(equipment.price)) {
-      throw new Error("Недостаточно денег на счёте фермы");
+    if (balance < price) {
+      throw new Error("Недостаточно долларов на основном балансе");
     }
 
+    // Списываем деньги именно с основного баланса.
     await client.query(
-      `UPDATE bitcoin_farm_players
-       SET farm_cash = farm_cash - $1
+      `UPDATE players
+       SET balance = balance - $1
        WHERE telegram_id = $2`,
       [equipment.price, req.player.id]
     );
 
+    // Добавляем майнер в ферму.
     await client.query(
       `INSERT INTO bitcoin_farm_equipment
        (telegram_id, equipment_key, equipment_name,
@@ -2145,8 +2154,8 @@ app.post("/api/bitcoin-farm/buy", auth, async (req, res) => {
     await client.query("COMMIT");
 
     const updated = await pool.query(
-      `SELECT farm_cash
-       FROM bitcoin_farm_players
+      `SELECT balance
+       FROM players
        WHERE telegram_id = $1`,
       [req.player.id]
     );
@@ -2154,7 +2163,7 @@ app.post("/api/bitcoin-farm/buy", auth, async (req, res) => {
     res.json({
       success: true,
       message: "Оборудование успешно куплено",
-      farmCash: Number(updated.rows[0].farm_cash)
+      balance: Number(updated.rows[0].balance)
     });
   } catch (error) {
     await client.query("ROLLBACK");
@@ -2202,16 +2211,10 @@ app.post("/api/bitcoin-farm/exchange", auth, async (req, res) => {
     });
   }
 
-  // Обменивается ровно указанное пользователем количество BTC.
-  // Дробная часть игровой валюты отбрасывается вниз.
-
   const client = await pool.connect();
 
   try {
     await client.query("BEGIN");
-
-    // Блокируем запись игрока, чтобы не было одновременных
-    // конфликтующих операций с его основным балансом.
 
     const playerResult = await client.query(
       `SELECT balance, gramm_balance
