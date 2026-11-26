@@ -2368,23 +2368,9 @@ async function getClub(client,id,lock=false){
   const delay=Math.max(12000,42000-d.adLevel*2500);
   d.nextArrivalAt=new Date(now+delay+Math.floor(Math.random()*10000)).toISOString();dirty=true;
  }
- // Purchased receptionist automatically assigns every waiting guest to a free PC.
- if(d.adminEnabled){
-  let freeNow=clubFreeStations(d);
-  while(d.queue.length&&freeNow.length){
-   const guest=d.queue.shift(),station=freeNow.shift(),tier=clubStationLevel(d.stations[station]),range=CLUB_CUSTOMER_PAYMENT[tier];
-   const duration=120+Math.floor(Math.random()*181),reward=range[0]+Math.floor(Math.random()*(range[1]-range[0]+1)),startedAt=new Date(now).toISOString();
-   d.sessions.push({id:guest.id,name:guest.name,station,duration,reward,startedAt,endsAt:new Date(now+duration*1000).toISOString(),autoReception:true});
-   xp+=5;dirty=true;
-  }
-  let freeConsole=consoleFreeStations(d);
-  while(d.queue.length&&freeConsole.length){
-   const guest=d.queue.shift(),station=freeConsole.shift(),tier=consoleStationLevel(d.consoleStations[station]),range=CONSOLE_SESSION_PRICES[tier]||CONSOLE_SESSION_PRICES[1],duration=240;
-   const reward=range[0]+Math.floor(Math.random()*(range[1]-range[0]+1));
-   d.consoleSessions.push({id:guest.id,name:guest.name,station,minutes:4,duration,reward,startedAt:new Date(now).toISOString(),endsAt:new Date(now+duration*1000).toISOString(),autoReception:true});
-   xp+=5;dirty=true;
-  }
- }
+ // PC and console receptions have independent administrators.
+ if(d.adminEnabled){let freeNow=clubFreeStations(d);while(d.queue.length&&freeNow.length){const leaveForConsole=d.consoleAdminEnabled&&consoleFreeStations(d).length?1:0;if(d.queue.length<=leaveForConsole)break;const guest=d.queue.shift(),station=freeNow.shift(),tier=clubStationLevel(d.stations[station]),range=CLUB_CUSTOMER_PAYMENT[tier],duration=120+Math.floor(Math.random()*181),reward=range[0]+Math.floor(Math.random()*(range[1]-range[0]+1)),startedAt=new Date(now).toISOString();d.sessions.push({id:guest.id,name:guest.name,station,duration,reward,startedAt,endsAt:new Date(now+duration*1000).toISOString(),autoReception:true});xp+=5;dirty=true;}}
+ if(d.consoleAdminEnabled){let freeConsole=consoleFreeStations(d);while(d.queue.length&&freeConsole.length){const guest=d.queue.shift(),station=freeConsole.shift(),tier=consoleStationLevel(d.consoleStations[station]),range=CONSOLE_SESSION_PRICES[tier]||CONSOLE_SESSION_PRICES[1],duration=240,reward=range[0]+Math.floor(Math.random()*(range[1]-range[0]+1));d.consoleSessions.push({id:guest.id,name:guest.name,station,minutes:4,duration,reward,startedAt:new Date(now).toISOString(),endsAt:new Date(now+duration*1000).toISOString(),autoReception:true});xp+=5;dirty=true;}}
  const hourly=Math.round(d.stations.reduce((n,st)=>n+CLUB_TIER_RATE[clubStationLevel(st)],0)*(1+d.adLevel*.12)+d.consoleStations.reduce((n,st)=>n+[0,12,25,45,75][consoleStationLevel(st)],0));
  if(dirty||cash!==Number(r.shop_cash)||xp!==Number(r.shop_xp)||customers!==Number(r.customers_served)){
   await client.query("UPDATE ugly_simulator_players SET shop_cash=$1,shop_xp=$2,customers_served=$3,club_data=$4::jsonb,updated_at=NOW() WHERE telegram_id=$5",[cash,xp,customers,JSON.stringify(d),id]);
@@ -2445,6 +2431,12 @@ app.post("/api/simulator/action",auth,async(req,res)=>{
    const price=12000;if(s.cash<price)throw Error("Нужно $12 000 для нового консольного места");
    d.consoleStations.push({tv:1,console:1,sofa:1,name:CONSOLE_NAMES[d.consoleStations.length%2]});
    await c.query("UPDATE ugly_simulator_players SET shop_cash=shop_cash-$1,club_data=$2::jsonb,shop_xp=shop_xp+30,updated_at=NOW() WHERE telegram_id=$3",[price,JSON.stringify(d),req.player.id]);msg="Новое консольное место установлено!";
+  }else if(a==="buy_console_admin"){
+   if(d.consoleAdminEnabled)throw Error("Администратор консольной зоны уже нанят");const price=40000;if(s.cash<price)throw Error("Для найма администратора консольной зоны нужно $40 000");d.consoleAdminEnabled=true;
+   await c.query("UPDATE ugly_simulator_players SET shop_cash=shop_cash-$1,club_data=$2::jsonb,shop_xp=shop_xp+100,updated_at=NOW() WHERE telegram_id=$3",[price,JSON.stringify(d),req.player.id]);msg="Администратор консольной зоны нанят! Он автоматически выдаёт сессии на свободные консоли.";
+  }else if(a==="expand_console_room"){
+   const level=Number(d.consoleRoomLevel||0),prices=[15000,30000,60000];if(level>=3)throw Error("Консольный зал уже расширен до максимального размера");const price=prices[level];if(s.cash<price)throw Error("Нужно $"+price.toLocaleString("ru-RU")+" для расширения консольного зала");d.consoleRoomLevel=level+1;
+   await c.query("UPDATE ugly_simulator_players SET shop_cash=shop_cash-$1,club_data=$2::jsonb,shop_xp=shop_xp+60,updated_at=NOW() WHERE telegram_id=$3",[price,JSON.stringify(d),req.player.id]);msg="Консольный зал расширен! Добавлено пространство в комнате приставок.";
   }else if(a==="buy_station"){
    if(d.stations.length>=8)throw Error("Уже установлено 8 игровых мест");
    if(s.cash<3500)throw Error("Нужно $3 500 на новое игровое место");
