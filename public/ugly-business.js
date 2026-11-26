@@ -324,7 +324,13 @@ function animate() {
   activeObject = findInteractable();
   $("simHint").textContent = activeObject ? activeObject.hint : "Двигайся по клубу. Подойди к ресепшену или игровому месту.";
   $("simAction").disabled = !activeObject || actionBusy;
-  $("simAction").textContent = activeObject ? (activeObject.action==="open_reception"?"ОТКРЫТЬ НОУТБУК":"УЛУЧШИТЬ · "+activeObject.name.toUpperCase()) : "ПОДОЙДИ БЛИЖЕ";
+  if(activeObject?.action==="upgrade_component"){
+    const st=(state.clubData.stations||[])[Number(activeObject.station)],lv=Number(st?.components?.[activeObject.component]||st?.tier||1),next=lv+1,price=[0,500,2500,11000,24000][next]||0;
+    $("simAction").textContent=lv>=4?"МАКСИМАЛЬНЫЙ УРОВЕНЬ":"УЛУЧШИТЬ "+activeObject.name.toUpperCase()+" · $"+price.toLocaleString("ru-RU");
+    $("simAction").disabled=actionBusy||lv>=4;
+  }else{
+    $("simAction").textContent = activeObject ? (activeObject.action==="open_reception"?"ОТКРЫТЬ НОУТБУК":"УЛУЧШИТЬ · "+activeObject.name.toUpperCase()) : "ПОДОЙДИ БЛИЖЕ";
+  }
   if (renderer) renderer.render(scene, camera);
 }
 function syncClubNPCs(){
