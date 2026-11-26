@@ -258,10 +258,10 @@ function buildStore(){
  box(scene,roomSize,.35,roomSize,0,-.18,0,surfaceMat("#ffffff","floor",.32,.18));
  box(scene,roomSize,5,.32,0,2.35,-roomHalf,surfaceMat("#ffffff","wall",.88,0));box(scene,.32,5,roomSize,-roomHalf,2.35,0,surfaceMat("#ffffff","wall",.88,0));box(scene,.32,5,roomHalf-2.5,roomHalf,2.35,-(roomHalf+2.5)/2,surfaceMat("#ffffff","wall",.88,0));box(scene,.32,5,roomHalf-2.5,roomHalf,2.35,(roomHalf+2.5)/2,surfaceMat("#ffffff","wall",.88,0));box(scene,roomSize,.25,roomSize,0,5,0,surfaceMat("#ffffff","ceiling",.82,.08));
  const wingX=roomHalf+4.75;
- box(scene,9.5,.3,12,wingX,-.18,0,surfaceMat("#ffffff","floor",.32,.18));
- box(scene,9.5,5,.3,wingX,2.35,-6,surfaceMat("#ffffff","wall",.88,0));box(scene,9.5,5,.3,wingX,2.35,6,surfaceMat("#ffffff","wall",.88,0));box(scene,.3,5,12,roomHalf+9.5,2.35,0,surfaceMat("#ffffff","wall",.88,0));box(scene,9.5,.25,12,wingX,5,0,surfaceMat("#ffffff","ceiling",.82,.08));
+ box(scene,9.5,.3,22,wingX,-.18,0,surfaceMat("#ffffff","floor",.32,.18));
+ box(scene,9.5,5,.3,wingX,2.35,-11,surfaceMat("#ffffff","wall",.88,0));box(scene,9.5,5,.3,wingX,2.35,11,surfaceMat("#ffffff","wall",.88,0));box(scene,.3,5,22,roomHalf+9.5,2.35,0,surfaceMat("#ffffff","wall",.88,0));box(scene,9.5,.25,22,wingX,5,0,surfaceMat("#ffffff","ceiling",.82,.08));
  box(scene,.12,3.5,.18,roomHalf+.08,2.1,-2.3,mat("#21cfff",.2,.3,{emissive:"#087fa8",emissiveIntensity:1}),false);box(scene,.12,3.5,.18,roomHalf+.08,2.1,2.3,mat("#a55cff",.2,.3,{emissive:"#4a138c",emissiveIntensity:1}),false);
- const wingSign=new THREE.Mesh(new THREE.PlaneGeometry(3.4,.65),signMaterial("CONSOLE LOUNGE","PLAYSTATION • XBOX"));wingSign.position.set(roomHalf+4.75,3.7,-5.78);scene.add(wingSign);
+ const wingSign=new THREE.Mesh(new THREE.PlaneGeometry(3.4,.65),signMaterial("CONSOLE LOUNGE","PLAYSTATION • XBOX"));wingSign.position.set(roomHalf+4.75,3.7,-10.78);scene.add(wingSign);
  box(scene,.12,2.5,3.2,-2.45,1.25,6.0,surfaceMat("#263d58","plastic",.35,.3));box(scene,.12,2.5,3.2,2.45,1.25,6.0,surfaceMat("#263d58","plastic",.35,.3));box(scene,4.9,2.5,.12,0,1.25,4.35,surfaceMat("#263d58","plastic",.35,.3));
  for(let i=0;i<7;i++){const p=box(scene,.12,3.6,.08,-7.2+i*2.4,2.25,-8.78,mat(i%2?"#1bd5ff":"#a56cff",.32,.25,{emissive:i%2?"#087a9d":"#4d1684",emissiveIntensity:.55}),false);p.rotation.z=i%2?.18:-.18;}
  box(scene,7,.95,.22,0,4.12,-8.72,mat("#121d31",.3,.3));const sign=new THREE.Mesh(new THREE.PlaneGeometry(6.5,.72),signMaterial("UGLY CYBER CLUB","PLAY • COMPETE • LEVEL UP"));sign.position.set(0,4.12,-8.57);scene.add(sign);
@@ -383,7 +383,7 @@ function buildStore(){
  interactables.push({position:new THREE.Vector3(0,0,7.22),name:"Ноутбук администратора",hint:"НОУТБУК РЕСЕПШЕНА · НАЖМИ, ЧТОБЫ ПРИНЯТЬ ПОСЕТИТЕЛЯ",action:"open_reception",radius:2.25});
  const spots=[[-5.1,-3.4],[-1.8,-3.4],[1.8,-3.4],[5.1,-3.4],[-5.1,2],[-1.8,2],[1.8,2],[5.1,2]];
  for(let i=0;i<8;i++)makeGamingStation(spots[i][0],spots[i][1],i,state.clubData?.stations?.[i]||{tier:1});
- (state.clubData?.consoleStations||[]).forEach((st,i)=>makeConsoleStation(roomHalf+2.5+(i%2)*4.2,-2.5+Math.floor(i/2)*5,i,st));
+ (state.clubData?.consoleStations||[]).forEach((st,i)=>makeConsoleStation(roomHalf+2.5+(i%2)*4.2,-7.5+Math.floor(i/2)*5,i,st));
  for(const x of [-7,-3,3,7]){box(scene,.13,4.5,.13,x,2.5,-5.2,mat("#71849a",.28,.65));box(scene,1.8,.07,.3,x,4.55,-5.2,mat("#f2f7ff",.2,.1,{emissive:"#cceeff",emissiveIntensity:1.2}),false);}
  for(const x of [-6,0,6])for(const z of [-6,0,6]){box(scene,1.8,.07,.38,x,4.65,z,mat("#dcecff",.2,.1,{emissive:"#8bdcff",emissiveIntensity:1}),false);const l=new THREE.PointLight("#77bfff",28,8);l.position.set(x,4.05,z);scene.add(l);}
  for(const x of [-7.8,7.8]){box(scene,.05,2.4,4.4,x,2.25,-1,mat("#12253b",.25,.25));for(let i=0;i<5;i++)box(scene,.035,.12,.55,x+(x<0?.04:-.04),1.4+i*.35,-1.8+i*.75,mat(i%2?"#21d5ff":"#b66cff",.22,.3,{emissive:i%2?"#0780a5":"#6125a0",emissiveIntensity:.9}),false);}
@@ -442,7 +442,7 @@ function animate() {
   }
   const roomBound=7.15+Number(state.clubData.roomLevel||0)*2;
   player.position.x = clamp(player.position.x, -roomBound, roomBound+9.5);
-  player.position.z = clamp(player.position.z, -Math.max(roomBound,6), Math.max(roomBound,6));
+  player.position.z = clamp(player.position.z, -Math.max(roomBound,10), Math.max(roomBound,10));
   const moving = input.length > .08;
   for (const a of animated) {
     if (a.type === "idle") a.mesh.position.y = Math.sin(performance.now() * .0017 + a.phase) * .025;
@@ -489,7 +489,7 @@ function animate() {
   const now = performance.now();
   for (const npc of clubNPCs) {
     const qi=(state.clubData.queue||[]).findIndex(q=>q.id===npc.id),session=(state.clubData.sessions||[]).find(q=>q.id===npc.id),consoleSession=(state.clubData.consoleSessions||[]).find(q=>q.id===npc.id);let dest;
-    if(session||consoleSession){if(consoleSession){const ci=Number(consoleSession.station),x=9+Number(state.clubData.roomLevel||0)*2+2.5+(ci%2)*4.2,z=-2.5+Math.floor(ci/2)*5;dest=new THREE.Vector3(x,.24,z+.85);}else{const spots=[[-5.1,-3.4],[-1.8,-3.4],[1.8,-3.4],[5.1,-3.4],[-5.1,2],[-1.8,2],[1.8,2],[5.1,2]],p=spots[session.station]||spots[0];dest=new THREE.Vector3(p[0],npc.mode==="play"?.24:0,p[1]+1.05);}if(npc.mode!=="play")npc.mode="toSeat";}
+    if(session||consoleSession){if(consoleSession){const ci=Number(consoleSession.station),x=9+Number(state.clubData.roomLevel||0)*2+2.5+(ci%2)*4.2,z=-7.5+Math.floor(ci/2)*5;dest=new THREE.Vector3(x,.24,z+.85);}else{const spots=[[-5.1,-3.4],[-1.8,-3.4],[1.8,-3.4],[5.1,-3.4],[-5.1,2],[-1.8,2],[1.8,2],[5.1,2]],p=spots[session.station]||spots[0];dest=new THREE.Vector3(p[0],npc.mode==="play"?.24:0,p[1]+1.05);}if(npc.mode!=="play")npc.mode="toSeat";}
     else if(qi>=0){dest=new THREE.Vector3(-.9+(qi%3)*.9,0,5.82+Math.floor(qi/3)*.42);if(npc.mode!=="queue")npc.mode="toQueue";}
     else{npc.mode="exit";dest=new THREE.Vector3(0,0,8.5);}
     const delta=dest.clone().sub(npc.mesh.position),distance=delta.length();
