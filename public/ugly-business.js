@@ -525,7 +525,7 @@ function renderClubPanels(){
   queue.forEach((q,i)=>{
    const row=document.createElement("div");row.className="sim-queue-row";
    const label=document.createElement("b");label.textContent="🧍 "+(q.name||"Посетитель")+" · ожидает у стойки №"+(i+1);row.appendChild(label);
-   const status=document.createElement("span");status.textContent=free.length?"Готов к оформлению на ноутбуке администратора":"Нет свободных компьютеров";row.appendChild(status);qb.appendChild(row);
+   const status=document.createElement("span");status.textContent=state.clubData.adminEnabled?(free.length?"Автоадминистратор назначит свободный ПК":"Ожидает свободный ПК"):free.length?"Готов к оформлению на ноутбуке администратора":"Нет свободных компьютеров";row.appendChild(status);qb.appendChild(row);
   });
  }
  const names={gpu:"Видеокарта",cpu:"Процессор",ram:"ОЗУ",monitor:"Монитор",keyboard:"Клавиатура",mouse:"Мышь",chair:"Кресло",desk:"Стол"};
@@ -594,6 +594,7 @@ function updateHUD() {
   if ($("simIncome")) $("simIncome").textContent = "$" + Number(state.hourlyIncome || 0).toLocaleString("ru-RU") + "/ч";
   if ($("simAdLevel")) $("simAdLevel").textContent = state.adLevel || 0;
   const expand=$("simExpandRoom"),rl=Number(state.clubData.roomLevel||0),rp=[12000,25000,50000];if(expand){expand.disabled=rl>=3;expand.textContent=rl>=3?"🏢 ЗАЛ МАКСИМАЛЬНОГО УРОВНЯ":"🏢 РАСШИРИТЬ ЗАЛ · $"+rp[rl].toLocaleString("ru-RU");}
+  const admin=$("simHireAdmin"),adminHired=Boolean(state.clubData.adminEnabled);if(admin){admin.disabled=adminHired;admin.textContent=adminHired?"✓ АДМИНИСТРАТОР НАНЯТ":"👨‍💼 НАНЯТЬ АДМИНИСТРАТОРА · $40 000";}
   stationGroups.forEach((g,i)=>g.visible=i<(state.stations||4));
   renderClubPanels();if(scene)syncClubNPCs();
 }
@@ -658,6 +659,7 @@ function bindControls() {
   $("simQueue")?.addEventListener("click",event=>{const b=event.target.closest("[data-confirm-guest]");if(!b)return;const id=b.dataset.confirmGuest,sel=$("simQueue").querySelector('[data-station-for="'+id+'"]');if(sel)doAction("start_session",{queueId:id,station:Number(sel.value)});});
   $("simUpgradePanel")?.addEventListener("click",event=>{const b=event.target.closest("[data-upgrade-component]");if(!b)return;doAction("upgrade_component",{station:Number(b.dataset.upgradeStation),component:b.dataset.upgradeComponent});});
   $("simBuyStation")?.addEventListener("click",()=>doAction("buy_station"));
+  $("simHireAdmin")?.addEventListener("click",()=>doAction("buy_admin"));
   $("simExpandRoom")?.addEventListener("click",()=>doAction("expand_room"));
   $("simAdvertise")?.addEventListener("click",()=>doAction("advertise"));
   $("simCashout")?.addEventListener("click",async()=>{try{const d=await api("/api/simulator/exchange",{method:"POST",body:JSON.stringify({currency:"gramm"})});Object.assign(state,d.state||{});updateHUD();toast("Зачислено "+d.gramm+" GRAMM на основной баланс");}catch(e){toast(e.message,"error");}});
