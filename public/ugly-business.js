@@ -232,7 +232,7 @@ function currentInput() {
 function findInteractable() {
   let best = null, bestDistance = Infinity;
   for (const item of interactables) {
-    if (item.index >= (state.stations || 4)) continue;
+    if ((item.station ?? item.index ?? 0) >= (state.stations || 4)) continue;
     const d = player.position.distanceTo(item.position);
     if (d < item.radius && d < bestDistance) { best = item; bestDistance = d; }
   }
@@ -266,7 +266,7 @@ function animate() {
   const moving = input.length > .08;
   for (const a of animated) {
     if (a.type === "idle") a.mesh.position.y = Math.sin(performance.now() * .0017 + a.phase) * .025;
-    if(a.type==="character"){const phase=performance.now()*.009+a.phase,stride=moving?.72:.035;a.torsoPivot.position.y=1.12+(moving?Math.abs(Math.sin(phase))*.045:Math.sin(phase*.6)*.012);a.torsoPivot.rotation.z=moving?Math.sin(phase)*.035:0;a.limbs.forEach(l=>{l.leg.rotation.x=Math.sin(phase+l.side*Math.PI)*stride;l.arm.rotation.x=-Math.sin(phase+l.side*Math.PI)*stride*.72;});}
+    if(a.type==="character"){const phase=performance.now()*.009+a.phase,characterMoving=a.isPlayer?moving:clubNPCs.some(n=>n.mesh===a.root&&n.mode!=="play"),stride=characterMoving?.72:.035;a.torsoPivot.position.y=1.12+(moving?Math.abs(Math.sin(phase))*.045:Math.sin(phase*.6)*.012);a.torsoPivot.rotation.z=moving?Math.sin(phase)*.035:0;a.limbs.forEach(l=>{l.leg.rotation.x=Math.sin(phase+l.side*Math.PI)*stride;l.arm.rotation.x=-Math.sin(phase+l.side*Math.PI)*stride*.72;});}
   }
   const now = performance.now();
   for (const npc of clubNPCs) {
@@ -275,7 +275,7 @@ function animate() {
       const spots = [[-5.1,-2.2],[-1.8,-2.2],[1.8,-2.2],[5.1,-2.2]];
       const p = spots[npc.station % spots.length], dest = new THREE.Vector3(p[0],0,p[1]);
       npc.mesh.position.lerp(dest, Math.min(1,dt*1.15));
-      if (npc.mesh.position.distanceTo(dest) < .35) { npc.mode="play"; npc.timer=8+Math.random()*12; }
+      if (npc.mesh.position.distanceTo(dest) < .35) { npc.mode="play"; npc.timer=120+Math.random()*180; }
     } else if (npc.mode === "play") {
       npc.mesh.position.y = Math.sin(now*.006+npc.phase)*.02;
       if (npc.timer <= 0) npc.mode="exit";
