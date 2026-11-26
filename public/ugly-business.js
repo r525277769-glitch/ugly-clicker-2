@@ -9,7 +9,7 @@ let yaw = 0, moveX = 0, moveY = 0, activeObject = null, actionBusy = false;
 let joyPointer = null, lookPointer = null, lookLastX = 0, joyCenter = { x: 0, y: 0 };
 let joystickRadius = 48, cameraDistance = 5.8, cameraHeight = 3.2;
 const interactables = [], animated = [], keys = Object.create(null);
-const stationGroups=[],consoleGroups=[], clubNPCs=[];let statePollTimer=0, receptionGuestId=null, receptionDuration=180;
+const stationGroups=[],consoleGroups=[], clubNPCs=[];let statePollTimer=0, receptionGuestId=null, receptionDuration=180, receptionMode="pc";
 const tempForward = new THREE.Vector3(), tempRight = new THREE.Vector3(), tempMove = new THREE.Vector3();
 const _v = new THREE.Vector3();
 
@@ -288,8 +288,9 @@ function buildStore(){
  box(scene,roomSize,.35,roomSize,0,-.18,0,surfaceMat("#ffffff","floor",.32,.18));
  box(scene,roomSize,5,.32,0,2.35,-roomHalf,surfaceMat("#ffffff","wall",.88,0));box(scene,.32,5,roomSize,-roomHalf,2.35,0,surfaceMat("#ffffff","wall",.88,0));box(scene,.32,5,roomHalf-2.5,roomHalf,2.35,-(roomHalf+2.5)/2,surfaceMat("#ffffff","wall",.88,0));box(scene,.32,5,roomHalf-2.5,roomHalf,2.35,(roomHalf+2.5)/2,surfaceMat("#ffffff","wall",.88,0));box(scene,roomSize,.25,roomSize,0,5,0,surfaceMat("#ffffff","ceiling",.82,.08));
  const wingX=roomHalf+4.75;
- box(scene,9.5,.3,22,wingX,-.18,0,surfaceMat("#ffffff","floor",.32,.18));
- box(scene,9.5,5,.3,wingX,2.35,-11,surfaceMat("#ffffff","wall",.88,0));box(scene,9.5,5,.3,wingX,2.35,11,surfaceMat("#ffffff","wall",.88,0));box(scene,.3,5,22,roomHalf+9.5,2.35,0,surfaceMat("#ffffff","wall",.88,0));box(scene,9.5,.25,22,wingX,5,0,surfaceMat("#ffffff","ceiling",.82,.08));
+ const consoleRoomLevel=Number(state.clubData.consoleRoomLevel||0),consoleDepth=22+consoleRoomLevel*4,consoleCenterZ=consoleRoomLevel*2;
+ box(scene,9.5,.3,consoleDepth,wingX,-.18,consoleCenterZ,surfaceMat("#ffffff","floor",.32,.18));
+ box(scene,9.5,5,.3,wingX,2.35,-11,surfaceMat("#ffffff","wall",.88,0));box(scene,9.5,5,.3,wingX,2.35,11+consoleRoomLevel*4,surfaceMat("#ffffff","wall",.88,0));box(scene,.3,5,consoleDepth,roomHalf+9.5,2.35,consoleCenterZ,surfaceMat("#ffffff","wall",.88,0));box(scene,9.5,.25,consoleDepth,wingX,5,consoleCenterZ,surfaceMat("#ffffff","ceiling",.82,.08));
  box(scene,.12,3.5,.18,roomHalf+.08,2.1,-2.3,mat("#21cfff",.2,.3,{emissive:"#087fa8",emissiveIntensity:1}),false);box(scene,.12,3.5,.18,roomHalf+.08,2.1,2.3,mat("#a55cff",.2,.3,{emissive:"#4a138c",emissiveIntensity:1}),false);
  const wingSign=new THREE.Mesh(new THREE.PlaneGeometry(3.4,.65),signMaterial("CONSOLE LOUNGE","PLAYSTATION • XBOX"));wingSign.position.set(roomHalf+4.75,3.7,-10.78);scene.add(wingSign);
  box(scene,.12,2.5,3.2,-2.45,1.25,6.0,surfaceMat("#263d58","plastic",.35,.3));box(scene,.12,2.5,3.2,2.45,1.25,6.0,surfaceMat("#263d58","plastic",.35,.3));// Keep the entrance-to-club passage open: rear reception partition removed.
@@ -414,6 +415,11 @@ function buildStore(){
  const spots=[[-5.1,-3.4],[-1.8,-3.4],[1.8,-3.4],[5.1,-3.4],[-5.1,2],[-1.8,2],[1.8,2],[5.1,2]];
  for(let i=0;i<8;i++)makeGamingStation(spots[i][0],spots[i][1],i,state.clubData?.stations?.[i]||{tier:1});
  (state.clubData?.consoleStations||[]).forEach((st,i)=>makeConsoleStation(roomHalf+2.5+(i%2)*4.2,-7.5+Math.floor(i/2)*5,i,st));
+ // Dedicated reception inside the console lounge.
+ const consoleDesk=new THREE.Group();consoleDesk.position.set(roomHalf+4.75,0,9.55+consoleRoomLevel*4);scene.add(consoleDesk);
+ box(consoleDesk,3.35,.14,.9,0,1.02,0,surfaceMat("#263d58","wood",.3,.24));box(consoleDesk,3.12,.68,.12,0,.58,-.37,surfaceMat("#14243a","plastic",.32,.38));box(consoleDesk,3.2,.045,.05,0,.91,-.31,mat("#25dfff",.2,.3,{emissive:"#0788aa",emissiveIntensity:1.15}),false);
+ box(consoleDesk,.72,.045,.48,-.55,1.12,-.02,surfaceMat("#8798aa","metal",.25,.72));box(consoleDesk,.66,.36,.035,-.55,1.31,-.22,mat("#202b3a",.2,.55));const consoleAdminScreen=new THREE.Mesh(new THREE.PlaneGeometry(.58,.25),signMaterial("CONSOLE ADMIN","PLAYSTATION • XBOX"));consoleAdminScreen.material.side=THREE.DoubleSide;consoleAdminScreen.material.needsUpdate=true;consoleAdminScreen.position.set(-.55,1.32,-.195);consoleDesk.add(consoleAdminScreen);
+ makeLabel(scene,"CONSOLE RECEPTION",roomHalf+4.75,2.05,8.92+consoleRoomLevel*4,2.9,.34);interactables.push({position:new THREE.Vector3(roomHalf+4.75,0,8.25+consoleRoomLevel*4),name:"Ресепшен консольной зоны",hint:"КОНСОЛЬНЫЙ РЕСЕПШЕН · ОФОРМИТЬ ИГРОКА НА PLAYSTATION / XBOX",action:"open_console_reception",radius:2.35});
  for(const x of [-7,-3,3,7]){box(scene,.13,4.5,.13,x,2.5,-5.2,mat("#71849a",.28,.65));box(scene,1.8,.07,.3,x,4.55,-5.2,mat("#f2f7ff",.2,.1,{emissive:"#cceeff",emissiveIntensity:1.2}),false);}
  for(const x of [-6,0,6])for(const z of [-6,0,6]){box(scene,1.8,.07,.38,x,4.65,z,mat("#dcecff",.2,.1,{emissive:"#8bdcff",emissiveIntensity:1}),false);const l=new THREE.PointLight("#77bfff",28,8);l.position.set(x,4.05,z);scene.add(l);}
  for(const x of [-7.8,7.8]){box(scene,.05,2.4,4.4,x,2.25,-1,mat("#12253b",.25,.25));for(let i=0;i<5;i++)box(scene,.035,.12,.55,x+(x<0?.04:-.04),1.4+i*.35,-1.8+i*.75,mat(i%2?"#21d5ff":"#b66cff",.22,.3,{emissive:i%2?"#0780a5":"#6125a0",emissiveIntensity:.9}),false);}
@@ -539,7 +545,7 @@ function animate() {
     $("simAction").textContent=lv>=4?"МАКСИМАЛЬНЫЙ УРОВЕНЬ":"УЛУЧШИТЬ "+activeObject.name.toUpperCase()+" · $"+price.toLocaleString("ru-RU");
     $("simAction").disabled=actionBusy||lv>=4;
   }else{
-    $("simAction").textContent = activeObject ? (activeObject.action==="open_reception"?"ОТКРЫТЬ НОУТБУК":"УЛУЧШИТЬ · "+activeObject.name.toUpperCase()) : "ПОДОЙДИ БЛИЖЕ";
+    $("simAction").textContent = activeObject ? (activeObject.action==="open_reception"?"ОТКРЫТЬ НОУТБУК":activeObject.action==="open_console_reception"?"ОТКРЫТЬ КОНСОЛЬНЫЙ РЕСЕПШЕН":"УЛУЧШИТЬ · "+activeObject.name.toUpperCase()) : "ПОДОЙДИ БЛИЖЕ";
   }
   if (renderer) renderer.render(scene, camera);
 }
@@ -576,20 +582,17 @@ async function tapClub(){
  catch(error){toast(error.message,"error");}
  finally{if(button)button.disabled=false;}
 }
-function openReception(){
- const modal=$("simReceptionModal"),queue=state.clubData.queue||[];if(!modal)return;
- if(!queue.length){toast("Пока никто не подошёл к ресепшену","info");return;}
- receptionGuestId=queue[0].id;receptionDuration=120+Math.floor(Math.random()*181);renderReceptionModal();modal.classList.add("open");modal.setAttribute("aria-hidden","false");
-}
+function openReception(){receptionMode="pc";const modal=$("simReceptionModal"),queue=state.clubData.queue||[];if(!modal)return;if(!queue.length){toast("Пока никто не подошёл к ресепшену","info");return;}receptionGuestId=queue[0].id;receptionDuration=120+Math.floor(Math.random()*181);renderReceptionModal();modal.classList.add("open");modal.setAttribute("aria-hidden","false");}
+function openConsoleReception(){receptionMode="console";const modal=$("simReceptionModal"),queue=state.clubData.queue||[];if(!modal)return;if(!queue.length){toast("Пока никто не подошёл к консольному ресепшену","info");return;}receptionGuestId=queue[0].id;receptionDuration=240;renderReceptionModal();modal.classList.add("open");modal.setAttribute("aria-hidden","false");}
 function closeReception(){const modal=$("simReceptionModal");if(modal){modal.classList.remove("open");modal.setAttribute("aria-hidden","true");}receptionGuestId=null;}
 function renderReceptionModal(){
  const modal=$("simReceptionModal");if(!modal)return;const guest=(state.clubData.queue||[]).find(x=>x.id===receptionGuestId);if(!guest){closeReception();return;}
  const sessions=state.clubData.sessions||[],stations=state.clubData.stations||[],busy=new Set(sessions.map(x=>Number(x.station)));
- const select=$("simReceptionStation");$("simReceptionGuest").textContent=guest.name||"Посетитель";
+ const select=$("simReceptionStation");$("simReceptionGuest").textContent=guest.name||"Посетитель";const modalTitle=$("simReceptionModal").querySelector("h2");if(modalTitle)modalTitle.textContent=receptionMode==="console"?"🎮 ОФОРМЛЕНИЕ ИГРОКА НА КОНСОЛЬ":"💻 ОФОРМЛЕНИЕ ПОСЕТИТЕЛЯ";const stationLabel=select.previousElementSibling;if(stationLabel)stationLabel.textContent=receptionMode==="console"?"ВЫБЕРИ СВОБОДНУЮ КОНСОЛЬ":"ВЫБЕРИ СВОБОДНЫЙ ПК ИЛИ КОНСОЛЬ";
  $("simReceptionDuration").textContent=Math.floor(receptionDuration/60)+" мин "+String(receptionDuration%60).padStart(2,"0")+" сек";
  select.innerHTML="";
- stations.forEach((st,i)=>{if(busy.has(i))return;const c=st.components||{},tier=Math.max(1,Math.min(4,...["gpu","cpu","ram","monitor","keyboard","mouse","chair","desk"].map(k=>Number(c[k]||st.tier||1))));const paymentRange=[null,[500,1000],[2000,4000],[5000,7000],[10000,15000]][tier];const opt=document.createElement("option");opt.value=i;const quotedReward=paymentRange[0]+Math.floor(Math.random()*(paymentRange[1]-paymentRange[0]+1));opt.dataset.reward=quotedReward;opt.textContent="ПК №"+(i+1)+" · оплата $"+quotedReward.toLocaleString("ru-RU");select.appendChild(opt);});
- (state.clubData.consoleStations||[]).forEach((st,i)=>{if((state.clubData.consoleSessions||[]).some(x=>Number(x.station)===i))return;const opt=document.createElement("option");opt.value="console:"+i;const tier=Math.max(1,Math.min(4,Number(st.tv||1),Number(st.console||1),Number(st.sofa||1)));opt.dataset.tier=tier;const ranges={1:[3000,5000],2:[7000,10000],3:[15000,18000],4:[23000,30000]},range=ranges[tier]||ranges[1],quoted=range[0]+Math.floor(Math.random()*(range[1]-range[0]+1));opt.dataset.reward=quoted;opt.textContent=(st.name||"Консоль")+" №"+(i+1)+" · 4 мин · оплата $"+quoted.toLocaleString("ru-RU");select.appendChild(opt);});
+ if(receptionMode==="pc")stations.forEach((st,i)=>{if(busy.has(i))return;const c=st.components||{},tier=Math.max(1,Math.min(4,...["gpu","cpu","ram","monitor","keyboard","mouse","chair","desk"].map(k=>Number(c[k]||st.tier||1))));const paymentRange=[null,[500,1000],[2000,4000],[5000,7000],[10000,15000]][tier];const opt=document.createElement("option");opt.value=i;const quotedReward=paymentRange[0]+Math.floor(Math.random()*(paymentRange[1]-paymentRange[0]+1));opt.dataset.reward=quotedReward;opt.textContent="ПК №"+(i+1)+" · оплата $"+quotedReward.toLocaleString("ru-RU");select.appendChild(opt);});
+ if(receptionMode==="console")(state.clubData.consoleStations||[]).forEach((st,i)=>{if((state.clubData.consoleSessions||[]).some(x=>Number(x.station)===i))return;const opt=document.createElement("option");opt.value="console:"+i;const tier=Math.max(1,Math.min(4,Number(st.tv||1),Number(st.console||1),Number(st.sofa||1)));opt.dataset.tier=tier;const ranges={1:[3000,5000],2:[7000,10000],3:[15000,18000],4:[23000,30000]},range=ranges[tier]||ranges[1],quoted=range[0]+Math.floor(Math.random()*(range[1]-range[0]+1));opt.dataset.reward=quoted;opt.textContent=(st.name||"Консоль")+" №"+(i+1)+" · 4 мин · оплата $"+quoted.toLocaleString("ru-RU");select.appendChild(opt);});
  const update=()=>{const opt=select.selectedOptions[0],isConsole=String(opt?.value||"").startsWith("console:"),mins=Number($("simConsoleMinutes")?.value||4);if($("simConsoleMinutes"))$("simConsoleMinutes").style.display=isConsole?"block":"none";if(isConsole)$("simReceptionDuration").textContent=mins+" минут";else $("simReceptionDuration").textContent=Math.floor(receptionDuration/60)+" мин "+String(receptionDuration%60).padStart(2,"0")+" сек";let reward=Number(opt?.dataset.reward||0);if(isConsole){const ranges={1:[3000,5000],2:[7000,10000],3:[15000,18000],4:[23000,30000]},r=ranges[Number(opt?.dataset.tier||1)]||ranges[1];reward=r[0]+Math.floor(Math.random()*(r[1]-r[0]+1));if(opt)opt.dataset.reward=reward;}$("simReceptionPrice").textContent=opt?"$"+reward.toLocaleString("ru-RU"):"—";$("simReceptionConfirm").disabled=!opt;$("simReceptionHint").textContent=isConsole?"Выбрано консольное место. Оплата поступит в кассу после окончания сессии.":opt?"Выдай посетителю свободный ПК. Оплата поступит в кассу после завершения сессии.":"Свободных мест нет — дождись освобождения.";};select.onchange=update;if($("simConsoleMinutes"))$("simConsoleMinutes").onchange=update;update();
 }
 function rebuildClubScene(){
@@ -608,6 +611,8 @@ function updateHUD() {
   if ($("simAdLevel")) $("simAdLevel").textContent = state.adLevel || 0;
   const expand=$("simExpandRoom"),rl=Number(state.clubData.roomLevel||0),rp=[12000,25000,50000];if(expand){expand.disabled=rl>=3;expand.textContent=rl>=3?"🏢 ЗАЛ МАКСИМАЛЬНОГО УРОВНЯ":"🏢 РАСШИРИТЬ ЗАЛ · $"+rp[rl].toLocaleString("ru-RU");}
   const admin=$("simHireAdmin"),adminHired=Boolean(state.clubData.adminEnabled);if(admin){admin.disabled=adminHired;admin.textContent=adminHired?"✓ АДМИНИСТРАТОР НАНЯТ":"👨‍💼 НАНЯТЬ АДМИНИСТРАТОРА · $40 000";}
+  const cExpand=$("simExpandConsoleRoom"),crl=Number(state.clubData.consoleRoomLevel||0),crp=[15000,30000,60000];if(cExpand){cExpand.disabled=crl>=3;cExpand.textContent=crl>=3?"🏢 КОНСОЛЬНЫЙ ЗАЛ МАКСИМАЛЬНЫЙ":"🏢 РАСШИРИТЬ КОНСОЛЬНЫЙ ЗАЛ · $"+crp[crl].toLocaleString("ru-RU");}
+  const cAdmin=$("simHireConsoleAdmin"),cAdminHired=Boolean(state.clubData.consoleAdminEnabled);if(cAdmin){cAdmin.disabled=cAdminHired;cAdmin.textContent=cAdminHired?"✓ АДМИНИСТРАТОР КОНСОЛЕЙ НАНЯТ":"👨‍💼 НАНЯТЬ АДМИНИСТРАТОРА · $40 000";}
   stationGroups.forEach((g,i)=>g.visible=i<(state.stations||4));
   renderClubPanels();if(scene)syncClubNPCs();
 }
@@ -617,7 +622,7 @@ async function loadState() {
     Object.assign(state, data.state || {}); updateHUD();
   } catch (error) { $("simHint").textContent = error.message; }
 }
-async function doAction(action,extra={}){if(actionBusy)return;actionBusy=true;$("simAction").disabled=true;try{const d=await api("/api/simulator/action",{method:"POST",body:JSON.stringify({action,...extra})});Object.assign(state,d.state||{});updateHUD();if(["expand_room","upgrade_component","buy_station","upgrade_console_component","buy_console_station"].includes(action)&&scene)rebuildClubScene();if(action==="start_session")closeReception();toast(d.message||"Готово");$("simHint").textContent=d.message||"Готово";}catch(e){toast(e.message,"error");}finally{actionBusy=false;$("simAction").disabled=!activeObject;}}
+async function doAction(action,extra={}){if(actionBusy)return;actionBusy=true;$("simAction").disabled=true;try{const d=await api("/api/simulator/action",{method:"POST",body:JSON.stringify({action,...extra})});Object.assign(state,d.state||{});updateHUD();if(["expand_room","expand_console_room","upgrade_component","buy_station","upgrade_console_component","buy_console_station"].includes(action)&&scene)rebuildClubScene();if(action==="start_session")closeReception();toast(d.message||"Готово");$("simHint").textContent=d.message||"Готово";}catch(e){toast(e.message,"error");}finally{actionBusy=false;$("simAction").disabled=!activeObject;}}
 function joystickPoint(event) {
   const dx = event.clientX - joyCenter.x, dy = event.clientY - joyCenter.y;
   const length = Math.hypot(dx, dy), deadZone = 5;
@@ -664,7 +669,7 @@ function bindControls() {
   const releaseLook = event => { if (event.pointerId === lookPointer) lookPointer = null; };
   canvas.addEventListener("pointerup", releaseLook);
   canvas.addEventListener("pointercancel", releaseLook);
-  $("simAction").addEventListener("click",()=>{if(!activeObject)return;if(activeObject.action==="open_reception"){openReception();return;}doAction(activeObject.action||"upgrade_station",{station:activeObject.station??activeObject.index,component:activeObject.component});});
+  $("simAction").addEventListener("click",()=>{if(!activeObject)return;if(activeObject.action==="open_reception"){openReception();return;}if(activeObject.action==="open_console_reception"){openConsoleReception();return;}doAction(activeObject.action||"upgrade_station",{station:activeObject.station??activeObject.index,component:activeObject.component});});
   $("simReceptionClose")?.addEventListener("click",closeReception);
   $("simReceptionModal")?.addEventListener("click",e=>{if(e.target===$("simReceptionModal"))closeReception();});
   $("simReceptionConfirm")?.addEventListener("click",()=>{const select=$("simReceptionStation");if(receptionGuestId&&select?.value!==""){const isConsole=String(select.value).startsWith("console:");doAction("start_session",{queueId:receptionGuestId,station:isConsole?select.value:Number(select.value),duration:receptionDuration,minutes:Number($("simConsoleMinutes")?.value||4),expectedReward:Number(select.selectedOptions[0]?.dataset.reward||0)});}});
@@ -676,13 +681,16 @@ function bindControls() {
   $("simBuyStation")?.addEventListener("click",()=>doAction("buy_station"));
   $("simHireAdmin")?.addEventListener("click",()=>doAction("buy_admin"));
   $("simExpandRoom")?.addEventListener("click",()=>doAction("expand_room"));
+  $("simHireConsoleAdmin")?.addEventListener("click",()=>doAction("buy_console_admin"));
+  $("simExpandConsoleRoom")?.addEventListener("click",()=>doAction("expand_console_room"));
+  document.querySelectorAll("[data-sim-mode]").forEach(button=>button.addEventListener("click",()=>{const mode=button.dataset.simMode;document.querySelectorAll("[data-sim-mode]").forEach(x=>x.classList.toggle("active",x===button));document.querySelectorAll("[data-sim-manager]").forEach(panel=>panel.hidden=panel.dataset.simManager!==mode);}));
   $("simAdvertise")?.addEventListener("click",()=>doAction("advertise"));
   $("simCashout")?.addEventListener("click",async()=>{try{const d=await api("/api/simulator/exchange",{method:"POST",body:JSON.stringify({currency:"gramm"})});Object.assign(state,d.state||{});updateHUD();toast("Зачислено "+d.gramm+" GRAMM на основной баланс");}catch(e){toast(e.message,"error");}});
   window.addEventListener("keydown", event => {
     if (["KeyW","KeyA","KeyS","KeyD","ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].includes(event.code)) {
       keys[event.code] = true; event.preventDefault();
     }
-    if (event.code === "KeyE" && activeObject) {if(activeObject.action==="open_reception")openReception();else doAction(activeObject.action||"upgrade_station",{station:activeObject.station??activeObject.index,component:activeObject.component});}
+    if (event.code === "KeyE" && activeObject) {if(activeObject.action==="open_reception")openReception();else if(activeObject.action==="open_console_reception")openConsoleReception();else doAction(activeObject.action||"upgrade_station",{station:activeObject.station??activeObject.index,component:activeObject.component});}
   });
   window.addEventListener("keyup", event => { keys[event.code] = false; });
   window.addEventListener("blur", () => { Object.keys(keys).forEach(key => keys[key] = false); moveX = moveY = 0; });
