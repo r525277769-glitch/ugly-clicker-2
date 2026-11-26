@@ -19,6 +19,10 @@ const pool = new Pool({
 
 let databaseReady = false;
 
+// =====================================================
+// ОСНОВНОЙ КАТАЛОГ
+// =====================================================
+
 const catalog = {
   house: [
     { name: "Маленький дом", price: 100000 },
@@ -66,15 +70,15 @@ const businessCatalog = [
   { key: "ferrari_sales", name: "Продажа транспорта Ferrari", price: 12000000, income: 150000 }
 ];
 
+// =====================================================
+// УЛУЧШЕНИЯ
+// =====================================================
+
 const upgrades = {
   x2: { price: 5000, multiplier: 2, duration: 180000 },
   x4: { price: 12000, multiplier: 4, duration: 180000 },
   x10: { price: 2000000, multiplier: 10, permanent: true }
 };
-
-// =====================================================
-// ПОСТОЯННЫЕ УЛУЧШЕНИЯ КЛИКА
-// =====================================================
 
 const clickUpgrades = [
   { key: "click_2", name: "+$2 за клик", amount: 2, price: 1000 },
@@ -86,7 +90,7 @@ const clickUpgrades = [
 ];
 
 // =====================================================
-// BATTLE PASS: НАСТРОЙКИ
+// BATTLE PASS
 // =====================================================
 
 const BP_CONFIG = {
@@ -100,37 +104,80 @@ const BP_CONFIG = {
 };
 
 const BP_TASKS = [
+  { key: "click_dollars", title: "Заработать $2 000 кликами", target: 2000 },
+  { key: "business_profit", title: "Получить прибыль от бизнеса", target: 1 },
+  { key: "gramm_50", title: "Сделать 50 кликов в GRAMM CLICKER", target: 50 },
+  { key: "gramm_75", title: "Сделать 75 кликов в GRAMM CLICKER", target: 75 },
+  { key: "gramm_100", title: "Сделать 100 кликов в GRAMM CLICKER", target: 100 },
+  { key: "shop_purchase", title: "Купить любой предмет в магазине", target: 1 }
+];
+
+// =====================================================
+// TYCOON CRYPTOCURRENCY FARM — BITCOIN
+// =====================================================
+
+// BTC хранится с точностью до 12 знаков после запятой.
+// Все вычисления количества BTC выполняются через BigInt.
+
+const BTC_SCALE = 1000000000000n;
+
+const BTC_EXCHANGE_RATES = {
+  usd: 7000,
+  gramm: 700
+};
+
+const btcEquipmentCatalog = [
   {
-    key: "click_dollars",
-    title: "Заработать $2 000 кликами",
-    target: 2000
+    key: "gpu_rig",
+    name: "GPU Mining Rig",
+    price: 500,
+    rate: "20000000000"
   },
   {
-    key: "business_profit",
-    title: "Получить прибыль от бизнеса",
-    target: 1
+    key: "asic_miner",
+    name: "ASIC Miner",
+    price: 2500,
+    rate: "120000000000"
   },
   {
-    key: "gramm_50",
-    title: "Сделать 50 кликов в GRAMM CLICKER",
-    target: 50
+    key: "asic_pro",
+    name: "ASIC Miner Pro",
+    price: 10000,
+    rate: "550000000000"
   },
   {
-    key: "gramm_75",
-    title: "Сделать 75 кликов в GRAMM CLICKER",
-    target: 75
-  },
-  {
-    key: "gramm_100",
-    title: "Сделать 100 кликов в GRAMM CLICKER",
-    target: 100
-  },
-  {
-    key: "shop_purchase",
-    title: "Купить любой предмет в магазине",
-    target: 1
+    key: "mining_container",
+    name: "Mining Container",
+    price: 50000,
+    rate: "3000000000000"
   }
 ];
+
+function btcToUnits(value) {
+  const text = String(value);
+
+  if (!/^\d+(\.\d{1,12})?$/.test(text)) {
+    throw new Error("Неверное количество BTC");
+  }
+
+  const parts = text.split(".");
+  const whole = BigInt(parts[0]);
+  const fraction = (parts[1] || "").padEnd(12, "0");
+
+  return whole * BTC_SCALE + BigInt(fraction || "0");
+}
+
+function unitsToBtc(units) {
+  const value = BigInt(units);
+  const whole = value / BTC_SCALE;
+
+  const fraction = (value % BTC_SCALE)
+    .toString()
+    .padStart(12, "0")
+    .replace(/0+$/, "");
+
+  return fraction ? `${whole}.${fraction}` : whole.toString();
+}
 
 // =====================================================
 // БАЗА ДАННЫХ
@@ -206,8 +253,6 @@ async function initDatabase() {
     CREATE INDEX IF NOT EXISTS idx_player_businesses_telegram_id
       ON player_businesses(telegram_id);
 
-    -- ПОСТОЯННЫЕ УЛУЧШЕНИЯ КЛИКА
-
     CREATE TABLE IF NOT EXISTS player_click_upgrades (
       id BIGSERIAL PRIMARY KEY,
       telegram_id BIGINT NOT NULL REFERENCES players(telegram_id),
@@ -220,16 +265,12 @@ async function initDatabase() {
     CREATE INDEX IF NOT EXISTS idx_player_click_upgrades_telegram_id
       ON player_click_upgrades(telegram_id);
 
-    -- BATTLE PASS: сезоны
-
     CREATE TABLE IF NOT EXISTS battle_pass_seasons (
       id BIGSERIAL PRIMARY KEY,
       starts_at TIMESTAMPTZ NOT NULL,
       ends_at TIMESTAMPTZ NOT NULL,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
-
-    -- BATTLE PASS: прогресс игроков
 
     CREATE TABLE IF NOT EXISTS player_battle_pass (
       telegram_id BIGINT NOT NULL REFERENCES players(telegram_id),
@@ -240,8 +281,6 @@ async function initDatabase() {
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       PRIMARY KEY (telegram_id, season_id)
     );
-
-    -- BATTLE PASS: ежедневные задания
 
     CREATE TABLE IF NOT EXISTS battle_pass_tasks (
       id BIGSERIAL PRIMARY KEY,
@@ -257,8 +296,6 @@ async function initDatabase() {
     CREATE INDEX IF NOT EXISTS idx_bp_tasks_player_date
       ON battle_pass_tasks(telegram_id, season_id, task_date);
 
-    -- BATTLE PASS: полученные награды
-
     CREATE TABLE IF NOT EXISTS battle_pass_claims (
       id BIGSERIAL PRIMARY KEY,
       telegram_id BIGINT NOT NULL REFERENCES players(telegram_id),
@@ -270,10 +307,161 @@ async function initDatabase() {
       claimed_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       UNIQUE (telegram_id, season_id, bp_level, track)
     );
+
+    -- BITCOIN FARM
+
+    CREATE TABLE IF NOT EXISTS bitcoin_farm_players (
+      telegram_id BIGINT PRIMARY KEY REFERENCES players(telegram_id),
+      farm_cash BIGINT NOT NULL DEFAULT 500,
+      btc_balance NUMERIC(30,12) NOT NULL DEFAULT 0,
+      last_accrued_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS bitcoin_farm_equipment (
+      id BIGSERIAL PRIMARY KEY,
+      telegram_id BIGINT NOT NULL REFERENCES players(telegram_id),
+      equipment_key TEXT NOT NULL,
+      equipment_name TEXT NOT NULL,
+      purchase_price BIGINT NOT NULL,
+      hourly_rate_sats BIGINT NOT NULL,
+      purchased_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_btc_farm_equipment_player
+      ON bitcoin_farm_equipment(telegram_id);
   `);
 
   databaseReady = true;
   console.log("Database ready");
+}
+
+// =====================================================
+// TELEGRAM АВТОРИЗАЦИЯ
+// =====================================================
+
+function authenticate(initData) {
+  if (!BOT_TOKEN || !initData) {
+    throw new Error("Telegram authentication is not configured");
+  }
+
+  const params = new URLSearchParams(initData);
+  const hash = params.get("hash");
+
+  if (!hash) {
+    throw new Error("Invalid Telegram data");
+  }
+
+  params.delete("hash");
+
+  const authDate = Number(params.get("auth_date"));
+  const now = Math.floor(Date.now() / 1000);
+
+  if (!authDate || now - authDate > 86400 || authDate > now + 60) {
+    throw new Error("Telegram session expired");
+  }
+
+  const dataCheckString = [...params.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([key, value]) => `${key}=${value}`)
+    .join("\n");
+
+  const secretKey = crypto
+    .createHmac("sha256", "WebAppData")
+    .update(BOT_TOKEN)
+    .digest();
+
+  const calculatedHash = crypto
+    .createHmac("sha256", secretKey)
+    .update(dataCheckString)
+    .digest("hex");
+
+  const a = Buffer.from(hash, "hex");
+  const b = Buffer.from(calculatedHash, "hex");
+
+  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
+    throw new Error("Telegram authentication failed");
+  }
+
+  const user = JSON.parse(params.get("user") || "{}");
+
+  if (!user.id) {
+    throw new Error("Player not found");
+  }
+
+  return user;
+}
+
+async function auth(req, res, next) {
+  try {
+    if (!databaseReady) {
+      return res.status(503).json({ error: "Database is starting" });
+    }
+
+    req.player = authenticate(req.headers["x-telegram-init-data"]);
+
+    await pool.query(
+      `INSERT INTO players (telegram_id, username)
+       VALUES ($1, $2)
+       ON CONFLICT (telegram_id)
+       DO UPDATE SET username = EXCLUDED.username`,
+      [req.player.id, req.player.username || null]
+    );
+
+    next();
+  } catch (error) {
+    console.error("Authentication error:", error.message);
+
+    res.status(401).json({
+      error: error.message
+    });
+  }
+}
+
+// =====================================================
+// МНОЖИТЕЛИ И БОНУСЫ
+// =====================================================
+
+function getMultiplier(player) {
+  const now = Date.now();
+  let timedMultiplier = 1;
+
+  if (
+    player.bonus_x2_until &&
+    new Date(player.bonus_x2_until).getTime() > now
+  ) {
+    timedMultiplier = Math.max(timedMultiplier, 2);
+  }
+
+  if (
+    player.bonus_x4_until &&
+    new Date(player.bonus_x4_until).getTime() > now
+  ) {
+    timedMultiplier = Math.max(timedMultiplier, 4);
+  }
+
+  const permanentMultiplier = player.x10_unlocked ? 10 : 1;
+
+  return timedMultiplier * permanentMultiplier;
+}
+
+function getBonusState(player) {
+  const now = Date.now();
+
+  const x2Until = player.bonus_x2_until
+    ? new Date(player.bonus_x2_until).getTime()
+    : 0;
+
+  const x4Until = player.bonus_x4_until
+    ? new Date(player.bonus_x4_until).getTime()
+    : 0;
+
+  return {
+    x2Active: x2Until > now,
+    x2Seconds: Math.max(0, Math.ceil((x2Until - now) / 1000)),
+    x4Active: x4Until > now,
+    x4Seconds: Math.max(0, Math.ceil((x4Until - now) / 1000)),
+    x10Unlocked: player.x10_unlocked
+  };
 }
 
 // =====================================================
@@ -318,8 +506,7 @@ async function getActiveBPSeason(client) {
 
 async function getOrCreateBPPlayer(client, telegramId, seasonId) {
   await client.query(
-    `INSERT INTO player_battle_pass
-      (telegram_id, season_id)
+    `INSERT INTO player_battle_pass (telegram_id, season_id)
      VALUES ($1, $2)
      ON CONFLICT (telegram_id, season_id) DO NOTHING`,
     [telegramId, seasonId]
@@ -339,7 +526,6 @@ async function getOrCreateBPPlayer(client, telegramId, seasonId) {
 function getBPReward(level, track) {
   const freeDollars = level * 1000;
   const freeGramm = level * 10;
-
   const multiplier = track === "premium" ? 2 : 1;
 
   return {
@@ -351,14 +537,11 @@ function getBPReward(level, track) {
 async function addBPExperience(client, telegramId, seasonId, amount) {
   const result = await client.query(
     `UPDATE player_battle_pass
-     SET bp_xp = LEAST(
-       $3,
-       bp_xp + $4
-     ),
-     bp_level = LEAST(
-       100,
-       FLOOR(LEAST($3, bp_xp + $4)::numeric / 200)::integer + 1
-     )
+     SET bp_xp = LEAST($3, bp_xp + $4),
+         bp_level = LEAST(
+           100,
+           FLOOR(LEAST($3, bp_xp + $4)::numeric / 200)::integer + 1
+         )
      WHERE telegram_id = $1 AND season_id = $2
      RETURNING bp_xp, bp_level`,
     [
@@ -417,17 +600,1134 @@ async function trackBPTask(client, telegramId, taskKey, amount) {
       ? BP_CONFIG.premiumTaskXP
       : BP_CONFIG.freeTaskXP;
 
-    await addBPExperience(
-      client,
-      telegramId,
-      season.id,
-      xp
-    );
+    await addBPExperience(client, telegramId, season.id, xp);
   }
 }
 
 // =====================================================
-// BATTLE PASS: API СОСТОЯНИЯ
+// БИЗНЕС: ПАССИВНЫЙ ДОХОД
+// =====================================================
+
+async function accrueBusinessIncome(client, telegramId) {
+  const businesses = await client.query(
+    `SELECT id, hourly_income, last_accrued_at
+     FROM player_businesses
+     WHERE telegram_id = $1
+     FOR UPDATE`,
+    [telegramId]
+  );
+
+  const now = Date.now();
+  let totalIncome = 0n;
+
+  for (const business of businesses.rows) {
+    const lastTime = new Date(business.last_accrued_at).getTime();
+    const elapsedMs = BigInt(Math.max(0, now - lastTime));
+    const hourlyIncome = BigInt(business.hourly_income);
+
+    if (hourlyIncome <= 0n) continue;
+
+    const earned = (elapsedMs * hourlyIncome) / 3600000n;
+
+    if (earned > 0n) {
+      const creditedMs = (earned * 3600000n) / hourlyIncome;
+
+      const newLastTime = new Date(
+        lastTime + Number(creditedMs)
+      );
+
+      await client.query(
+        `UPDATE player_businesses
+         SET last_accrued_at = $1
+         WHERE id = $2 AND telegram_id = $3`,
+        [newLastTime, business.id, telegramId]
+      );
+
+      totalIncome += earned;
+    }
+  }
+
+  if (totalIncome > 0n) {
+    await client.query(
+      `UPDATE players
+       SET business_balance = business_balance + $1
+       WHERE telegram_id = $2`,
+      [totalIncome.toString(), telegramId]
+    );
+
+    await trackBPTask(client, telegramId, "business_profit", 1);
+  }
+
+  return totalIncome.toString();
+}
+
+// =====================================================
+// BITCOIN FARM: СОЗДАНИЕ АККАУНТА
+// =====================================================
+
+async function ensureBitcoinFarm(client, telegramId) {
+  await client.query(
+    `INSERT INTO bitcoin_farm_players (telegram_id, farm_cash)
+     VALUES ($1, 500)
+     ON CONFLICT (telegram_id) DO NOTHING`,
+    [telegramId]
+  );
+}
+
+// =====================================================
+// BITCOIN FARM: НАЧИСЛЕНИЕ ДОБЫЧИ
+// =====================================================
+
+async function accrueBitcoinFarm(client, telegramId) {
+  const farmResult = await client.query(
+    `SELECT farm_cash, btc_balance, last_accrued_at
+     FROM bitcoin_farm_players
+     WHERE telegram_id = $1
+     FOR UPDATE`,
+    [telegramId]
+  );
+
+  if (!farmResult.rows.length) {
+    throw new Error("Bitcoin ферма не найдена");
+  }
+
+  const farm = farmResult.rows[0];
+
+  const rateResult = await client.query(
+    `SELECT COALESCE(SUM(hourly_rate_sats), 0)::text AS total
+     FROM bitcoin_farm_equipment
+     WHERE telegram_id = $1`,
+    [telegramId]
+  );
+
+  const hourlyRate = BigInt(rateResult.rows[0].total);
+  const lastTime = new Date(farm.last_accrued_at).getTime();
+  const now = Date.now();
+  const elapsedMs = BigInt(Math.max(0, now - lastTime));
+
+  if (hourlyRate <= 0n) {
+    await client.query(
+      `UPDATE bitcoin_farm_players
+       SET last_accrued_at = NOW()
+       WHERE telegram_id = $1`,
+      [telegramId]
+    );
+
+    return {
+      earned: "0",
+      hourlyRate: "0"
+    };
+  }
+
+  const earnedUnits = (hourlyRate * elapsedMs) / 3600000n;
+
+  if (earnedUnits > 0n) {
+    const creditedMs = (earnedUnits * 3600000n) / hourlyRate;
+
+    const newLastTime = new Date(
+      lastTime + Number(creditedMs)
+    );
+
+    await client.query(
+      `UPDATE bitcoin_farm_players
+       SET btc_balance = btc_balance + ($1::numeric / 1000000000000),
+           last_accrued_at = $2
+       WHERE telegram_id = $3`,
+      [earnedUnits.toString(), newLastTime, telegramId]
+    );
+  }
+
+  return {
+    earned: unitsToBtc(earnedUnits),
+    hourlyRate: unitsToBtc(hourlyRate)
+  };
+}
+
+// =====================================================
+// СТАТУС СЕРВЕРА И КАТАЛОГИ
+// =====================================================
+
+app.get("/health", (req, res) => {
+  res.json({
+    status: "online",
+    game: "UGLY CLICKER 2.0",
+    database: databaseReady ? "connected" : "connecting"
+  });
+});
+
+app.get("/api/catalog", (req, res) => {
+  res.json(catalog);
+});
+
+app.get("/api/businesses/catalog", auth, (req, res) => {
+  res.json(businessCatalog);
+});
+
+// =====================================================
+// СОСТОЯНИЕ ИГРОКА
+// =====================================================
+
+app.get("/api/state", auth, async (req, res) => {
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    await client.query(
+      `SELECT telegram_id FROM players
+       WHERE telegram_id = $1 FOR UPDATE`,
+      [req.player.id]
+    );
+
+    await accrueBusinessIncome(client, req.player.id);
+
+    const player = await client.query(
+      `SELECT balance, gramm_balance, business_balance,
+              experience, level, last_daily,
+              bonus_x2_until, bonus_x4_until, x10_unlocked
+       FROM players WHERE telegram_id = $1`,
+      [req.player.id]
+    );
+
+    const inventory = await client.query(
+      `SELECT id, category, item_name, purchase_price, purchased_at
+       FROM inventory
+       WHERE telegram_id = $1
+       ORDER BY purchased_at DESC`,
+      [req.player.id]
+    );
+
+    const businesses = await client.query(
+      `SELECT id, business_key, business_name,
+              purchase_price, hourly_income, purchased_at
+       FROM player_businesses
+       WHERE telegram_id = $1
+       ORDER BY purchased_at DESC`,
+      [req.player.id]
+    );
+
+    const income = await client.query(
+      `SELECT COALESCE(SUM(hourly_income), 0)::text AS total
+       FROM player_businesses
+       WHERE telegram_id = $1`,
+      [req.player.id]
+    );
+
+    const clickUpgradeResult = await client.query(
+      `SELECT
+         COALESCE(SUM(amount), 0)::text AS total,
+         COALESCE(ARRAY_AGG(upgrade_key), ARRAY[]::text[]) AS owned
+       FROM player_click_upgrades
+       WHERE telegram_id = $1`,
+      [req.player.id]
+    );
+
+    await client.query("COMMIT");
+
+    const p = player.rows[0];
+    const clickUpgradeBonus = Number(clickUpgradeResult.rows[0].total);
+    const clickBase = 1 + clickUpgradeBonus;
+    const multiplier = getMultiplier(p);
+
+    res.json({
+      balance: Number(p.balance),
+      grammBalance: Number(p.gramm_balance),
+      businessBalance: Number(p.business_balance),
+      businessIncomePerHour: Number(income.rows[0].total),
+      businesses: businesses.rows,
+      experience: Number(p.experience),
+      level: p.level,
+      lastDaily: p.last_daily,
+      inventory: inventory.rows,
+      bonuses: getBonusState(p),
+      multiplier,
+      clickUpgradeBonus,
+      clickBase,
+      clickReward: clickBase * multiplier,
+      ownedClickUpgrades: clickUpgradeResult.rows[0].owned
+    });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("State error:", error);
+    res.status(500).json({ error: "Could not load game data" });
+  } finally {
+    client.release();
+  }
+});
+
+// =====================================================
+// ОСНОВНОЙ КЛИКЕР
+// =====================================================
+
+app.post("/api/click", auth, async (req, res) => {
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    const player = await client.query(
+      `SELECT balance, experience, level, bonus_x2_until,
+              bonus_x4_until, x10_unlocked
+       FROM players
+       WHERE telegram_id = $1
+       FOR UPDATE`,
+      [req.player.id]
+    );
+
+    const p = player.rows[0];
+
+    const clickUpgradeResult = await client.query(
+      `SELECT COALESCE(SUM(amount), 0)::text AS total
+       FROM player_click_upgrades
+       WHERE telegram_id = $1`,
+      [req.player.id]
+    );
+
+    const clickUpgradeBonus = Number(clickUpgradeResult.rows[0].total);
+    const clickBase = 1 + clickUpgradeBonus;
+    const multiplier = getMultiplier(p);
+    const clickReward = clickBase * multiplier;
+
+    const result = await client.query(
+      `UPDATE players
+       SET balance = balance + $1,
+           experience = experience + $1,
+           level = FLOOR((experience + $1) / 1000) + 1,
+           last_active = NOW()
+       WHERE telegram_id = $2
+       RETURNING balance, experience, level`,
+      [clickReward, req.player.id]
+    );
+
+    await trackBPTask(
+      client,
+      req.player.id,
+      "click_dollars",
+      clickReward
+    );
+
+    await client.query("COMMIT");
+
+    res.json({
+      balance: Number(result.rows[0].balance),
+      experience: Number(result.rows[0].experience),
+      level: result.rows[0].level,
+      multiplier,
+      clickBase,
+      clickUpgradeBonus,
+      clickReward
+    });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("Click error:", error);
+    res.status(500).json({ error: "Click failed" });
+  } finally {
+    client.release();
+  }
+});
+
+// =====================================================
+// GRAMM CLICKER
+// =====================================================
+
+app.post("/api/gramm/click", auth, async (req, res) => {
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    const player = await client.query(
+      `SELECT bonus_x2_until, bonus_x4_until, x10_unlocked
+       FROM players
+       WHERE telegram_id = $1
+       FOR UPDATE`,
+      [req.player.id]
+    );
+
+    const multiplier = getMultiplier(player.rows[0]);
+
+    const result = await client.query(
+      `UPDATE players
+       SET gramm_balance = gramm_balance + $1,
+           last_active = NOW()
+       WHERE telegram_id = $2
+       RETURNING gramm_balance`,
+      [multiplier, req.player.id]
+    );
+
+    await trackBPTask(client, req.player.id, "gramm_50", 1);
+    await trackBPTask(client, req.player.id, "gramm_75", 1);
+    await trackBPTask(client, req.player.id, "gramm_100", 1);
+
+    await client.query("COMMIT");
+
+    res.json({
+      grammBalance: Number(result.rows[0].gramm_balance),
+      multiplier
+    });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("GRAMM click error:", error);
+    res.status(500).json({ error: "GRAMM click failed" });
+  } finally {
+    client.release();
+  }
+});
+
+// =====================================================
+// ПОКУПКА x2, x4, x10
+// =====================================================
+
+app.post("/api/upgrades/buy", auth, async (req, res) => {
+  const { type } = req.body;
+  const upgrade = upgrades[type];
+
+  if (!upgrade) {
+    return res.status(400).json({ error: "Invalid upgrade" });
+  }
+
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    const result = await client.query(
+      `SELECT balance, bonus_x2_until, bonus_x4_until, x10_unlocked
+       FROM players
+       WHERE telegram_id = $1
+       FOR UPDATE`,
+      [req.player.id]
+    );
+
+    const player = result.rows[0];
+
+    if (type === "x10" && player.x10_unlocked) {
+      throw new Error("Улучшение x10 уже куплено");
+    }
+
+    if (BigInt(player.balance) < BigInt(upgrade.price)) {
+      throw new Error("Недостаточно денег");
+    }
+
+    if (type === "x10") {
+      await client.query(
+        `UPDATE players
+         SET balance = balance - $1,
+             x10_unlocked = TRUE
+         WHERE telegram_id = $2`,
+        [upgrade.price, req.player.id]
+      );
+    } else {
+      const column = type === "x2"
+        ? "bonus_x2_until"
+        : "bonus_x4_until";
+
+      await client.query(
+        `UPDATE players
+         SET balance = balance - $1,
+             ${column} = GREATEST(COALESCE(${column}, NOW()), NOW())
+               + INTERVAL '3 minutes'
+         WHERE telegram_id = $2`,
+        [upgrade.price, req.player.id]
+      );
+    }
+
+    await client.query("COMMIT");
+
+    const updated = await pool.query(
+      `SELECT balance, bonus_x2_until, bonus_x4_until, x10_unlocked
+       FROM players
+       WHERE telegram_id = $1`,
+      [req.player.id]
+    );
+
+    res.json({
+      success: true,
+      balance: Number(updated.rows[0].balance),
+      bonuses: getBonusState(updated.rows[0]),
+      multiplier: getMultiplier(updated.rows[0])
+    });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    res.status(400).json({ error: error.message });
+  } finally {
+    client.release();
+  }
+});
+
+// =====================================================
+// ОБМЕН ДОЛЛАРОВ И GRAMM
+// =====================================================
+
+app.post("/api/gramm/exchange", auth, async (req, res) => {
+  const { direction, amount } = req.body;
+  const value = Number(amount);
+
+  if (!Number.isSafeInteger(value) || value <= 0) {
+    return res.status(400).json({
+      error: "Укажи целое положительное число"
+    });
+  }
+
+  if (direction !== "toGramm" && direction !== "toDollars") {
+    return res.status(400).json({
+      error: "Неверное направление обмена"
+    });
+  }
+
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    const result = await client.query(
+      `SELECT balance, gramm_balance
+       FROM players
+       WHERE telegram_id = $1
+       FOR UPDATE`,
+      [req.player.id]
+    );
+
+    const player = result.rows[0];
+
+    if (direction === "toGramm") {
+      const cost = value * 10;
+
+      if (!Number.isSafeInteger(cost) || BigInt(player.balance) < BigInt(cost)) {
+        throw new Error("Недостаточно долларов");
+      }
+
+      await client.query(
+        `UPDATE players
+         SET balance = balance - $1,
+             gramm_balance = gramm_balance + $2
+         WHERE telegram_id = $3`,
+        [cost, value, req.player.id]
+      );
+    } else {
+      if (BigInt(player.gramm_balance) < BigInt(value)) {
+        throw new Error("Недостаточно GRAMM");
+      }
+
+      const dollars = value * 10;
+
+      if (!Number.isSafeInteger(dollars)) {
+        throw new Error("Слишком большая сумма");
+      }
+
+      await client.query(
+        `UPDATE players
+         SET gramm_balance = gramm_balance - $1,
+             balance = balance + $2
+         WHERE telegram_id = $3`,
+        [value, dollars, req.player.id]
+      );
+    }
+
+    await client.query("COMMIT");
+
+    const updated = await pool.query(
+      `SELECT balance, gramm_balance
+       FROM players
+       WHERE telegram_id = $1`,
+      [req.player.id]
+    );
+
+    res.json({
+      success: true,
+      balance: Number(updated.rows[0].balance),
+      grammBalance: Number(updated.rows[0].gramm_balance),
+      rate: 10
+    });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    res.status(400).json({ error: error.message });
+  } finally {
+    client.release();
+  }
+});
+
+// =====================================================
+// ПОСТОЯННЫЕ УЛУЧШЕНИЯ КЛИКА
+// =====================================================
+
+app.get("/api/click-upgrades", auth, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT upgrade_key
+       FROM player_click_upgrades
+       WHERE telegram_id = $1`,
+      [req.player.id]
+    );
+
+    const ownedKeys = result.rows.map(row => row.upgrade_key);
+
+    res.json({
+      success: true,
+      upgrades: clickUpgrades.map(upgrade => ({
+        ...upgrade,
+        owned: ownedKeys.includes(upgrade.key)
+      })),
+      owned: ownedKeys
+    });
+  } catch (error) {
+    console.error("Click upgrades state error:", error);
+
+    res.status(500).json({
+      error: "Не удалось загрузить улучшения клика"
+    });
+  }
+});
+
+app.post("/api/click-upgrades/buy", auth, async (req, res) => {
+  const key = req.body.key;
+  const upgrade = clickUpgrades.find(item => item.key === key);
+
+  if (!upgrade) {
+    return res.status(400).json({
+      error: "Такого улучшения не существует"
+    });
+  }
+
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    const playerResult = await client.query(
+      `SELECT balance
+       FROM players
+       WHERE telegram_id = $1
+       FOR UPDATE`,
+      [req.player.id]
+    );
+
+    if (!playerResult.rows.length) {
+      throw new Error("Игрок не найден");
+    }
+
+    const alreadyBought = await client.query(
+      `SELECT id
+       FROM player_click_upgrades
+       WHERE telegram_id = $1 AND upgrade_key = $2`,
+      [req.player.id, key]
+    );
+
+    if (alreadyBought.rows.length) {
+      throw new Error("Это улучшение уже куплено");
+    }
+
+    if (BigInt(playerResult.rows[0].balance) < BigInt(upgrade.price)) {
+      throw new Error("Недостаточно долларов");
+    }
+
+    await client.query(
+      `UPDATE players
+       SET balance = balance - $1
+       WHERE telegram_id = $2`,
+      [upgrade.price, req.player.id]
+    );
+
+    await client.query(
+      `INSERT INTO player_click_upgrades
+        (telegram_id, upgrade_key, amount)
+       VALUES ($1, $2, $3)`,
+      [req.player.id, upgrade.key, upgrade.amount]
+    );
+
+    const totalResult = await client.query(
+      `SELECT COALESCE(SUM(amount), 0)::text AS total
+       FROM player_click_upgrades
+       WHERE telegram_id = $1`,
+      [req.player.id]
+    );
+
+    const updatedPlayer = await client.query(
+      `SELECT balance
+       FROM players
+       WHERE telegram_id = $1`,
+      [req.player.id]
+    );
+
+    await client.query("COMMIT");
+
+    const clickUpgradeBonus = Number(totalResult.rows[0].total);
+
+    res.json({
+      success: true,
+      message: "Улучшение успешно куплено",
+      balance: Number(updatedPlayer.rows[0].balance),
+      purchased: upgrade.key,
+      clickUpgradeBonus,
+      clickBase: 1 + clickUpgradeBonus
+    });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    res.status(400).json({ error: error.message });
+  } finally {
+    client.release();
+  }
+});
+
+// =====================================================
+// ПОКУПКА БИЗНЕСА
+// =====================================================
+
+app.post("/api/businesses/buy", auth, async (req, res) => {
+  const { key } = req.body;
+  const business = businessCatalog.find(item => item.key === key);
+
+  if (!business) {
+    return res.status(400).json({ error: "Такого бизнеса нет" });
+  }
+
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    const player = await client.query(
+      `SELECT balance
+       FROM players
+       WHERE telegram_id = $1
+       FOR UPDATE`,
+      [req.player.id]
+    );
+
+    await accrueBusinessIncome(client, req.player.id);
+
+    if (BigInt(player.rows[0].balance) < BigInt(business.price)) {
+      throw new Error("Недостаточно долларов для покупки");
+    }
+
+    await client.query(
+      `UPDATE players
+       SET balance = balance - $1
+       WHERE telegram_id = $2`,
+      [business.price, req.player.id]
+    );
+
+    await client.query(
+      `INSERT INTO player_businesses
+       (telegram_id, business_key, business_name,
+        purchase_price, hourly_income)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [
+        req.player.id,
+        business.key,
+        business.name,
+        business.price,
+        business.income
+      ]
+    );
+
+    await client.query("COMMIT");
+
+    const updated = await pool.query(
+      `SELECT balance, business_balance
+       FROM players
+       WHERE telegram_id = $1`,
+      [req.player.id]
+    );
+
+    res.json({
+      success: true,
+      message: "Бизнес успешно куплен",
+      balance: Number(updated.rows[0].balance),
+      businessBalance: Number(updated.rows[0].business_balance)
+    });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    res.status(400).json({ error: error.message });
+  } finally {
+    client.release();
+  }
+});
+
+// =====================================================
+// ПРОДАЖА БИЗНЕСА
+// =====================================================
+
+app.post("/api/businesses/sell", auth, async (req, res) => {
+  const businessId = Number(req.body.businessId);
+
+  if (!Number.isSafeInteger(businessId) || businessId <= 0) {
+    return res.status(400).json({ error: "Неверный номер бизнеса" });
+  }
+
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    await client.query(
+      `SELECT telegram_id
+       FROM players
+       WHERE telegram_id = $1
+       FOR UPDATE`,
+      [req.player.id]
+    );
+
+    await accrueBusinessIncome(client, req.player.id);
+
+    const result = await client.query(
+      `SELECT id, purchase_price, business_name
+       FROM player_businesses
+       WHERE id = $1 AND telegram_id = $2
+       FOR UPDATE`,
+      [businessId, req.player.id]
+    );
+
+    if (!result.rows.length) {
+      throw new Error("Бизнес не найден");
+    }
+
+    const business = result.rows[0];
+    const refund = (BigInt(business.purchase_price) * 70n) / 100n;
+
+    await client.query(
+      `DELETE FROM player_businesses
+       WHERE id = $1 AND telegram_id = $2`,
+      [businessId, req.player.id]
+    );
+
+    await client.query(
+      `UPDATE players
+       SET balance = balance + $1
+       WHERE telegram_id = $2`,
+      [refund.toString(), req.player.id]
+    );
+
+    await client.query("COMMIT");
+
+    const updated = await pool.query(
+      `SELECT balance, business_balance
+       FROM players
+       WHERE telegram_id = $1`,
+      [req.player.id]
+    );
+
+    res.json({
+      success: true,
+      businessName: business.business_name,
+      refund: Number(refund),
+      balance: Number(updated.rows[0].balance),
+      businessBalance: Number(updated.rows[0].business_balance)
+    });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    res.status(400).json({ error: error.message });
+  } finally {
+    client.release();
+  }
+});
+
+// =====================================================
+// ВЫВОД С БИЗНЕС-СЧЁТА
+// =====================================================
+
+app.post("/api/businesses/withdraw", auth, async (req, res) => {
+  const { destination, amount } = req.body;
+  const value = Number(amount);
+
+  if (!Number.isSafeInteger(value) || value <= 0) {
+    return res.status(400).json({
+      error: "Укажи целую положительную сумму"
+    });
+  }
+
+  const toGramm =
+    destination === "gramm" || destination === "toGramm";
+
+  const toDollars =
+    destination === "usd" || destination === "toDollars";
+
+  if (!toGramm && !toDollars) {
+    return res.status(400).json({
+      error: "Неверное направление перевода"
+    });
+  }
+
+  if (toGramm && value % 10 !== 0) {
+    return res.status(400).json({
+      error: "Для перевода в GRAMM сумма должна делиться на 10"
+    });
+  }
+
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    await client.query(
+      `SELECT telegram_id
+       FROM players
+       WHERE telegram_id = $1
+       FOR UPDATE`,
+      [req.player.id]
+    );
+
+    await accrueBusinessIncome(client, req.player.id);
+
+    const result = await client.query(
+      `SELECT balance, gramm_balance, business_balance
+       FROM players
+       WHERE telegram_id = $1
+       FOR UPDATE`,
+      [req.player.id]
+    );
+
+    const player = result.rows[0];
+    const businessBalance = BigInt(player.business_balance);
+
+    if (businessBalance < BigInt(value)) {
+      throw new Error("Недостаточно денег на бизнес-счёте");
+    }
+
+    if (toDollars) {
+      await client.query(
+        `UPDATE players
+         SET business_balance = business_balance - $1,
+             balance = balance + $1
+         WHERE telegram_id = $2`,
+        [value, req.player.id]
+      );
+    } else {
+      const grammAmount = value / 10;
+
+      await client.query(
+        `UPDATE players
+         SET business_balance = business_balance - $1,
+             gramm_balance = gramm_balance + $2
+         WHERE telegram_id = $3`,
+        [value, grammAmount, req.player.id]
+      );
+    }
+
+    await client.query("COMMIT");
+
+    const updated = await pool.query(
+      `SELECT balance, gramm_balance, business_balance
+       FROM players
+       WHERE telegram_id = $1`,
+      [req.player.id]
+    );
+
+    res.json({
+      success: true,
+      balance: Number(updated.rows[0].balance),
+      grammBalance: Number(updated.rows[0].gramm_balance),
+      businessBalance: Number(updated.rows[0].business_balance),
+      rate: 10
+    });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    res.status(400).json({ error: error.message });
+  } finally {
+    client.release();
+  }
+});
+
+// =====================================================
+// ПОКУПКА ПРЕДМЕТОВ
+// =====================================================
+
+app.post("/api/shop/buy", auth, async (req, res) => {
+  const { category, index } = req.body;
+
+  if (
+    !catalog[category] ||
+    !Number.isInteger(index) ||
+    !catalog[category][index]
+  ) {
+    return res.status(400).json({ error: "Invalid item" });
+  }
+
+  const item = catalog[category][index];
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    const player = await client.query(
+      `SELECT balance
+       FROM players
+       WHERE telegram_id = $1
+       FOR UPDATE`,
+      [req.player.id]
+    );
+
+    if (!player.rows.length || BigInt(player.rows[0].balance) < BigInt(item.price)) {
+      throw new Error("Недостаточно денег");
+    }
+
+    await client.query(
+      `UPDATE players
+       SET balance = balance - $1
+       WHERE telegram_id = $2`,
+      [item.price, req.player.id]
+    );
+
+    await client.query(
+      `INSERT INTO inventory
+       (telegram_id, category, item_name, purchase_price)
+       VALUES ($1, $2, $3, $4)`,
+      [req.player.id, category, item.name, item.price]
+    );
+
+    await trackBPTask(client, req.player.id, "shop_purchase", 1);
+
+    await client.query("COMMIT");
+
+    const updated = await pool.query(
+      `SELECT balance
+       FROM players
+       WHERE telegram_id = $1`,
+      [req.player.id]
+    );
+
+    res.json({
+      success: true,
+      balance: Number(updated.rows[0].balance)
+    });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    res.status(400).json({ error: error.message });
+  } finally {
+    client.release();
+  }
+});
+
+// =====================================================
+// ПРОДАЖА ПРЕДМЕТОВ
+// =====================================================
+
+app.post("/api/shop/sell", auth, async (req, res) => {
+  const itemId = Number(req.body.itemId);
+
+  if (!Number.isSafeInteger(itemId) || itemId <= 0) {
+    return res.status(400).json({ error: "Invalid item" });
+  }
+
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    const item = await client.query(
+      `SELECT id, purchase_price
+       FROM inventory
+       WHERE id = $1 AND telegram_id = $2
+       FOR UPDATE`,
+      [itemId, req.player.id]
+    );
+
+    if (!item.rows.length) {
+      throw new Error("Предмет не найден");
+    }
+
+    const refund = (BigInt(item.rows[0].purchase_price) * 70n) / 100n;
+
+    await client.query(
+      `DELETE FROM inventory
+       WHERE id = $1 AND telegram_id = $2`,
+      [itemId, req.player.id]
+    );
+
+    await client.query(
+      `UPDATE players
+       SET balance = balance + $1
+       WHERE telegram_id = $2`,
+      [refund.toString(), req.player.id]
+    );
+
+    await client.query("COMMIT");
+
+    const updated = await pool.query(
+      `SELECT balance
+       FROM players
+       WHERE telegram_id = $1`,
+      [req.player.id]
+    );
+
+    res.json({
+      success: true,
+      refund: Number(refund),
+      balance: Number(updated.rows[0].balance)
+    });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    res.status(400).json({ error: error.message });
+  } finally {
+    client.release();
+  }
+});
+
+// =====================================================
+// ЕЖЕДНЕВНАЯ НАГРАДА
+// =====================================================
+
+app.post("/api/daily", auth, async (req, res) => {
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    const result = await client.query(
+      `UPDATE players
+       SET balance = balance + 1000,
+           last_daily = CURRENT_DATE
+       WHERE telegram_id = $1
+         AND (last_daily IS NULL OR last_daily < CURRENT_DATE)
+       RETURNING balance`,
+      [req.player.id]
+    );
+
+    if (!result.rows.length) {
+      throw new Error("Ежедневная награда уже получена");
+    }
+
+    await client.query("COMMIT");
+
+    res.json({
+      success: true,
+      reward: 1000,
+      balance: Number(result.rows[0].balance)
+    });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    res.status(400).json({ error: error.message });
+  } finally {
+    client.release();
+  }
+});
+
+// =====================================================
+// РЕЙТИНГ ИГРОКОВ
+// =====================================================
+
+app.get("/api/leaderboard", async (req, res) => {
+  try {
+    if (!databaseReady) {
+      return res.status(503).json({ error: "Database is starting" });
+    }
+
+    const result = await pool.query(
+      `SELECT username, balance, level
+       FROM players
+       ORDER BY balance DESC
+       LIMIT 20`
+    );
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Leaderboard error:", error);
+    res.status(500).json({ error: "Leaderboard failed" });
+  }
+});
+
+// =====================================================
+// BATTLE PASS: СОСТОЯНИЕ
 // =====================================================
 
 app.get("/api/battle-pass/state", auth, async (req, res) => {
@@ -519,6 +1819,7 @@ app.get("/api/battle-pass/state", auth, async (req, res) => {
   } catch (error) {
     await client.query("ROLLBACK");
     console.error("Battle Pass state error:", error);
+
     res.status(500).json({
       error: "Не удалось загрузить Battle Pass"
     });
@@ -568,10 +1869,7 @@ app.post("/api/battle-pass/buy-premium", auth, async (req, res) => {
     const player = playerResult.rows[0];
 
     if (currency === "usd") {
-      if (
-        BigInt(player.balance) <
-        BigInt(BP_CONFIG.premiumDollarPrice)
-      ) {
+      if (BigInt(player.balance) < BigInt(BP_CONFIG.premiumDollarPrice)) {
         throw new Error("Недостаточно долларов");
       }
 
@@ -582,10 +1880,7 @@ app.post("/api/battle-pass/buy-premium", auth, async (req, res) => {
         [BP_CONFIG.premiumDollarPrice, req.player.id]
       );
     } else {
-      if (
-        BigInt(player.gramm_balance) <
-        BigInt(BP_CONFIG.premiumGrammPrice)
-      ) {
+      if (BigInt(player.gramm_balance) < BigInt(BP_CONFIG.premiumGrammPrice)) {
         throw new Error("Недостаточно GRAMM");
       }
 
@@ -714,168 +2009,87 @@ app.post("/api/battle-pass/claim", auth, async (req, res) => {
 });
 
 // =====================================================
-// TELEGRAM АВТОРИЗАЦИЯ
+// BITCOIN FARM: СОСТОЯНИЕ
 // =====================================================
 
-function authenticate(initData) {
-  if (!BOT_TOKEN || !initData) {
-    throw new Error("Telegram authentication is not configured");
-  }
+app.get("/api/bitcoin-farm/state", auth, async (req, res) => {
+  const client = await pool.connect();
 
-  const params = new URLSearchParams(initData);
-  const hash = params.get("hash");
-
-  if (!hash) throw new Error("Invalid Telegram data");
-
-  params.delete("hash");
-
-  const authDate = Number(params.get("auth_date"));
-  const now = Math.floor(Date.now() / 1000);
-
-  if (!authDate || now - authDate > 86400 || authDate > now + 60) {
-    throw new Error("Telegram session expired");
-  }
-
-  const dataCheckString = [...params.entries()]
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([key, value]) => `${key}=${value}`)
-    .join("\n");
-
-  const secretKey = crypto
-    .createHmac("sha256", "WebAppData")
-    .update(BOT_TOKEN)
-    .digest();
-
-  const calculatedHash = crypto
-    .createHmac("sha256", secretKey)
-    .update(dataCheckString)
-    .digest("hex");
-
-  const a = Buffer.from(hash, "hex");
-  const b = Buffer.from(calculatedHash, "hex");
-
-  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
-    throw new Error("Telegram authentication failed");
-  }
-
-  const user = JSON.parse(params.get("user") || "{}");
-
-  if (!user.id) throw new Error("Player not found");
-
-  return user;
-}
-
-async function auth(req, res, next) {
   try {
-    if (!databaseReady) {
-      return res.status(503).json({ error: "Database is starting" });
-    }
+    await client.query("BEGIN");
 
-    req.player = authenticate(req.headers["x-telegram-init-data"]);
+    await ensureBitcoinFarm(client, req.player.id);
 
-    await pool.query(
-      `INSERT INTO players (telegram_id, username)
-       VALUES ($1, $2)
-       ON CONFLICT (telegram_id)
-       DO UPDATE SET username = EXCLUDED.username`,
-      [req.player.id, req.player.username || null]
+    const mining = await accrueBitcoinFarm(
+      client,
+      req.player.id
     );
 
-    next();
-  } catch (error) {
-    console.error("Authentication error:", error.message);
-    res.status(401).json({ error: error.message });
-  }
-}
-
-function getMultiplier(player) {
-  const now = Date.now();
-
-  let timedMultiplier = 1;
-
-  if (
-    player.bonus_x2_until &&
-    new Date(player.bonus_x2_until).getTime() > now
-  ) {
-    timedMultiplier = Math.max(timedMultiplier, 2);
-  }
-
-  if (
-    player.bonus_x4_until &&
-    new Date(player.bonus_x4_until).getTime() > now
-  ) {
-    timedMultiplier = Math.max(timedMultiplier, 4);
-  }
-
-  const permanentMultiplier = player.x10_unlocked ? 10 : 1;
-
-  return timedMultiplier * permanentMultiplier;
-}
-
-function getBonusState(player) {
-  const now = Date.now();
-
-  const x2Until = player.bonus_x2_until
-    ? new Date(player.bonus_x2_until).getTime()
-    : 0;
-
-  const x4Until = player.bonus_x4_until
-    ? new Date(player.bonus_x4_until).getTime()
-    : 0;
-
-  return {
-    x2Active: x2Until > now,
-    x2Seconds: Math.max(0, Math.ceil((x2Until - now) / 1000)),
-    x4Active: x4Until > now,
-    x4Seconds: Math.max(0, Math.ceil((x4Until - now) / 1000)),
-    x10Unlocked: player.x10_unlocked
-  };
-}
-
-// =====================================================
-// API ПОСТОЯННЫХ УЛУЧШЕНИЙ КЛИКА
-// =====================================================
-
-// Получение списка улучшений и информации о покупках.
-
-app.get("/api/click-upgrades", auth, async (req, res) => {
-  try {
-    const result = await pool.query(
-      `SELECT upgrade_key
-       FROM player_click_upgrades
+    const farmResult = await client.query(
+      `SELECT farm_cash, btc_balance, last_accrued_at
+       FROM bitcoin_farm_players
        WHERE telegram_id = $1`,
       [req.player.id]
     );
 
-    const ownedKeys = result.rows.map(row => row.upgrade_key);
+    const equipmentResult = await client.query(
+      `SELECT id, equipment_key, equipment_name,
+              purchase_price, hourly_rate_sats, purchased_at
+       FROM bitcoin_farm_equipment
+       WHERE telegram_id = $1
+       ORDER BY purchased_at DESC`,
+      [req.player.id]
+    );
 
-    const upgradesList = clickUpgrades.map(upgrade => ({
-      ...upgrade,
-      owned: ownedKeys.includes(upgrade.key)
-    }));
+    await client.query("COMMIT");
+
+    const farm = farmResult.rows[0];
 
     res.json({
       success: true,
-      upgrades: upgradesList,
-      owned: ownedKeys
+      farmCash: Number(farm.farm_cash),
+      btcBalance: String(farm.btc_balance),
+      hourlyRate: mining.hourlyRate,
+      equipment: equipmentResult.rows.map(item => ({
+        id: Number(item.id),
+        key: item.equipment_key,
+        name: item.equipment_name,
+        price: Number(item.purchase_price),
+        hourlyRate: unitsToBtc(item.hourly_rate_sats),
+        purchasedAt: item.purchased_at
+      })),
+      catalog: btcEquipmentCatalog.map(item => ({
+        key: item.key,
+        name: item.name,
+        price: item.price,
+        hourlyRate: unitsToBtc(item.rate)
+      })),
+      exchangeRates: BTC_EXCHANGE_RATES
     });
   } catch (error) {
-    console.error("Click upgrades state error:", error);
+    await client.query("ROLLBACK");
+    console.error("Bitcoin farm state error:", error);
+
     res.status(500).json({
-      error: "Не удалось загрузить улучшения клика"
+      error: "Не удалось загрузить Bitcoin ферму"
     });
+  } finally {
+    client.release();
   }
 });
 
-// Покупка постоянного улучшения.
+// =====================================================
+// BITCOIN FARM: ПОКУПКА ОБОРУДОВАНИЯ
+// =====================================================
 
-app.post("/api/click-upgrades/buy", auth, async (req, res) => {
-  const key = req.body.key;
-  const upgrade = clickUpgrades.find(item => item.key === key);
+app.post("/api/bitcoin-farm/buy", auth, async (req, res) => {
+  const equipment = btcEquipmentCatalog.find(
+    item => item.key === req.body.key
+  );
 
-  if (!upgrade) {
+  if (!equipment) {
     return res.status(400).json({
-      error: "Такого улучшения не существует"
+      error: "Такого оборудования не существует"
     });
   }
 
@@ -884,11 +2098,123 @@ app.post("/api/click-upgrades/buy", auth, async (req, res) => {
   try {
     await client.query("BEGIN");
 
-    // Блокируем строку игрока, чтобы исключить
-    // одновременную повторную покупку.
+    await ensureBitcoinFarm(client, req.player.id);
+
+    await client.query(
+      `SELECT telegram_id
+       FROM bitcoin_farm_players
+       WHERE telegram_id = $1
+       FOR UPDATE`,
+      [req.player.id]
+    );
+
+    await accrueBitcoinFarm(client, req.player.id);
+
+    const farmResult = await client.query(
+      `SELECT farm_cash
+       FROM bitcoin_farm_players
+       WHERE telegram_id = $1`,
+      [req.player.id]
+    );
+
+    if (BigInt(farmResult.rows[0].farm_cash) < BigInt(equipment.price)) {
+      throw new Error("Недостаточно денег на счёте фермы");
+    }
+
+    await client.query(
+      `UPDATE bitcoin_farm_players
+       SET farm_cash = farm_cash - $1
+       WHERE telegram_id = $2`,
+      [equipment.price, req.player.id]
+    );
+
+    await client.query(
+      `INSERT INTO bitcoin_farm_equipment
+       (telegram_id, equipment_key, equipment_name,
+        purchase_price, hourly_rate_sats)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [
+        req.player.id,
+        equipment.key,
+        equipment.name,
+        equipment.price,
+        equipment.rate
+      ]
+    );
+
+    await client.query("COMMIT");
+
+    const updated = await pool.query(
+      `SELECT farm_cash
+       FROM bitcoin_farm_players
+       WHERE telegram_id = $1`,
+      [req.player.id]
+    );
+
+    res.json({
+      success: true,
+      message: "Оборудование успешно куплено",
+      farmCash: Number(updated.rows[0].farm_cash)
+    });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    res.status(400).json({ error: error.message });
+  } finally {
+    client.release();
+  }
+});
+
+// =====================================================
+// BITCOIN FARM: ОБМЕН BTC В ОСНОВНОЙ БАЛАНС
+// =====================================================
+
+app.post("/api/bitcoin-farm/exchange", auth, async (req, res) => {
+  const currency = req.body.currency;
+
+  if (currency !== "usd" && currency !== "gramm") {
+    return res.status(400).json({
+      error: "Выбери USD или GRAMM"
+    });
+  }
+
+  let amountUnits;
+
+  try {
+    amountUnits = btcToUnits(req.body.amountBtc);
+  } catch (error) {
+    return res.status(400).json({
+      error: error.message
+    });
+  }
+
+  if (amountUnits <= 0n) {
+    return res.status(400).json({
+      error: "Укажи положительное количество BTC"
+    });
+  }
+
+  const rate = BigInt(BTC_EXCHANGE_RATES[currency]);
+  const payout = (amountUnits * rate) / BTC_SCALE;
+
+  if (payout <= 0n) {
+    return res.status(400).json({
+      error: "Сумма обмена слишком мала"
+    });
+  }
+
+  // Обменивается ровно указанное пользователем количество BTC.
+  // Дробная часть игровой валюты отбрасывается вниз.
+
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    // Блокируем запись игрока, чтобы не было одновременных
+    // конфликтующих операций с его основным балансом.
 
     const playerResult = await client.query(
-      `SELECT balance
+      `SELECT balance, gramm_balance
        FROM players
        WHERE telegram_id = $1
        FOR UPDATE`,
@@ -899,965 +2225,82 @@ app.post("/api/click-upgrades/buy", auth, async (req, res) => {
       throw new Error("Игрок не найден");
     }
 
-    const alreadyBought = await client.query(
-      `SELECT id
-       FROM player_click_upgrades
-       WHERE telegram_id = $1 AND upgrade_key = $2`,
-      [req.player.id, key]
-    );
-
-    if (alreadyBought.rows.length) {
-      throw new Error("Это улучшение уже куплено");
-    }
-
-    if (BigInt(playerResult.rows[0].balance) < BigInt(upgrade.price)) {
-      throw new Error("Недостаточно долларов");
-    }
+    await ensureBitcoinFarm(client, req.player.id);
 
     await client.query(
-      `UPDATE players
-       SET balance = balance - $1
-       WHERE telegram_id = $2`,
-      [upgrade.price, req.player.id]
-    );
-
-    await client.query(
-      `INSERT INTO player_click_upgrades
-        (telegram_id, upgrade_key, amount)
-       VALUES ($1, $2, $3)`,
-      [req.player.id, upgrade.key, upgrade.amount]
-    );
-
-    const totalResult = await client.query(
-      `SELECT COALESCE(SUM(amount), 0)::text AS total
-       FROM player_click_upgrades
-       WHERE telegram_id = $1`,
-      [req.player.id]
-    );
-
-    const updatedPlayer = await client.query(
-      `SELECT balance
-       FROM players
-       WHERE telegram_id = $1`,
-      [req.player.id]
-    );
-
-    await client.query("COMMIT");
-
-    const clickUpgradeBonus = Number(totalResult.rows[0].total);
-
-    res.json({
-      success: true,
-      message: "Улучшение успешно куплено",
-      balance: Number(updatedPlayer.rows[0].balance),
-      purchased: upgrade.key,
-      clickUpgradeBonus,
-      clickBase: 1 + clickUpgradeBonus
-    });
-  } catch (error) {
-    await client.query("ROLLBACK");
-    res.status(400).json({ error: error.message });
-  } finally {
-    client.release();
-  }
-});
-
-// =====================================================
-// БИЗНЕС: ПАССИВНЫЙ ДОХОД
-// =====================================================
-
-async function accrueBusinessIncome(client, telegramId) {
-  const businesses = await client.query(
-    `SELECT id, hourly_income, last_accrued_at
-     FROM player_businesses
-     WHERE telegram_id = $1
-     FOR UPDATE`,
-    [telegramId]
-  );
-
-  const now = Date.now();
-  let totalIncome = 0n;
-
-  for (const business of businesses.rows) {
-    const lastTime = new Date(business.last_accrued_at).getTime();
-    const elapsedMs = BigInt(Math.max(0, now - lastTime));
-    const hourlyIncome = BigInt(business.hourly_income);
-
-    const earned = (elapsedMs * hourlyIncome) / 3600000n;
-
-    if (earned > 0n) {
-      const creditedMs = (earned * 3600000n) / hourlyIncome;
-      const newLastTime = new Date(
-        lastTime + Number(creditedMs)
-      );
-
-      await client.query(
-        `UPDATE player_businesses
-         SET last_accrued_at = $1
-         WHERE id = $2 AND telegram_id = $3`,
-        [newLastTime, business.id, telegramId]
-      );
-
-      totalIncome += earned;
-    }
-  }
-
-  if (totalIncome > 0n) {
-    await client.query(
-      `UPDATE players
-       SET business_balance = business_balance + $1
-       WHERE telegram_id = $2`,
-      [totalIncome.toString(), telegramId]
-    );
-
-    await trackBPTask(client, telegramId, "business_profit", 1);
-  }
-
-  return totalIncome.toString();
-}
-
-// =====================================================
-// СТАТУС СЕРВЕРА И КАТАЛОГИ
-// =====================================================
-
-app.get("/health", (req, res) => {
-  res.json({
-    status: "online",
-    game: "UGLY CLICKER 2.0",
-    database: databaseReady ? "connected" : "connecting"
-  });
-});
-
-app.get("/api/catalog", (req, res) => {
-  res.json(catalog);
-});
-
-app.get("/api/businesses/catalog", auth, (req, res) => {
-  res.json(businessCatalog);
-});
-
-// =====================================================
-// СОСТОЯНИЕ ИГРОКА
-// =====================================================
-
-app.get("/api/state", auth, async (req, res) => {
-  const client = await pool.connect();
-
-  try {
-    await client.query("BEGIN");
-
-    await client.query(
-      `SELECT telegram_id FROM players
-       WHERE telegram_id = $1 FOR UPDATE`,
-      [req.player.id]
-    );
-
-    await accrueBusinessIncome(client, req.player.id);
-
-    const player = await client.query(
-      `SELECT balance, gramm_balance, business_balance,
-              experience, level, last_daily,
-              bonus_x2_until, bonus_x4_until, x10_unlocked
-       FROM players WHERE telegram_id = $1`,
-      [req.player.id]
-    );
-
-    const inventory = await client.query(
-      `SELECT id, category, item_name, purchase_price, purchased_at
-       FROM inventory WHERE telegram_id = $1
-       ORDER BY purchased_at DESC`,
-      [req.player.id]
-    );
-
-    const businesses = await client.query(
-      `SELECT id, business_key, business_name,
-              purchase_price, hourly_income, purchased_at
-       FROM player_businesses
-       WHERE telegram_id = $1
-       ORDER BY purchased_at DESC`,
-      [req.player.id]
-    );
-
-    const income = await client.query(
-      `SELECT COALESCE(SUM(hourly_income), 0)::text AS total
-       FROM player_businesses
-       WHERE telegram_id = $1`,
-      [req.player.id]
-    );
-
-    // Сумма всех приобретённых улучшений клика.
-
-    const clickUpgradeResult = await client.query(
-      `SELECT
-         COALESCE(SUM(amount), 0)::text AS total,
-         COALESCE(
-           ARRAY_AGG(upgrade_key),
-           ARRAY[]::text[]
-         ) AS owned
-       FROM player_click_upgrades
-       WHERE telegram_id = $1`,
-      [req.player.id]
-    );
-
-    await client.query("COMMIT");
-
-    const p = player.rows[0];
-    const clickUpgradeBonus = Number(clickUpgradeResult.rows[0].total);
-    const clickBase = 1 + clickUpgradeBonus;
-    const multiplier = getMultiplier(p);
-
-    res.json({
-      balance: Number(p.balance),
-      grammBalance: Number(p.gramm_balance),
-      businessBalance: Number(p.business_balance),
-      businessIncomePerHour: Number(income.rows[0].total),
-      businesses: businesses.rows,
-      experience: Number(p.experience),
-      level: p.level,
-      lastDaily: p.last_daily,
-      inventory: inventory.rows,
-      bonuses: getBonusState(p),
-      multiplier,
-
-      // Новые данные улучшений клика.
-      clickUpgradeBonus,
-      clickBase,
-      clickReward: clickBase * multiplier,
-      ownedClickUpgrades: clickUpgradeResult.rows[0].owned
-    });
-  } catch (error) {
-    await client.query("ROLLBACK");
-    console.error("State error:", error);
-    res.status(500).json({ error: "Could not load game data" });
-  } finally {
-    client.release();
-  }
-});
-
-// =====================================================
-// ОСНОВНОЙ КЛИКЕР
-// =====================================================
-
-app.post("/api/click", auth, async (req, res) => {
-  const client = await pool.connect();
-
-  try {
-    await client.query("BEGIN");
-
-    const player = await client.query(
-      `SELECT balance, experience, level, bonus_x2_until,
-              bonus_x4_until, x10_unlocked
-       FROM players WHERE telegram_id = $1 FOR UPDATE`,
-      [req.player.id]
-    );
-
-    const p = player.rows[0];
-
-    // Получаем сумму всех постоянных улучшений.
-
-    const clickUpgradeResult = await client.query(
-      `SELECT COALESCE(SUM(amount), 0)::text AS total
-       FROM player_click_upgrades
-       WHERE telegram_id = $1`,
-      [req.player.id]
-    );
-
-    const clickUpgradeBonus = Number(clickUpgradeResult.rows[0].total);
-    const clickBase = 1 + clickUpgradeBonus;
-
-    // Сначала рассчитываем множитель,
-    // затем применяем его к общей сумме клика.
-
-    const multiplier = getMultiplier(p);
-    const clickReward = clickBase * multiplier;
-
-    const result = await client.query(
-      `UPDATE players
-       SET balance = balance + $1,
-           experience = experience + $1,
-           level = FLOOR((experience + $1) / 1000) + 1,
-           last_active = NOW()
-       WHERE telegram_id = $2
-       RETURNING balance, experience, level`,
-      [clickReward, req.player.id]
-    );
-
-    // Battle Pass учитывает фактически заработанные доллары.
-
-    await trackBPTask(
-      client,
-      req.player.id,
-      "click_dollars",
-      clickReward
-    );
-
-    await client.query("COMMIT");
-
-    res.json({
-      balance: Number(result.rows[0].balance),
-      experience: Number(result.rows[0].experience),
-      level: result.rows[0].level,
-      multiplier,
-      clickBase,
-      clickUpgradeBonus,
-      clickReward
-    });
-  } catch (error) {
-    await client.query("ROLLBACK");
-    console.error("Click error:", error);
-    res.status(500).json({ error: "Click failed" });
-  } finally {
-    client.release();
-  }
-});
-
-// =====================================================
-// GRAMM CLICKER
-// =====================================================
-
-app.post("/api/gramm/click", auth, async (req, res) => {
-  const client = await pool.connect();
-
-  try {
-    await client.query("BEGIN");
-
-    const player = await client.query(
-      `SELECT bonus_x2_until, bonus_x4_until, x10_unlocked
-       FROM players WHERE telegram_id = $1 FOR UPDATE`,
-      [req.player.id]
-    );
-
-    const multiplier = getMultiplier(player.rows[0]);
-
-    const result = await client.query(
-      `UPDATE players
-       SET gramm_balance = gramm_balance + $1,
-           last_active = NOW()
-       WHERE telegram_id = $2
-       RETURNING gramm_balance`,
-      [multiplier, req.player.id]
-    );
-
-    await trackBPTask(client, req.player.id, "gramm_50", 1);
-    await trackBPTask(client, req.player.id, "gramm_75", 1);
-    await trackBPTask(client, req.player.id, "gramm_100", 1);
-
-    await client.query("COMMIT");
-
-    res.json({
-      grammBalance: Number(result.rows[0].gramm_balance),
-      multiplier
-    });
-  } catch (error) {
-    await client.query("ROLLBACK");
-    console.error("GRAMM click error:", error);
-    res.status(500).json({ error: "GRAMM click failed" });
-  } finally {
-    client.release();
-  }
-});
-
-// =====================================================
-// ПОКУПКА СТАРЫХ УЛУЧШЕНИЙ x2, x4, x10
-// =====================================================
-
-app.post("/api/upgrades/buy", auth, async (req, res) => {
-  const { type } = req.body;
-  const upgrade = upgrades[type];
-
-  if (!upgrade) {
-    return res.status(400).json({ error: "Invalid upgrade" });
-  }
-
-  const client = await pool.connect();
-
-  try {
-    await client.query("BEGIN");
-
-    const result = await client.query(
-      `SELECT balance, bonus_x2_until, bonus_x4_until, x10_unlocked
-       FROM players WHERE telegram_id = $1 FOR UPDATE`,
-      [req.player.id]
-    );
-
-    const player = result.rows[0];
-
-    if (type === "x10" && player.x10_unlocked) {
-      throw new Error("Улучшение x10 уже куплено");
-    }
-
-    if (Number(player.balance) < upgrade.price) {
-      throw new Error("Недостаточно денег");
-    }
-
-    if (type === "x10") {
-      await client.query(
-        `UPDATE players
-         SET balance = balance - $1,
-             x10_unlocked = TRUE
-         WHERE telegram_id = $2`,
-        [upgrade.price, req.player.id]
-      );
-    } else {
-      const column = type === "x2"
-        ? "bonus_x2_until"
-        : "bonus_x4_until";
-
-      await client.query(
-        `UPDATE players
-         SET balance = balance - $1,
-             ${column} = GREATEST(
-               COALESCE(${column}, NOW()), NOW()
-             ) + INTERVAL '3 minutes'
-         WHERE telegram_id = $2`,
-        [upgrade.price, req.player.id]
-      );
-    }
-
-    await client.query("COMMIT");
-
-    const updated = await pool.query(
-      `SELECT balance, bonus_x2_until, bonus_x4_until, x10_unlocked
-       FROM players WHERE telegram_id = $1`,
-      [req.player.id]
-    );
-
-    res.json({
-      success: true,
-      balance: Number(updated.rows[0].balance),
-      bonuses: getBonusState(updated.rows[0]),
-      multiplier: getMultiplier(updated.rows[0])
-    });
-  } catch (error) {
-    await client.query("ROLLBACK");
-    res.status(400).json({ error: error.message });
-  } finally {
-    client.release();
-  }
-});
-
-// =====================================================
-// ОБМЕН ДОЛЛАРОВ И GRAMM
-// =====================================================
-
-app.post("/api/gramm/exchange", auth, async (req, res) => {
-  const { direction, amount } = req.body;
-  const value = Number(amount);
-
-  if (!Number.isSafeInteger(value) || value <= 0) {
-    return res.status(400).json({
-      error: "Укажи целое положительное число"
-    });
-  }
-
-  if (direction !== "toGramm" && direction !== "toDollars") {
-    return res.status(400).json({
-      error: "Неверное направление обмена"
-    });
-  }
-
-  const client = await pool.connect();
-
-  try {
-    await client.query("BEGIN");
-
-    const result = await client.query(
-      `SELECT balance, gramm_balance
-       FROM players WHERE telegram_id = $1 FOR UPDATE`,
-      [req.player.id]
-    );
-
-    const player = result.rows[0];
-
-    if (direction === "toGramm") {
-      const cost = value * 10;
-
-      if (!Number.isSafeInteger(cost) || Number(player.balance) < cost) {
-        throw new Error("Недостаточно долларов");
-      }
-
-      await client.query(
-        `UPDATE players
-         SET balance = balance - $1,
-             gramm_balance = gramm_balance + $2
-         WHERE telegram_id = $3`,
-        [cost, value, req.player.id]
-      );
-    } else {
-      if (Number(player.gramm_balance) < value) {
-        throw new Error("Недостаточно GRAMM");
-      }
-
-      const dollars = value * 10;
-
-      if (!Number.isSafeInteger(dollars)) {
-        throw new Error("Слишком большая сумма");
-      }
-
-      await client.query(
-        `UPDATE players
-         SET gramm_balance = gramm_balance - $1,
-             balance = balance + $2
-         WHERE telegram_id = $3`,
-        [value, dollars, req.player.id]
-      );
-    }
-
-    await client.query("COMMIT");
-
-    const updated = await pool.query(
-      `SELECT balance, gramm_balance
-       FROM players WHERE telegram_id = $1`,
-      [req.player.id]
-    );
-
-    res.json({
-      success: true,
-      balance: Number(updated.rows[0].balance),
-      grammBalance: Number(updated.rows[0].gramm_balance),
-      rate: 10
-    });
-  } catch (error) {
-    await client.query("ROLLBACK");
-    res.status(400).json({ error: error.message });
-  } finally {
-    client.release();
-  }
-});
-
-// =====================================================
-// ПОКУПКА БИЗНЕСА
-// =====================================================
-
-app.post("/api/businesses/buy", auth, async (req, res) => {
-  const { key } = req.body;
-  const business = businessCatalog.find(item => item.key === key);
-
-  if (!business) {
-    return res.status(400).json({ error: "Такого бизнеса нет" });
-  }
-
-  const client = await pool.connect();
-
-  try {
-    await client.query("BEGIN");
-
-    const player = await client.query(
-      `SELECT balance FROM players
-       WHERE telegram_id = $1 FOR UPDATE`,
-      [req.player.id]
-    );
-
-    await accrueBusinessIncome(client, req.player.id);
-
-    if (BigInt(player.rows[0].balance) < BigInt(business.price)) {
-      throw new Error("Недостаточно долларов для покупки");
-    }
-
-    await client.query(
-      `UPDATE players
-       SET balance = balance - $1
-       WHERE telegram_id = $2`,
-      [business.price, req.player.id]
-    );
-
-    await client.query(
-      `INSERT INTO player_businesses
-       (telegram_id, business_key, business_name,
-        purchase_price, hourly_income)
-       VALUES ($1, $2, $3, $4, $5)`,
-      [
-        req.player.id,
-        business.key,
-        business.name,
-        business.price,
-        business.income
-      ]
-    );
-
-    await client.query("COMMIT");
-
-    const updated = await pool.query(
-      `SELECT balance, business_balance
-       FROM players WHERE telegram_id = $1`,
-      [req.player.id]
-    );
-
-    res.json({
-      success: true,
-      message: "Бизнес успешно куплен",
-      balance: Number(updated.rows[0].balance),
-      businessBalance: Number(updated.rows[0].business_balance)
-    });
-  } catch (error) {
-    await client.query("ROLLBACK");
-    res.status(400).json({ error: error.message });
-  } finally {
-    client.release();
-  }
-});
-
-// =====================================================
-// ПРОДАЖА БИЗНЕСА
-// =====================================================
-
-app.post("/api/businesses/sell", auth, async (req, res) => {
-  const businessId = Number(req.body.businessId);
-
-  if (!Number.isSafeInteger(businessId) || businessId <= 0) {
-    return res.status(400).json({ error: "Неверный номер бизнеса" });
-  }
-
-  const client = await pool.connect();
-
-  try {
-    await client.query("BEGIN");
-
-    await client.query(
-      `SELECT telegram_id FROM players
-       WHERE telegram_id = $1 FOR UPDATE`,
-      [req.player.id]
-    );
-
-    await accrueBusinessIncome(client, req.player.id);
-
-    const result = await client.query(
-      `SELECT id, purchase_price, business_name
-       FROM player_businesses
-       WHERE id = $1 AND telegram_id = $2
-       FOR UPDATE`,
-      [businessId, req.player.id]
-    );
-
-    if (!result.rows.length) {
-      throw new Error("Бизнес не найден");
-    }
-
-    const business = result.rows[0];
-    const refund = (
-      BigInt(business.purchase_price) * 70n
-    ) / 100n;
-
-    await client.query(
-      `DELETE FROM player_businesses
-       WHERE id = $1 AND telegram_id = $2`,
-      [businessId, req.player.id]
-    );
-
-    await client.query(
-      `UPDATE players
-       SET balance = balance + $1
-       WHERE telegram_id = $2`,
-      [refund.toString(), req.player.id]
-    );
-
-    await client.query("COMMIT");
-
-    const updated = await pool.query(
-      `SELECT balance, business_balance
-       FROM players WHERE telegram_id = $1`,
-      [req.player.id]
-    );
-
-    res.json({
-      success: true,
-      businessName: business.business_name,
-      refund: Number(refund),
-      balance: Number(updated.rows[0].balance),
-      businessBalance: Number(updated.rows[0].business_balance)
-    });
-  } catch (error) {
-    await client.query("ROLLBACK");
-    res.status(400).json({ error: error.message });
-  } finally {
-    client.release();
-  }
-});
-
-// =====================================================
-// ВЫВОД С БИЗНЕС-СЧЁТА
-// =====================================================
-
-app.post("/api/businesses/withdraw", auth, async (req, res) => {
-  const { destination, amount } = req.body;
-  const value = Number(amount);
-
-  if (!Number.isSafeInteger(value) || value <= 0) {
-    return res.status(400).json({
-      error: "Укажи целую положительную сумму"
-    });
-  }
-
-  const toGramm =
-    destination === "gramm" || destination === "toGramm";
-
-  const toDollars =
-    destination === "usd" || destination === "toDollars";
-
-  if (!toGramm && !toDollars) {
-    return res.status(400).json({
-      error: "Неверное направление перевода"
-    });
-  }
-
-  if (toGramm && value % 10 !== 0) {
-    return res.status(400).json({
-      error: "Для перевода в GRAMM сумма должна делиться на 10"
-    });
-  }
-
-  const client = await pool.connect();
-
-  try {
-    await client.query("BEGIN");
-
-    await client.query(
-      `SELECT telegram_id FROM players
-       WHERE telegram_id = $1 FOR UPDATE`,
-      [req.player.id]
-    );
-
-    await accrueBusinessIncome(client, req.player.id);
-
-    const result = await client.query(
-      `SELECT balance, gramm_balance, business_balance
-       FROM players
+      `SELECT telegram_id
+       FROM bitcoin_farm_players
        WHERE telegram_id = $1
        FOR UPDATE`,
       [req.player.id]
     );
 
-    const player = result.rows[0];
-    const businessBalance = BigInt(player.business_balance);
+    await accrueBitcoinFarm(client, req.player.id);
 
-    if (businessBalance < BigInt(value)) {
-      throw new Error("Недостаточно денег на бизнес-счёте");
-    }
-
-    if (toDollars) {
-      await client.query(
-        `UPDATE players
-         SET business_balance = business_balance - $1,
-             balance = balance + $1
-         WHERE telegram_id = $2`,
-        [value, req.player.id]
-      );
-    } else {
-      const grammAmount = value / 10;
-
-      await client.query(
-        `UPDATE players
-         SET business_balance = business_balance - $1,
-             gramm_balance = gramm_balance + $2
-         WHERE telegram_id = $3`,
-        [value, grammAmount, req.player.id]
-      );
-    }
-
-    await client.query("COMMIT");
-
-    const updated = await pool.query(
-      `SELECT balance, gramm_balance, business_balance
-       FROM players WHERE telegram_id = $1`,
+    const farmResult = await client.query(
+      `SELECT btc_balance
+       FROM bitcoin_farm_players
+       WHERE telegram_id = $1`,
       [req.player.id]
     );
 
-    res.json({
-      success: true,
-      balance: Number(updated.rows[0].balance),
-      grammBalance: Number(updated.rows[0].gramm_balance),
-      businessBalance: Number(updated.rows[0].business_balance),
-      rate: 10
-    });
-  } catch (error) {
-    await client.query("ROLLBACK");
-    res.status(400).json({ error: error.message });
-  } finally {
-    client.release();
-  }
-});
-
-// =====================================================
-// ПОКУПКА ПРЕДМЕТОВ
-// =====================================================
-
-app.post("/api/shop/buy", auth, async (req, res) => {
-  const { category, index } = req.body;
-
-  if (
-    !catalog[category] ||
-    !Number.isInteger(index) ||
-    !catalog[category][index]
-  ) {
-    return res.status(400).json({ error: "Invalid item" });
-  }
-
-  const item = catalog[category][index];
-  const client = await pool.connect();
-
-  try {
-    await client.query("BEGIN");
-
-    const player = await client.query(
-      "SELECT balance FROM players WHERE telegram_id = $1 FOR UPDATE",
-      [req.player.id]
+    const availableUnits = btcToUnits(
+      String(farmResult.rows[0].btc_balance)
     );
 
-    if (!player.rows.length || Number(player.rows[0].balance) < item.price) {
-      throw new Error("Недостаточно денег");
+    if (availableUnits < amountUnits) {
+      throw new Error("Недостаточно Bitcoin");
     }
 
     await client.query(
-      "UPDATE players SET balance = balance - $1 WHERE telegram_id = $2",
-      [item.price, req.player.id]
+      `UPDATE bitcoin_farm_players
+       SET btc_balance = btc_balance - ($1::numeric / 1000000000000)
+       WHERE telegram_id = $2`,
+      [amountUnits.toString(), req.player.id]
     );
+
+    const column = currency === "usd"
+      ? "balance"
+      : "gramm_balance";
 
     await client.query(
-      `INSERT INTO inventory
-       (telegram_id, category, item_name, purchase_price)
-       VALUES ($1, $2, $3, $4)`,
-      [req.player.id, category, item.name, item.price]
-    );
-
-    await trackBPTask(client, req.player.id, "shop_purchase", 1);
-
-    await client.query("COMMIT");
-
-    const updated = await pool.query(
-      "SELECT balance FROM players WHERE telegram_id = $1",
-      [req.player.id]
-    );
-
-    res.json({
-      success: true,
-      balance: Number(updated.rows[0].balance)
-    });
-  } catch (error) {
-    await client.query("ROLLBACK");
-    res.status(400).json({ error: error.message });
-  } finally {
-    client.release();
-  }
-});
-
-// =====================================================
-// ПРОДАЖА ПРЕДМЕТОВ
-// =====================================================
-
-app.post("/api/shop/sell", auth, async (req, res) => {
-  const itemId = Number(req.body.itemId);
-
-  if (!Number.isSafeInteger(itemId) || itemId <= 0) {
-    return res.status(400).json({ error: "Invalid item" });
-  }
-
-  const client = await pool.connect();
-
-  try {
-    await client.query("BEGIN");
-
-    const item = await client.query(
-      `SELECT id, purchase_price FROM inventory
-       WHERE id = $1 AND telegram_id = $2 FOR UPDATE`,
-      [itemId, req.player.id]
-    );
-
-    if (!item.rows.length) {
-      throw new Error("Предмет не найден");
-    }
-
-    const refund = Math.floor(Number(item.rows[0].purchase_price) * 0.7);
-
-    await client.query(
-      "DELETE FROM inventory WHERE id = $1",
-      [itemId]
-    );
-
-    await client.query(
-      "UPDATE players SET balance = balance + $1 WHERE telegram_id = $2",
-      [refund, req.player.id]
-    );
-
-    await client.query("COMMIT");
-
-    const updated = await pool.query(
-      "SELECT balance FROM players WHERE telegram_id = $1",
-      [req.player.id]
-    );
-
-    res.json({
-      success: true,
-      refund,
-      balance: Number(updated.rows[0].balance)
-    });
-  } catch (error) {
-    await client.query("ROLLBACK");
-    res.status(400).json({ error: error.message });
-  } finally {
-    client.release();
-  }
-});
-
-// =====================================================
-// ЕЖЕДНЕВНАЯ НАГРАДА ИГРЫ
-// =====================================================
-
-app.post("/api/daily", auth, async (req, res) => {
-  const client = await pool.connect();
-
-  try {
-    await client.query("BEGIN");
-
-    const result = await client.query(
       `UPDATE players
-       SET balance = balance + 1000,
-           last_daily = CURRENT_DATE
-       WHERE telegram_id = $1
-         AND (last_daily IS NULL OR last_daily < CURRENT_DATE)
-       RETURNING balance`,
-      [req.player.id]
+       SET ${column} = ${column} + $1
+       WHERE telegram_id = $2`,
+      [payout.toString(), req.player.id]
     );
-
-    if (!result.rows.length) {
-      throw new Error("Ежедневная награда уже получена");
-    }
 
     await client.query("COMMIT");
 
+    const updatedPlayer = await pool.query(
+      `SELECT balance, gramm_balance
+       FROM players
+       WHERE telegram_id = $1`,
+      [req.player.id]
+    );
+
+    const updatedFarm = await pool.query(
+      `SELECT btc_balance
+       FROM bitcoin_farm_players
+       WHERE telegram_id = $1`,
+      [req.player.id]
+    );
+
     res.json({
       success: true,
-      reward: 1000,
-      balance: Number(result.rows[0].balance)
+      currency,
+      exchangedBtc: unitsToBtc(amountUnits),
+      received: payout.toString(),
+      btcBalance: String(updatedFarm.rows[0].btc_balance),
+      balance: String(updatedPlayer.rows[0].balance),
+      grammBalance: String(updatedPlayer.rows[0].gramm_balance),
+      exchangeRates: BTC_EXCHANGE_RATES
     });
   } catch (error) {
     await client.query("ROLLBACK");
     res.status(400).json({ error: error.message });
   } finally {
     client.release();
-  }
-});
-
-// =====================================================
-// РЕЙТИНГ ИГРОКОВ
-// =====================================================
-
-app.get("/api/leaderboard", async (req, res) => {
-  try {
-    if (!databaseReady) {
-      return res.status(503).json({ error: "Database is starting" });
-    }
-
-    const result = await pool.query(
-      `SELECT username, balance, level
-       FROM players
-       ORDER BY balance DESC
-       LIMIT 20`
-    );
-
-    res.json(result.rows);
-  } catch (error) {
-    console.error("Leaderboard error:", error);
-    res.status(500).json({ error: "Leaderboard failed" });
   }
 });
 
