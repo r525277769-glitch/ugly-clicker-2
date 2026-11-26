@@ -332,13 +332,44 @@ function animate() {
   for (const a of animated) {
     if (a.type === "idle") a.mesh.position.y = Math.sin(performance.now() * .0017 + a.phase) * .025;
     if(a.type==="character"){
- const npc=clubNPCs.find(n=>n.mesh===a.root),walk=a.isPlayer?moving:!!npc&&(npc.mode==="toSeat"||npc.mode==="toQueue");
- const speed=a.isPlayer?(moving?Math.max(.25,input.length)*3.65:0):(walk?1.35:0),stride=walk?Math.min(.62,speed*.2):0,phase=a.phase;
- a.phase=(a.phase+dt*(walk?speed*2.45:1.05))%(Math.PI*2);
- a.torsoPivot.position.y=1.12+(walk?Math.abs(Math.sin(phase*2))*.045:Math.sin(a.phase)*.006);
- a.torsoPivot.rotation.x=walk?.045:0;a.torsoPivot.rotation.z=walk?Math.sin(phase)*.035:0;
- a.limbs.forEach(l=>{const swing=Math.sin(phase+l.side*Math.PI),lift=Math.max(0,Math.cos(phase+l.side*Math.PI));const seated=!a.isPlayer&&npc?.mode==="play";l.leg.rotation.x=seated?-.95:swing*stride;l.calf.rotation.x=seated?1.05:walk?lift*.48:0;l.foot.rotation.x=seated?-.12:walk?-lift*.12:0;l.arm.rotation.x=seated?-.72:-swing*stride*.78;l.forearm.rotation.x=seated?-.42:walk?-.12-lift*.22:0;});
-}
+      const npc=clubNPCs.find(n=>n.mesh===a.root);
+      const walk=a.isPlayer?moving:!!npc&&(npc.mode==="toSeat"||npc.mode==="toQueue"||npc.mode==="exit");
+      const seated=!a.isPlayer&&npc?.mode==="play";
+      const speed=a.isPlayer?(moving?Math.max(.2,input.length)*3.65:0):(walk?1.5:0);
+      a.gaitWeight??=0;
+      const targetWeight=walk?1:0;
+      a.gaitWeight+=(targetWeight-a.gaitWeight)*(1-Math.exp(-dt*(walk?11:8)));
+      const weight=a.gaitWeight;
+      // A full stride cycle follows actual movement speed; limbs ease into and out of motion.
+      if(weight>.001)a.phase=(a.phase+dt*Math.max(0.1,speed)*2.65)%(Math.PI*2);
+      const phase=a.phase,cycle=Math.sin(phase),opposite=Math.sin(phase+Math.PI);
+      const bob=Math.abs(Math.sin(phase*2))*.038*weight;
+      a.torsoPivot.position.y=1.12+bob+(1-weight)*Math.sin(performance.now()*.0017+a.phase)*.004;
+      a.torsoPivot.rotation.x=.035*weight;
+      a.torsoPivot.rotation.z=Math.sin(phase)*.025*weight;
+      a.torsoPivot.rotation.y=Math.sin(phase)*.018*weight;
+      a.limbs.forEach(l=>{
+        const legWave=l.side<0?cycle:opposite;
+        const armWave=-legWave;
+        const lift=Math.max(0,Math.cos(phase+(l.side<0?0:Math.PI)));
+        if(seated){
+          l.leg.rotation.x+=( -.88-l.leg.rotation.x )*(1-Math.exp(-dt*8));
+          l.calf.rotation.x+=( .98-l.calf.rotation.x )*(1-Math.exp(-dt*8));
+          l.foot.rotation.x+=( -.08-l.foot.rotation.x )*(1-Math.exp(-dt*8));
+          l.arm.rotation.x+=( -.68-l.arm.rotation.x )*(1-Math.exp(-dt*8));
+          l.forearm.rotation.x+=( -.38-l.forearm.rotation.x )*(1-Math.exp(-dt*8));
+        }else{
+          const stride=legWave*.48*weight;
+          const calfBend=lift*.58*weight;
+          const armSwing=armWave*.38*weight;
+          l.leg.rotation.x+=(stride-l.leg.rotation.x)*(1-Math.exp(-dt*14));
+          l.calf.rotation.x+=(calfBend-l.calf.rotation.x)*(1-Math.exp(-dt*14));
+          l.foot.rotation.x+=(-calfBend*.28-l.foot.rotation.x)*(1-Math.exp(-dt*14));
+          l.arm.rotation.x+=(armSwing-l.arm.rotation.x)*(1-Math.exp(-dt*12));
+          l.forearm.rotation.x+=(-.08*weight-l.forearm.rotation.x)*(1-Math.exp(-dt*12));
+        }
+      });
+    }
   }
   const now = performance.now();
   for (const npc of clubNPCs) {
