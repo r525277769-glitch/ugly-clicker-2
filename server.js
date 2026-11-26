@@ -2423,6 +2423,8 @@ app.post("/api/simulator/action",auth,async(req,res)=>{
    st.components[key]=next;st.tier=clubStationLevel(st);
    await c.query("UPDATE ugly_simulator_players SET shop_cash=shop_cash-$1,club_data=$2::jsonb,shop_xp=shop_xp+12 WHERE telegram_id=$3",[price,JSON.stringify(d),req.player.id]);
    msg="Компонент ПК №"+(i+1)+" улучшен до уровня "+next;
+  }else if(a==="expand_room"){
+   const level=Number(d.roomLevel||0),prices=[12000,25000,50000];if(level>=3)throw Error("Зал уже расширен до максимального размера");const price=prices[level];if(s.cash<price)throw Error("Нужно $"+price.toLocaleString("ru-RU")+" для расширения зала");d.roomLevel=level+1;await c.query("UPDATE ugly_simulator_players SET shop_cash=shop_cash-$1,club_data=$2::jsonb,shop_xp=shop_xp+60 WHERE telegram_id=$3",[price,JSON.stringify(d),req.player.id]);msg="Зал расширен! Появилось больше пространства для клуба.";
   }else if(a==="advertise"){
    const price=500*(d.adLevel+1);
    if(d.adLevel>=10)throw Error("Реклама максимального уровня");
