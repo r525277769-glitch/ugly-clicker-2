@@ -247,9 +247,7 @@ input::placeholder{color:#53765e}
 .hud-warning-panel h2{color:#ff8490!important}.hud-warning-list{display:grid;gap:7px}.hud-warning-item{display:flex;gap:9px;align-items:flex-start;text-align:left;padding:10px;border:1px solid #853943;border-radius:10px;background:linear-gradient(120deg,#35151b,#160b0e);color:#ffd2d6;font-size:10px}.hud-warning-item b{white-space:nowrap;color:#ff8793}.hud-warning-item span{overflow-wrap:anywhere}
 .toast.error{border-color:#ff5367!important;color:#ffd2d6!important;background:linear-gradient(145deg,#3b151d,#16090d)!important;box-shadow:0 0 20px #ff334422,0 8px 28px #000d!important;animation:toastIn .25s ease both,hudWarningPulse 1.1s ease 2}
 @keyframes hudWarningPulse{0%,100%{box-shadow:0 0 0 #ff334400,0 8px 28px #000d}50%{box-shadow:0 0 22px #ff334455,0 8px 28px #000d}}
-.hud-money-delta{display:inline-block;margin-left:6px;color:#70ff9e;font-size:10px;font-weight:1000;vertical-align:middle;white-space:nowrap;text-shadow:0 0 10px #39ff76;animation:hudMoneyPop 1s ease forwards}
-.hud-money-delta.negative{color:#ff7b89;text-shadow:0 0 10px #ff5367}
-@keyframes hudMoneyPop{0%{opacity:0;transform:translateY(8px) scale(.8)}18%{opacity:1;transform:translateY(0) scale(1.05)}75%{opacity:1}100%{opacity:0;transform:translateY(-13px) scale(.95)}}
+18%{opacity:1;transform:translateY(0) scale(1.05)}75%{opacity:1}100%{opacity:0;transform:translateY(-13px) scale(.95)}}
 body.hud-scan-active:after{content:"";position:fixed;inset:0;z-index:900;pointer-events:none;background:linear-gradient(180deg,transparent 0%,rgba(75,255,133,0) 43%,rgba(75,255,133,.18) 50%,rgba(75,255,133,0) 57%,transparent 100%);background-size:100% 220%;animation:hudScanSweep .62s ease-out forwards}
 @keyframes hudScanSweep{from{background-position:0 100%}to{background-position:0 0}}
 .page.hud-glitch-enter{animation:hudGlitchIn .42s steps(2,end) both!important}
@@ -335,4 +333,64 @@ input,select,textarea{width:100%;min-width:0}
 }
 @media(prefers-reduced-motion:reduce){
  #hudTransitionOverlay.is-running,.hud-scan-beam,.page.hud-glitch-enter{animation:none!important}
+}
+
+
+/* FINAL RESPONSIVE LAYOUT + SOFT, CLEAN PAGE TRANSITIONS */
+html,body{max-width:100%;overscroll-behavior-x:none}
+body{min-height:100vh;min-height:100dvh}
+#app{width:100%;max-width:980px;padding-left:clamp(10px,2.4vw,24px);padding-right:clamp(10px,2.4vw,24px)}
+.page{width:100%;min-width:0}
+.page.active{animation:responsivePageEnter .22s ease-out both}
+@keyframes responsivePageEnter{from{opacity:.88}to{opacity:1}}
+/* Keep the transition restrained: no screen shake, hue shifts or harsh glitch bars. */
+.page.hud-glitch-enter{animation:responsivePageEnter .22s ease-out both!important;filter:none!important;transform:none!important}
+#hudTransitionOverlay{background:transparent!important}
+#hudTransitionOverlay.is-running{animation:none!important}
+#hudTransitionOverlay .hud-glitch-bars{display:none!important}
+.hud-scan-beam{height:8%!important;top:-8%;background:linear-gradient(180deg,transparent,rgba(72,255,132,.025) 35%,rgba(72,255,132,.12) 50%,rgba(72,255,132,.025) 65%,transparent)!important;box-shadow:0 0 12px rgba(72,255,132,.06)!important}
+#hudTransitionOverlay.is-running .hud-scan-beam{animation:hudOverlayScan .48s ease-out both!important}
+@keyframes hudOverlayScan{0%{top:-8%;opacity:0}18%{opacity:.55}100%{top:105%;opacity:0}}
+/* Content, cards and media must shrink inside every viewport without horizontal scrolling. */
+#app,#app *{box-sizing:border-box}
+#app img,#app video,#app canvas,#app iframe{max-width:100%}
+#app .panel,#app .business-card,#app .click-upgrade-card,#app .farm-equipment,#app .bp-task,#app .bp-reward,#app .re-card,#app .resale-product-card,#app .simulator-card{min-width:0;max-width:100%}
+#app button,#app input,#app select,#app textarea{max-width:100%;min-width:0}
+#app .balance-grid,#app .re-stats,#app .re-finance,#app .hud-profile-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+.bottom-nav{width:100%;max-width:980px;left:50%;transform:translateX(-50%);padding-left:max(6px,env(safe-area-inset-left));padding-right:max(6px,env(safe-area-inset-right))}
+@media(min-width:700px){
+ #app{max-width:980px}
+ .bottom-nav{max-width:980px}
+ .simulator-cards,.re-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:520px){
+ #app{padding-left:10px;padding-right:10px}
+ .top-header{padding-top:12px;gap:7px}
+ .balance-grid{gap:7px}
+ .balance-card{padding:9px}
+ .balance-value{font-size:clamp(14px,4.2vw,20px);overflow-wrap:anywhere}
+ .player-info{gap:7px;padding:10px}
+ .clicker-hero{padding:18px 10px}
+ .coin{width:clamp(132px,43vw,178px);height:clamp(132px,43vw,178px);font-size:clamp(46px,14vw,60px)}
+ .panel{padding:clamp(10px,3vw,14px)}
+ .bottom-nav{grid-template-columns:repeat(6,minmax(0,1fr));gap:2px}
+ .nav-button{font-size:clamp(6px,1.8vw,8px);padding:7px 1px;letter-spacing:0}
+ .nav-icon{font-size:clamp(14px,4vw,18px)}
+ .simulator-cards{grid-template-columns:minmax(0,1fr)}
+}
+@media(max-width:360px){
+ .balance-grid,.re-stats,.re-finance,.hud-profile-grid{grid-template-columns:minmax(0,1fr)}
+ .bp-columns{grid-template-columns:minmax(0,1fr)}
+ .sim-component-grid{grid-template-columns:minmax(0,1fr)!important}
+}
+@media(orientation:landscape) and (max-height:520px){
+ body{padding-bottom:calc(68px + env(safe-area-inset-bottom))}
+ .bottom-nav{padding-top:4px;padding-bottom:calc(4px + env(safe-area-inset-bottom))}
+ .nav-button{padding:4px 1px;gap:2px}
+ .nav-icon{font-size:14px}
+ .top-header{padding-top:7px;padding-bottom:7px}
+ .coin{width:clamp(110px,25vh,160px);height:clamp(110px,25vh,160px);margin:12px auto}
+}
+@media(prefers-reduced-motion:reduce){
+ .page.active,.page.hud-glitch-enter,#hudTransitionOverlay.is-running .hud-scan-beam{animation:none!important}
 }
