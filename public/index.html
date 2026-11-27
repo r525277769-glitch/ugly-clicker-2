@@ -300,6 +300,6 @@ setInterval(()=>{const b=state.bonuses;if(!b)return;if(b.x2Seconds>0)b.x2Seconds
 setInterval(async()=>{if(!initData||document.visibilityState==="hidden")return;try{await loadState();}catch(error){console.warn("State synchronization:",error);}},30000);
 setInterval(async()=>{if(!initData||document.visibilityState==="hidden")return;try{await loadBitcoinFarm();}catch(error){console.warn("Farm synchronization:",error);}},60000);
 </script>
-<script type="module" src="/ugly-business.js?v=multi-simulator-1"></script>
+<script type="module" src="/ugly-business.js?v=multi-simulator-fix-1"></script>
 </body>
 </html>
