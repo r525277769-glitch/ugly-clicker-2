@@ -57,7 +57,7 @@ function canvasTexture(draw, width = 512, height = 256) {
   const ctx = c.getContext("2d"); draw(ctx, width, height);
   const texture = new THREE.CanvasTexture(c);
   texture.colorSpace = THREE.SRGBColorSpace;
-  texture.anisotropy = renderer?.capabilities?.getMaxAnisotropy?.() || 4;
+  texture.anisotropy = Math.min(16,renderer?.capabilities?.getMaxAnisotropy?.() || 4);
   return texture;
 }
 function studioEnvironmentTexture() {
@@ -157,7 +157,7 @@ function surfaceTexture(kind) {
   },1024,1024);
   texture.wrapS=texture.wrapT=THREE.RepeatWrapping;
   texture.repeat.set(kind==="floor"?2.5:kind==="wall"?1.35:1,kind==="floor"?2.5:kind==="wall"?1.35:1);
-  texture.anisotropy=renderer?.capabilities?.getMaxAnisotropy?.()||8;
+  texture.anisotropy=Math.min(16,renderer?.capabilities?.getMaxAnisotropy?.()||8);
   surfaceMaps[kind]=texture;return texture;
 }
 function surfaceMat(color,kind,roughness=.65,metalness=0,extra={}) {
@@ -247,21 +247,41 @@ function makePerson(x,z,shirt,isPlayer=false,variant=0){
 function makeGamingPC(parent,x,y,z,tier=1,cpuTier=1,ramTier=1){
  const g=new THREE.Group();g.position.set(x,y,z);parent.add(g);
  const colors=["#202d3d","#15506d","#17634e","#56377c"],lights=["#27c8ff","#7c69ff","#35f0c0","#ffbf45"],emissives=["#0877a8","#3820a1","#087b55","#9c5700"],idx=clamp((tier||1)-1,0,3);
- const glow=mat(lights[idx],.24,.15,{emissive:emissives[idx],emissiveIntensity:1.55});
- box(g,.46,.68,.43,0,.36,0,surfaceMat(colors[idx],"plastic",.28,.48),true);
- box(g,.012,.57,.35,.237,.37,0,mat("#7892a9",.2,.35,{transparent:true,opacity:.72}),false);box(g,.018,.57,.35,.245,.37,0,glow,false);
- for(let i=0;i<3;i++){const fan=cylinder(g,.078,.078,.022,0,.56-i*.19,-.224,glow,24);fan.rotation.x=Math.PI/2;const hub=cylinder(g,.025,.025,.026,0,.56-i*.19,-.24,mat("#d9f7ff",.2,.45),16);hub.rotation.x=Math.PI/2;}
- box(g,.31,.025,.018,0,.69,-.225,mat("#d8eaff",.22,.35),false);box(g,.12,.035,.025,.14,.69,-.23,glow,false);
- for(let i=0;i<4;i++)box(g,.025,.19,.012,-.14+i*.045,.36,.219,mat("#9fb3c8",.3,.65),false);
+ const shell=surfaceMat(colors[idx],"plastic",.24,.58),dark=mat("#080e18",.22,.72),glass=mat("#7898b8",.12,.42,{transparent:true,opacity:.22,metalness:.42});
+ const glow=mat(lights[idx],.2,.22,{emissive:emissives[idx],emissiveIntensity:1.35});
+ // Premium tower chassis with glass side panel, machined trim and separated front intake.
+ box(g,.52,.76,.48,0,.39,0,shell);
+ box(g,.012,.65,.405,.267,.4,0,glass,false);
+ box(g,.018,.67,.42,.277,.4,0,mat(lights[idx],.2,.35,{emissive:emissives[idx],emissiveIntensity:.18}),false);
+ box(g,.018,.66,.018,.285,.4,-.205,mat("#b9d1e5",.22,.78),false);
+ for(let i=0;i<4;i++)box(g,.018,.09,.018,.285,.12+i*.18,.205,mat("#a9bacb",.22,.75),false);
+ // Three individually framed RGB intake fans.
+ for(let i=0;i<3;i++){
+  const yy=.61-i*.205;
+  const ring=cylinder(g,.092,.092,.018,0,yy,-.252,mat("#0b1422",.22,.7),32);ring.rotation.x=Math.PI/2;
+  const torus=new THREE.Mesh(new THREE.TorusGeometry(.071,.009,8,32),glow);torus.position.set(0,yy,-.267);torus.rotation.x=0;g.add(torus);
+  const fan=cylinder(g,.055,.055,.012,0,yy,-.27,mat("#182b40",.26,.55),24);fan.rotation.x=Math.PI/2;
+  for(let b=0;b<7;b++){const blade=box(g,.012,.055,.008,Math.cos(b*Math.PI*2/7)*.027,yy+Math.sin(b*Math.PI*2/7)*.027,-.28,mat("#9bb2c8",.3,.68),false);blade.rotation.z=b*Math.PI*2/7;}
+  sphere(g,.018,0,yy,-.289,mat("#eaf8ff",.18,.65),16,12);
+ }
+ // Interior motherboard, GPU, memory and cooling hardware visible through the glass.
+ box(g,.025,.48,.31,.225,.39,.015,mat("#142b35",.32,.65),false);
  const cpuIndex=clamp(cpuTier,1,4)-1,ramIndex=clamp(ramTier,1,4)-1;
  const partColors=["#ffbd45","#24cfff","#42e6a5","#bf82ff"],partEmits=["#704000","#00618a","#087a4d","#4a1a83"];
- const cpuGlow=mat(partColors[cpuIndex],.24,.2,{emissive:partEmits[cpuIndex],emissiveIntensity:.35+cpuTier*.15});
- const ramGlow=mat(partColors[ramIndex],.24,.2,{emissive:partEmits[ramIndex],emissiveIntensity:.35+ramTier*.15});
- box(g,.055,.22,.018,.14,.36,-.225,cpuGlow,false);box(g,.07,.24,.012,.14,.36,-.238,surfaceMat("#25374a","metal",.38,.72),false);
- for(let i=0;i<Math.min(4,ramTier);i++)box(g,.035,.16,.018,-.12+i*.07,.35,-.226,ramGlow,false);
+ box(g,.045,.18,.11,.245,.43,-.075,mat("#a6b5c5",.24,.82),false);
+ box(g,.052,.13,.08,.245,.43,-.075,mat(partColors[cpuIndex],.22,.45,{emissive:partEmits[cpuIndex],emissiveIntensity:.65}),false);
+ for(let i=0;i<Math.min(4,ramTier);i++){box(g,.018,.24,.035,.245,.37,.095+i*.047,mat(partColors[ramIndex],.22,.48,{emissive:partEmits[ramIndex],emissiveIntensity:.75}),false);box(g,.022,.018,.038,.245,.25,.095+i*.047,mat("#d7e1eb",.22,.8),false);}
+ // Graphics card with dual fans and support bracket.
+ box(g,.045,.105,.31,.245,.24,-.055,mat("#25374a",.24,.78),false);
+ for(let i=0;i<2;i++){const fan=new THREE.Mesh(new THREE.TorusGeometry(.039,.006,6,24),glow);fan.position.set(.273,.24,-.13+i*.15);g.add(fan);cylinder(g,.012,.012,.012,.273,.24,-.13+i*.15,mat("#dbe8f2",.2,.75),12);}
+ box(g,.02,.16,.31,.285,.24,-.055,mat("#a9b9c8",.22,.82),false);
+ // Top I/O, vents and rubber feet.
+ box(g,.27,.018,.16,0,.78,.02,mat("#101b2a",.3,.5),false);
+ for(let i=0;i<8;i++)box(g,.012,.012,.11,-.12+i*.034,.794,.02,mat("#6e8298",.28,.7),false);
+ for(const xx of [-.17,.17])for(const zz of [-.16,.16])cylinder(g,.035,.035,.035,xx,.02,zz,mat("#0a1018",.62,.1),16);
+ const badge=mat("#d7e8f8",.24,.65,{emissive:lights[idx],emissiveIntensity:.35});box(g,.12,.025,.012,0,.71,-.247,badge,false);
  return g;
-}
-function makeGamingStation(x,z,index,data){
+}function makeGamingStation(x,z,index,data){
  const g=new THREE.Group();g.position.set(x,0,z);scene.add(g);
  const c=data.components||{},levels=Object.values(c).map(Number).filter(v=>v>0),tier=levels.length?Math.min(4,...levels):Math.max(1,Number(data.tier)||1);
  const gpu=clamp(Number(c.gpu)||tier,1,4),cpu=clamp(Number(c.cpu)||tier,1,4),ram=clamp(Number(c.ram)||tier,1,4),monitor=clamp(Number(c.monitor)||tier,1,4),keyboard=clamp(Number(c.keyboard)||tier,1,4),mouse=clamp(Number(c.mouse)||tier,1,4),chairLevel=clamp(Number(c.chair)||tier,1,4),deskLevel=clamp(Number(c.desk)||tier,1,4);
@@ -282,8 +302,14 @@ function makeGamingStation(x,z,index,data){
  const rgbLight=new THREE.PointLight(palette[gpu-1],1.8,2.2,2);rgbLight.position.set(x+.78,1.35,z-.32);scene.add(rgbLight);
  const chair=new THREE.Group();chair.position.set(0,0,1.05);g.add(chair);const chairMat=surfaceMat(["#222d3c","#173e58","#174b3b","#3e2b58"][chairLevel-1],"fabric",.82,.02);
  cylinder(chair,.065,.075,.48,0,.28,0,mat("#71849a",.25,.6),14);cylinder(chair,.42,.42,.1,0,.07,0,surfaceMat("#182332","plastic",.42,.2),24);
- box(chair,.65,.65,.17,0,.72,.12,chairMat);box(chair,.5,.12,.18,0,1.1,.1,trim,false);
- for(const sx of [-1,1]){box(chair,.08,.38,.48,sx*.37,.48,.02,chairMat,false);box(chair,.1,.08,.34,sx*.37,.67,.02,trim,false);}
+ box(chair,.68,.72,.19,0,.76,.12,chairMat);
+ box(chair,.52,.20,.205,0,.78,.025,surfaceMat("#34465d","fabric",.9,.02),false);
+ box(chair,.48,.22,.21,0,1.12,.105,chairMat,false);
+ box(chair,.3,.12,.22,0,1.42,.12,chairMat,false);
+ box(chair,.22,.035,.225,0,1.43,.005,trim,false);
+ for(const yy of [.55,.82,1.08])box(chair,.48,.018,.012,0,yy,.225,mat("#8195a9",.72,.12),false);
+ for(const sx of [-1,1]){box(chair,.09,.4,.5,sx*.39,.52,.02,chairMat,false);box(chair,.12,.07,.37,sx*.39,.72,.02,trim,false);box(chair,.035,.32,.035,sx*.39,.47,.22,mat("#8295aa",.28,.72),false);}
+ for(let i=0;i<5;i++){const spoke=new THREE.Group();spoke.rotation.y=i*Math.PI*2/5;spoke.position.set(0,.06,0);chair.add(spoke);box(spoke,.055,.045,.38,0,0,.22,mat("#8295aa",.24,.82),false);const wheel=cylinder(spoke,.055,.055,.09,0,-.04,.42,mat("#111821",.42,.18),16);wheel.rotation.z=Math.PI/2;}
  makeLabel(g,"PC "+String(index+1).padStart(2,"0"),0,2.15,-.4,1.3,.3);g.userData={index,tier,components:{gpu,cpu,ram,monitor,keyboard,mouse,chair:chairLevel,desk:deskLevel}};stationGroups.push(g);
  const keys=["gpu","cpu","ram","monitor","keyboard","mouse","chair","desk"],names=["Видеокарта","Процессор","ОЗУ","Монитор","Клавиатура","Мышь","Кресло","Стол"];
  keys.forEach((key,k)=>interactables.push({position:new THREE.Vector3(x+((k%4)-1.5)*.3,0,z+1.15+Math.floor(k/4)*.28),name:names[k],hint:"Улучшение компонента ПК · "+names[k],action:"upgrade_component",station:index,component:key,radius:1.9}));
@@ -345,7 +371,7 @@ function buildStore(){
  // Ultra Graphics lighting: soft neutral fill, warm key light and cool cinematic rim.
  scene.add(new THREE.AmbientLight("#9aabc5",.48));
  scene.add(new THREE.HemisphereLight("#d7eaff","#25283a",1.35));
- const key=new THREE.DirectionalLight("#fff0d8",3.35);key.position.set(-7,13,8);key.castShadow=true;key.shadow.mapSize.set(2048,2048);key.shadow.bias=-.00008;key.shadow.normalBias=.02;key.shadow.radius=4;key.shadow.camera.left=-19;key.shadow.camera.right=19;key.shadow.camera.top=19;key.shadow.camera.bottom=-19;key.shadow.camera.near=.5;key.shadow.camera.far=42;scene.add(key);
+ const key=new THREE.DirectionalLight("#fff0d8",3.35);key.position.set(-7,13,8);key.castShadow=true;key.shadow.mapSize.set(4096,4096);key.shadow.bias=-.00008;key.shadow.normalBias=.02;key.shadow.radius=4;key.shadow.camera.left=-19;key.shadow.camera.right=19;key.shadow.camera.top=19;key.shadow.camera.bottom=-19;key.shadow.camera.near=.5;key.shadow.camera.far=42;scene.add(key);
  const rim=new THREE.DirectionalLight("#83bfff",1.05);rim.position.set(9,8,-10);scene.add(rim);
  for(const [color,intensity,pos] of [["#21cfff",27,[-5,3,-4]],["#9c4dff",24,[6,3,2]],["#ff4e9b",14,[0,3,7]]]){const l=new THREE.PointLight(color,intensity,19,2);l.position.set(...pos);scene.add(l);}
  const roomSize=18+Number(state.clubData.roomLevel||0)*4,roomHalf=roomSize/2;
@@ -846,8 +872,10 @@ window.initUglyBusiness = async function() {
     const canvas = $("uglyBusinessCanvas");
     renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: "high-performance", stencil: false, depth: true });
     const compactScreen = window.matchMedia?.("(max-width: 700px)").matches || /iPhone|Android/i.test(navigator.userAgent);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, compactScreen ? 1.5 : 2));
+    // Render at device-native resolution (up to 2.5x) for crisp 1080p-class output.
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, compactScreen ? 2 : 2.5));
     renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.info.autoReset = true;
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.18;
     renderer.setClearColor("#111a29", 1);
