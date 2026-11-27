@@ -815,6 +815,7 @@ async function loadState() {
     Object.assign(state, data.state || {}); updateHUD();
   } catch (error) { $("simHint").textContent = error.message; }
 }
+async function runClubUpgrade(button,action,extra){if(actionBusy||!button||button.disabled)return;const panel=button.closest("#simUpgradePanel,#simConsoleUpgradePanel");if(panel){panel.classList.add("is-upgrading");panel.querySelectorAll("button").forEach(b=>b.disabled=true);}try{await doAction(action,extra);}finally{if(panel){panel.classList.remove("is-upgrading");renderClubPanels();}}}
 async function doAction(action,extra={}){if(actionBusy)return;actionBusy=true;$("simAction").disabled=true;try{const d=await api("/api/simulator/action",{method:"POST",body:JSON.stringify({action,...extra})});Object.assign(state,d.state||{});updateHUD();if(["expand_room","expand_console_room","upgrade_component","buy_station","upgrade_console_component","buy_console_station"].includes(action)&&scene)rebuildClubScene();if(action==="start_session")closeReception();toast(d.message||"Готово");$("simHint").textContent=d.message||"Готово";}catch(e){toast(e.message,"error");}finally{actionBusy=false;$("simAction").disabled=!activeObject;}}
 function joystickPoint(event) {
   const dx = event.clientX - joyCenter.x, dy = event.clientY - joyCenter.y;
@@ -868,8 +869,8 @@ function bindControls() {
   $("simReceptionConfirm")?.addEventListener("click",()=>{const select=$("simReceptionStation");if(receptionGuestId&&select?.value!==""){const isConsole=String(select.value).startsWith("console:");doAction("start_session",{queueId:receptionGuestId,station:isConsole?select.value:Number(select.value),duration:receptionDuration,minutes:Number($("simConsoleMinutes")?.value||4),expectedReward:Number(select.selectedOptions[0]?.dataset.reward||0)});}});
   $("simTapButton")?.addEventListener("click",tapClub);
   $("simQueue")?.addEventListener("click",event=>{const b=event.target.closest("[data-confirm-guest]");if(!b)return;const id=b.dataset.confirmGuest,sel=$("simQueue").querySelector('[data-station-for="'+id+'"]');if(sel)doAction("start_session",{queueId:id,station:Number(sel.value)});});
-  $("simUpgradePanel")?.addEventListener("click",event=>{const b=event.target.closest("[data-upgrade-component]");if(!b)return;doAction("upgrade_component",{station:Number(b.dataset.upgradeStation),component:b.dataset.upgradeComponent});});
-  $("simConsoleUpgradePanel")?.addEventListener("click",event=>{const b=event.target.closest("[data-console-upgrade-component]");if(!b)return;doAction("upgrade_console_component",{station:Number(b.dataset.consoleUpgradeStation),component:b.dataset.consoleUpgradeComponent});});
+  $("simUpgradePanel")?.addEventListener("click",event=>{const b=event.target.closest("[data-upgrade-component]");if(!b||actionBusy||b.disabled)return;runClubUpgrade(b,"upgrade_component",{station:Number(b.dataset.upgradeStation),component:b.dataset.upgradeComponent});});
+  $("simConsoleUpgradePanel")?.addEventListener("click",event=>{const b=event.target.closest("[data-console-upgrade-component]");if(!b||actionBusy||b.disabled)return;runClubUpgrade(b,"upgrade_console_component",{station:Number(b.dataset.consoleUpgradeStation),component:b.dataset.consoleUpgradeComponent});});
   $("simBuyConsoleStation")?.addEventListener("click",()=>doAction("buy_console_station"));
   $("simBuyStation")?.addEventListener("click",()=>doAction("buy_station"));
   $("simHireAdmin")?.addEventListener("click",()=>doAction("buy_admin"));
