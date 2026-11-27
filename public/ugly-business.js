@@ -289,8 +289,14 @@ function makeGamingPC(parent,x,y,z,tier=1,cpuTier=1,ramTier=1){
  const screenMat=mat("#fff",.24,.05,{map:canvasTexture((ctx,w,h)=>{const gr=ctx.createLinearGradient(0,0,w,h);gr.addColorStop(0,["#12314c","#0a5276","#104a38","#48265f"][monitor-1]);gr.addColorStop(1,["#07111f","#142b5a","#102b25","#211333"][monitor-1]);ctx.fillStyle=gr;ctx.fillRect(0,0,w,h);ctx.fillStyle="#fff";ctx.font="bold 38px Arial";ctx.fillText("UGLY",18,57);ctx.font="16px Arial";ctx.fillText("GAMING ARENA / PC "+(index+1),18,83);ctx.fillStyle=palette[monitor-1];ctx.fillRect(18,104,w*.72,7);},256,160),emissive:palette[monitor-1],emissiveIntensity:.12+monitor*.055});
  const deskPalette=["#26374b","#174d68","#18513f","#49315f"],deskGlow=["#71869c","#2b9ab5","#398b6c","#9270b8"],deskShell=surfaceMat(deskPalette[deskLevel-1],"plastic",.3,.42);box(g,2.1,.15,.92,0,.78,0,deskShell);box(g,2.12,.045,.94,0,.87,0,mat(palette[deskLevel-1],.26,.15,{emissive:emit[deskLevel-1],emissiveIntensity:.28+deskLevel*.1}),false);
  for(const sx of [-.9,.9]){box(g,.12,.76,.13,sx,.38,0,mat(deskGlow[deskLevel-1],.28,.62));box(g,.13,.035,.14,sx,.72,.03,mat(palette[deskLevel-1],.26,.15,{emissive:emit[deskLevel-1],emissiveIntensity:.35}),false);}
- box(g,.88,.56,.11,0,1.28,-.36,surfaceMat("#111b2b","plastic",.22,.42));box(g,.76,.42,.016,0,1.29,-.422,screenMat,false);
+ box(g,.92,.60,.12,0,1.28,-.36,surfaceMat("#111b2b","plastic",.2,.52));
+ box(g,.82,.49,.018,0,1.29,-.432,screenMat,false);
+ box(g,.78,.018,.018,0,1.045,-.444,mat("#8298ad",.24,.62),false);
+ sphere(g,.018,0,1.53,-.445,mat("#30dfff",.2,.3,{emissive:"#12a9df",emissiveIntensity:.8}),16,10);
  box(g,.12,.17,.13,0,1.02,-.34,mat("#71849a",.26,.58));box(g,.34,.035,.25,0,.98,-.19,mat("#182536",.3,.35));
+ box(g,.48,.018,.28,0,.895,-.17,mat("#52677d",.3,.7),false);
+ // Individually modeled keycaps, legends and a braided cable make the desk setup read as real hardware.
+
  const boardGlow=mat(palette[keyboard-1],.3,.15,{emissive:emit[keyboard-1],emissiveIntensity:.2+keyboard*.12});
  box(g,.64,.045,.24,-.12,.925,.22,surfaceMat("#121b29","plastic",.36,.24));
  for(let row=0;row<4;row++)for(let col=0;col<12;col++)box(g,.039,.025,.038,-.405+col*.052,.96,.135+row*.052,keyboard>=2?boardGlow:surfaceMat("#8493a4","rubber",.52,.08),false);
@@ -324,8 +330,10 @@ function makeConsoleStation(x,z,index,data){
  box(g,1.62,.07,.55,0,.27,-.92,mat("#172538",.42,.45));
  // TV and its feet rest directly on the tabletop.
  box(g,.16,.12,.18,0,.84,-.92,mat("#202a3b",.32,.55));
- box(g,1.62,.9,.12,0,1.37,-.92,mat("#101722",.22,.55));
- box(g,1.49,.76,.025,0,1.39,-.852,mat("#fff",.18,.08,{emissive:["#17324b","#12445a","#164a39","#38224f"][tv-1],emissiveIntensity:.5+tv*.12}));
+ box(g,1.68,.96,.13,0,1.37,-.92,mat("#080d16",.18,.72));
+ box(g,1.55,.82,.022,0,1.39,-.842,mat("#fff",.16,.08,{emissive:["#17324b","#12445a","#164a39","#38224f"][tv-1],emissiveIntensity:.42+tv*.1}));
+ box(g,1.58,.025,.025,0,.895,-.842,mat("#8396a8",.24,.72),false);
+ sphere(g,.018,0,.895,-.858,mat("#28dfff",.2,.3,{emissive:"#0d9bcf",emissiveIntensity:.7}),12,8);
  box(g,1.55,.045,.04,0,1.86,-.84,mat(tvGlow,.25,.35,{emissive:tvGlow,emissiveIntensity:.7}),false);
  // Brand-specific console models: PlayStation has the recognizable white split
  // shell and black center; Xbox is a compact upright black tower with green vent.
@@ -361,6 +369,16 @@ function makeConsoleStation(x,z,index,data){
  box(g,2,.7,.2,0,.76,1.27,fabric);
  for(const sx of [-.91,.91])box(g,.18,.54,.82,sx,.53,.92,fabric);
  for(const sx of [-.58,0,.58])box(g,.58,.11,.12,sx,.51,.49,mat(colors[sofa-1],.5,.08),false);
+ // Seamed seat cushions and a wireless controller resting on the sofa.
+ for(const sx of [-.58,0,.58]){box(g,.53,.055,.58,sx,.49,.91,surfaceMat(["#34465d","#23627b","#28664e","#61417b"][sofa-1],"fabric",.92,.01),false);box(g,.48,.012,.018,sx,.52,1.16,mat("#8296aa",.8,.08),false);}
+ const pad=new THREE.Group();pad.position.set(.28,.57,.77);pad.rotation.x=-.18;g.add(pad);
+ const padBody=mat("#202a39",.3,.38),padTrim=mat(colors[con-1],.24,.22,{emissive:colors[con-1],emissiveIntensity:.32});
+ const body=sphere(pad,.22,0,0,0,padBody,24,16);body.scale.set(1.45,.42,.82);
+ for(const side of [-1,1]){const grip=new THREE.Mesh(new THREE.CapsuleGeometry(.065,.17,5,12),padBody);grip.position.set(side*.22,-.015,.035);grip.rotation.z=side*.38;pad.add(grip);}
+ cylinder(pad,.045,.045,.025,-.105,.045,-.015,mat("#101722",.3,.2),20);
+ cylinder(pad,.045,.045,.025,.105,.045,-.015,mat("#101722",.3,.2),20);
+ for(const [bx,bz,col] of [[-.12,-.025,"#e95b69"],[.12,-.025,"#4aa7ef"],[0,.09,"#62cf8a"],[0,-.14,"#e9c45a"]])sphere(pad,.025,bx,.055,bz,mat(col,.24,.12,{emissive:col,emissiveIntensity:.18}),12,8);
+ box(pad,.1,.012,.02,0,.055,.12,padTrim,false);
  makeLabel(g,"CONSOLE "+String(index+1).padStart(2,"0"),0,2.12,-.92,1.8,.32);g.userData={consoleIndex:index};consoleGroups.push(g);
  for(const key of ["tv","console","sofa"])interactables.push({position:new THREE.Vector3(x+(key==="tv"?-.65:key==="console"?.65:0),0,z+(key==="sofa"?1.2:-.8)),name:({tv:"Телевизор",console:"Приставка",sofa:"Диван"})[key],hint:"КОНСОЛЬНАЯ ЗОНА · "+({tv:"ТЕЛЕВИЗОР",console:"ПРИСТАВКА",sofa:"ДИВАН"})[key]+" · НАЖМИ ДЛЯ УЛУЧШЕНИЯ",action:"upgrade_console_component",station:index,component:key,radius:1.8});
 }
