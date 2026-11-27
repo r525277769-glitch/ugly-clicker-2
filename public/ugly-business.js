@@ -889,19 +889,29 @@ function bindControls() {
   window.addEventListener("blur", () => { Object.keys(keys).forEach(key => keys[key] = false); moveX = moveY = 0; });
 }
 window.openSimulator = function(id) {
-  if (id !== "pc") return;
-  const hub = $("simulatorHub"), view = $("pcSimulatorView"), page = $("simulator");
-  if (!hub || !view || !page) {
-    console.error("UGLY SIMULATOR: не найдены элементы меню или ПК-симулятора");
+  const hub = $("simulatorHub"), page = $("simulator");
+  const pcView = $("pcSimulatorView"), resaleView = $("resaleSimulatorView");
+  if (!hub || !page) {
+    console.error("UGLY SIMULATOR: не найдены элементы центра симуляторов");
     return;
   }
-  // Ensure the simulator page itself is active before initializing the 3D scene.
+  if (id !== "pc" && id !== "resale") return;
   document.querySelectorAll(".page").forEach(el => el.classList.remove("active"));
   page.classList.add("active");
   document.querySelectorAll(".nav-button").forEach(button => button.classList.toggle("active", button.dataset.page === "simulator"));
   hub.hidden = true;
-  view.hidden = false;
-  view.style.display = "block";
+  if (id === "resale") {
+    if (!resaleView) { hub.hidden = false; console.error("UGLY SIMULATOR: не найден экран перепродажи"); return; }
+    if (pcView) pcView.hidden = true;
+    resaleView.hidden = false;
+    if (typeof window.initResaleSimulator === "function") window.initResaleSimulator();
+    window.scrollTo({top:0,behavior:"smooth"});
+    return;
+  }
+  if (!pcView) { hub.hidden = false; console.error("UGLY SIMULATOR: не найден экран ПК-клуба"); return; }
+  if (resaleView) resaleView.hidden = true;
+  pcView.hidden = false;
+  pcView.style.display = "block";
   requestAnimationFrame(() => {
     resize();
     if (typeof window.initUglyBusiness === "function") window.initUglyBusiness();
