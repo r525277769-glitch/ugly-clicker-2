@@ -432,7 +432,7 @@ function authenticate(initData) {
     throw new Error("Invalid Telegram user data");
   }
 
-  if (!user || !/^\\d+$/.test(String(user.id || "")) || BigInt(user.id) <= 0n) {
+  if (!user || !/^\d+$/.test(String(user.id || "")) || BigInt(user.id) <= 0n) {
     throw new Error("Player not found");
   }
 
