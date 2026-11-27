@@ -831,7 +831,7 @@ function bindControls() {
   joy.addEventListener("pointerdown", event => {
     event.preventDefault(); event.stopPropagation();
     if (joyPointer !== null) return;
-    joyPointer = event.pointerId; joy.setPointerCapture(event.pointerId);
+    joyPointer = event.pointerId; joy.classList.add("is-pressed"); joy.setPointerCapture(event.pointerId);
     const rect = joy.getBoundingClientRect();
     joyCenter = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
     joystickPoint(event);
@@ -842,7 +842,7 @@ function bindControls() {
   });
   const releaseJoy = event => {
     if (event.pointerId !== joyPointer) return;
-    joyPointer = null; moveX = 0; moveY = 0; stick.style.transform = "translate(0,0)";
+    joyPointer = null; joy.classList.remove("is-pressed"); moveX = 0; moveY = 0; stick.style.transform = "translate(0,0)";
   };
   joy.addEventListener("pointerup", releaseJoy);
   joy.addEventListener("pointercancel", releaseJoy);
