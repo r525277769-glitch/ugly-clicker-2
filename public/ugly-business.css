@@ -108,3 +108,63 @@
   .sim-hint{top:6px;padding:5px 9px}
 }
 @media(prefers-reduced-motion:reduce){.sim-joystick,.sim-action{transition:none!important}}
+
+
+/* POLISHED TOUCH CONTROLS */
+.sim-joystick{
+  border:1px solid rgba(124,231,255,.78);
+  background:
+    radial-gradient(circle at center,rgba(80,220,255,.13) 0 22%,transparent 23% 100%),
+    radial-gradient(circle,rgba(10,29,54,.76) 0 42%,rgba(9,19,39,.58) 43% 68%,rgba(22,57,88,.62) 69% 72%,rgba(5,14,30,.72) 73% 100%);
+  box-shadow:inset 0 0 0 7px rgba(255,255,255,.025),inset 0 0 24px rgba(30,196,255,.2),0 8px 24px #000b,0 0 22px rgba(37,207,255,.2);
+  transition:box-shadow .18s ease,border-color .18s ease,transform .18s ease;
+}
+.sim-joystick:before,.sim-joystick:after{background:rgba(154,232,255,.12)}
+.sim-joystick.is-pressed{
+  border-color:#b7f8ff;
+  box-shadow:inset 0 0 0 7px rgba(255,255,255,.04),inset 0 0 28px rgba(30,196,255,.28),0 5px 17px #000c,0 0 28px rgba(37,207,255,.4);
+}
+.sim-stick{
+  width:clamp(48px,13vw,58px);height:clamp(48px,13vw,58px);
+  border:2px solid rgba(239,253,255,.96);
+  background:radial-gradient(circle at 32% 24%,#fff 0,#b8f8ff 19%,#42d7fa 48%,#2761b8 82%,#1b2c65 100%);
+  box-shadow:inset 0 3px 8px #fff9,inset 0 -5px 10px #122b6c99,0 5px 14px #000c,0 0 18px #25d8ff88;
+  transition:box-shadow .16s ease;
+}
+.sim-joystick.is-pressed .sim-stick{box-shadow:inset 0 3px 8px #fff9,inset 0 -5px 10px #122b6c99,0 3px 9px #000d,0 0 22px #25d8ffbb}
+.sim-action{
+  min-height:58px;padding:11px 15px;border:1px solid #d3fbff;border-radius:18px;
+  background:linear-gradient(145deg,rgba(202,251,255,.97),rgba(60,205,244,.97) 52%,rgba(104,91,235,.97));
+  color:#07172b;font-size:10px;font-weight:950;letter-spacing:.65px;
+  box-shadow:inset 0 1px 0 #fff,0 7px 0 rgba(19,57,105,.72),0 10px 22px #0009,0 0 20px #28cfff44;
+  text-shadow:0 1px #fff9;transform:translateY(0);
+  transition:transform .12s ease,filter .12s ease,box-shadow .12s ease,opacity .12s ease;
+  -webkit-tap-highlight-color:transparent;touch-action:manipulation;
+}
+.sim-action:not(:disabled):active{
+  transform:translateY(4px) scale(.98);filter:brightness(1.08);
+  box-shadow:inset 0 1px 0 #fff,0 3px 0 rgba(19,57,105,.72),0 5px 12px #0009,0 0 24px #28cfff66;
+}
+.sim-action:disabled{opacity:.68;filter:saturate(.58);box-shadow:inset 0 1px 0 #ffffff88,0 4px 12px #0007}
+.sim-tap-panel button,.sim-management button,.sim-queue-actions button,.sim-component button,#simBuyConsoleStation{
+  border-radius:13px;transition:transform .14s ease,filter .14s ease,box-shadow .14s ease;
+  -webkit-tap-highlight-color:transparent;touch-action:manipulation;
+}
+.sim-tap-panel button:active,.sim-management button:active,.sim-queue-actions button:active,.sim-component button:active,#simBuyConsoleStation:active{
+  transform:translateY(2px) scale(.985);filter:brightness(1.15);
+}
+.sim-action:focus-visible,.sim-tap-panel button:focus-visible,.sim-management button:focus-visible,
+.sim-queue-actions button:focus-visible,.sim-component button:focus-visible{
+  outline:2px solid #fff;outline-offset:3px;
+}
+@media(max-width:760px){
+  .sim-joystick{width:clamp(108px,30vw,132px);height:clamp(108px,30vw,132px)}
+  .sim-action{min-height:56px;width:clamp(124px,35vw,150px);border-radius:17px}
+}
+@media(orientation:landscape) and (max-height:520px){
+  .sim-action{min-height:46px;border-radius:14px;padding:8px 11px}
+}
+@media(prefers-reduced-motion:reduce){
+  .sim-joystick,.sim-stick,.sim-action,.sim-tap-panel button,.sim-management button,
+  .sim-queue-actions button,.sim-component button{transition:none!important}
+}
