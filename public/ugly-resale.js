@@ -144,7 +144,7 @@ const RESALE_EVENTS=[
 const resaleMoney=n=>"$"+Math.round(Number(n)||0).toLocaleString("en-US");
 let resaleState;
 let resaleEventTimer=null,resaleBuyerTimer=null;
-function defaultResaleState(){return {cash:5000,sold:0,revenue:0,profit:0,reputation:0,inventory:{},inventoryCosts:{},listings:[],offers:[],nextListingId:1,eventIndex:4,eventUntil:Date.now()+45000,priceIndex:{},priceUntil:Date.now()+30000,storeItems:[],storePrices:{},storeStock:{},storeUntil:Date.now()+180000};}
+function defaultResaleState(){return {cash:5000,sold:0,revenue:0,profit:0,reputation:0,inventory:{},inventoryCosts:{},listings:[],offers:[],nextListingId:1,eventIndex:4,eventUntil:Date.now()+45000,priceIndex:{},priceUntil:Date.now()+30000,storeItems:[],storePrices:{},storeStock:{},superDeals:[],storeUntil:Date.now()+180000};}
 function loadResaleState(){
  try{
   const saved=JSON.parse(localStorage.getItem(RESALE_KEY)||"null");
@@ -160,10 +160,13 @@ function loadResaleState(){
   resaleState.storeItems=Array.isArray(resaleState.storeItems)?resaleState.storeItems:[];
   resaleState.storePrices=resaleState.storePrices&&typeof resaleState.storePrices==="object"?resaleState.storePrices:{};
   resaleState.storeStock=resaleState.storeStock&&typeof resaleState.storeStock==="object"?resaleState.storeStock:{};
+  resaleState.superDeals=Array.isArray(resaleState.superDeals)?resaleState.superDeals:[];
   if(!resaleState.storeItems.length||!Number(resaleState.storeUntil)||resaleState.storeUntil<=Date.now())refreshResaleStore(false);
-  if(Number(resaleState.storePricingVersion||0)<2){
-   resaleState.storeItems.forEach(id=>{const p=resaleProduct(id);if(p){const market=resaleMarketPrice(p),factor=.65+Math.random()*.60;resaleState.storePrices[id]=Math.max(1,Math.round(market*factor));}});
-   resaleState.storePricingVersion=2;
+  if(Number(resaleState.storePricingVersion||0)<3){
+   const dealPool=[...resaleState.storeItems];for(let i=dealPool.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[dealPool[i],dealPool[j]]=[dealPool[j],dealPool[i]];}
+   resaleState.superDeals=dealPool.slice(0,Math.min(2,dealPool.length));
+   resaleState.superDeals.forEach(id=>{const p=resaleProduct(id);if(p){const market=resaleMarketPrice(p),factor=.5+Math.random()*.2;resaleState.storePrices[id]=Math.max(1,Math.round(market*factor));}});
+   resaleState.storePricingVersion=3;
   }
   resaleState.nextListingId=Number(resaleState.nextListingId)||1;
   resaleState.listings.forEach(item=>{if(!item.lid)item.lid=resaleState.nextListingId++;if(!item.price)item.price=resaleProduct(item.id)?.sell||100;});
@@ -193,8 +196,8 @@ function renderResale(){
  if(eventEl)eventEl.innerHTML='<div><b>'+event.title+'</b><span>'+event.desc+'</span></div><small>СМЕНА РЫНКА ЧЕРЕЗ '+Math.max(0,Math.ceil((resaleState.eventUntil-Date.now())/1000))+' СЕК.</small>';
  const catalog=document.getElementById("resaleCatalog");
  catalog.innerHTML=resaleState.storeItems.map(id=>resaleProduct(id)).filter(Boolean).map(p=>{
-  const demand=resaleDemand(p),market=resaleMarketPrice(p),buyPrice=resaleStorePrice(p),stock=Number(resaleState.storeStock[p.id])||0;
-  return '<article class="resale-product-card"><div class="resale-product-visual" style="position:relative;overflow:hidden;height:112px;min-height:112px;background:#eef2f8"><img src="'+resalePhoto(p)+'" alt="'+p.name+'" loading="lazy" decoding="async" style="width:100%;height:112px;object-fit:contain;display:block;padding:7px;box-sizing:border-box" onerror="this.nextElementSibling.style.display=\'grid\';this.remove()"><span class="resale-photo-fallback" style="display:none;position:absolute;inset:0;place-items:center;font-size:48px;background:linear-gradient(135deg,#243b5d,#17243d)">'+p.emoji+'</span><small style="position:absolute;right:7px;bottom:7px;background:#101827dd;padding:5px 8px;border-radius:8px">'+p.category+'</small></div><div class="resale-product-info"><h3>'+p.name+'</h3><p>'+p.desc+'</p><div class="resale-demand"><span>СПРОС</span><b>'+demand+'%</b><i><em style="width:'+demand+'%"></em></i></div><div class="resale-price-line"><span>Цена магазина</span><b>'+resaleMoney(buyPrice)+'</b></div><div class="resale-price-line"><span>Рыночная цена</span><b class="resale-green">'+resaleMoney(market)+'</b></div><div class="resale-price-line"><span>Осталось в магазине</span><b>'+stock+' шт.</b></div><div class="resale-buy-controls"><button type="button" data-resale-buy="'+p.id+'" '+(resaleState.cash<buyPrice||stock<1?"disabled":"")+'>КУПИТЬ 1 ШТ.</button></div></div></article>';
+  const demand=resaleDemand(p),market=resaleMarketPrice(p),buyPrice=resaleStorePrice(p),stock=Number(resaleState.storeStock[p.id])||0,isSuperDeal=resaleState.superDeals.includes(p.id),dealPercent=Math.max(0,Math.round((1-buyPrice/market)*100));
+  return '<article class="resale-product-card"><div class="resale-product-visual" style="position:relative;overflow:hidden;height:112px;min-height:112px;background:#eef2f8"><img src="'+resalePhoto(p)+'" alt="'+p.name+'" loading="lazy" decoding="async" style="width:100%;height:112px;object-fit:contain;display:block;padding:7px;box-sizing:border-box" onerror="this.nextElementSibling.style.display=\'grid\';this.remove()"><span class="resale-photo-fallback" style="display:none;position:absolute;inset:0;place-items:center;font-size:48px;background:linear-gradient(135deg,#243b5d,#17243d)">'+p.emoji+'</span><small style="position:absolute;right:7px;bottom:7px;background:#101827dd;padding:5px 8px;border-radius:8px">'+p.category+'</small></div><div class="resale-product-info"><h3>'+p.name+(isSuperDeal?' <span class="resale-super-deal-badge">СУПЕР-ЦЕНА −'+dealPercent+'%</span>':'')+'</h3><p>'+p.desc+'</p><div class="resale-demand"><span>СПРОС</span><b>'+demand+'%</b><i><em style="width:'+demand+'%"></em></i></div><div class="resale-price-line"><span>Цена магазина</span><b>'+resaleMoney(buyPrice)+'</b></div><div class="resale-price-line"><span>Рыночная цена</span><b class="resale-green">'+resaleMoney(market)+'</b></div><div class="resale-price-line"><span>Осталось в магазине</span><b>'+stock+' шт.</b></div><div class="resale-buy-controls"><button type="button" data-resale-buy="'+p.id+'" '+(resaleState.cash<buyPrice||stock<1?"disabled":"")+'>КУПИТЬ 1 ШТ.</button></div></div></article>';
  }).join("");
  const inventory=document.getElementById("resaleInventory");
  const owned=RESALE_PRODUCTS.filter(p=>(Number(resaleState.inventory[p.id])||0)>0);
@@ -285,8 +288,10 @@ function refreshResaleStore(showToast=true){
  for(let i=pool.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]];}
  const chosen=pool.slice(0,12);
  resaleState.storeItems=chosen.map(p=>p.id);resaleState.storePrices={};resaleState.storeStock={};
- chosen.forEach(p=>{const market=resaleMarketPrice(p);const factor=.65+Math.random()*.60;resaleState.storePrices[p.id]=Math.max(1,Math.round(market*factor));resaleState.storeStock[p.id]=1+Math.floor(Math.random()*4);});
- resaleState.storePricingVersion=2;
+ const dealPool=[...chosen];for(let i=dealPool.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[dealPool[i],dealPool[j]]=[dealPool[j],dealPool[i]];}
+ resaleState.superDeals=dealPool.slice(0,2).map(p=>p.id);
+ chosen.forEach(p=>{const market=resaleMarketPrice(p),factor=resaleState.superDeals.includes(p.id)?(.5+Math.random()*.2):(.65+Math.random()*.60);resaleState.storePrices[p.id]=Math.max(1,Math.round(market*factor));resaleState.storeStock[p.id]=1+Math.floor(Math.random()*4);});
+ resaleState.storePricingVersion=3;
  resaleState.storeUntil=Date.now()+180000;saveResaleState();renderResale();
  if(showToast)resaleToast("Магазин обновлён! Поступили новые товары и цены.");
 }
