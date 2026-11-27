@@ -1,0 +1,172 @@
+/* UGLY CLICKER 2.0 — HACKER HUD SYSTEM
+   Visual-only layer. Game logic, data, API calls and saved state are untouched. */
+:root{
+ --bg:#050907;--surface:#0a120e;--surface2:#0e1a13;--gold:#48ff83;--gold2:#a5ffc0;--gold-dark:#176b3a;
+ --text:#d9ffe5;--muted:#779b83;--green:#57ff91;--red:#ff6677;
+ --border:rgba(62,255,133,.25);--hacker:#42ff82;--hacker-dim:#153d27;
+ --panel-shadow:0 10px 28px rgba(0,0,0,.42),inset 0 1px rgba(130,255,170,.035);
+}
+html{background:var(--bg);color-scheme:dark;scroll-behavior:smooth}
+body{
+ background:radial-gradient(ellipse at 50% -18%,rgba(28,255,105,.12),transparent 48%),
+ repeating-linear-gradient(0deg,rgba(49,255,117,.018) 0,rgba(49,255,117,.018) 1px,transparent 1px,transparent 4px),var(--bg);
+ color:var(--text);font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono",monospace;
+ letter-spacing:.12px;padding-bottom:calc(100px + env(safe-area-inset-bottom));
+}
+#app{max-width:560px;padding:0 14px}
+.top-header{padding:18px 2px 14px}
+.brand-name{font-family:inherit;font-size:clamp(19px,5vw,23px);font-weight:1000;letter-spacing:2.4px;color:var(--hacker2,var(--gold2));text-shadow:0 0 18px rgba(66,255,130,.26)}
+.brand-sub{color:#55b978;font-size:9px;letter-spacing:2.5px}
+.profile-button{border:1px solid var(--hacker);border-radius:12px;background:linear-gradient(145deg,#102719,#08130c);color:var(--hacker);box-shadow:0 0 18px #25ff7022}
+.gold-line{height:1px;background:linear-gradient(90deg,transparent,#1cff68,#b2ffca,#1cff68,transparent);opacity:.65}
+.balance-grid{gap:9px;margin:13px 0}
+.balance-card,.player-info,.panel,.clicker-hero,.gramm-hero,.business-card,.click-upgrade-card,.bp-task,.bp-reward,.farm-hero,.farm-stat,.farm-equipment{
+ background:linear-gradient(145deg,rgba(13,28,18,.98),rgba(6,13,9,.99));border:1px solid var(--border);
+ border-radius:15px;box-shadow:var(--panel-shadow);color:var(--text)
+}
+.balance-card{padding:13px;position:relative;overflow:hidden}
+.balance-card:before,.panel:before{content:"";position:absolute;left:0;top:0;width:28px;height:2px;background:var(--hacker);box-shadow:0 0 12px var(--hacker)}
+.balance-label,.farm-stat-label{color:#78b88c;font-size:9px;letter-spacing:1.45px;font-weight:900}
+.balance-value,.business-number,.balance,.farm-btc,.farm-stat-value{color:var(--hacker)!important;text-shadow:0 0 14px rgba(66,255,130,.18);font-variant-numeric:tabular-nums}
+.balance-value{font-size:clamp(18px,5vw,24px);margin-top:7px}
+.balance-symbol{color:#5e9c70;font-size:9px;letter-spacing:.8px}
+.player-info{padding:11px 14px;margin-bottom:16px;border-radius:12px}
+.player-level,.player-xp{color:#8cb99a;font-size:10px;letter-spacing:.7px}
+.player-level strong,.player-xp strong{color:var(--hacker);font-size:15px}
+.section-heading{margin:23px 2px 10px;text-align:left}
+.section-heading h2{color:var(--hacker);font-size:14px;letter-spacing:1.7px;font-weight:1000;text-shadow:0 0 12px #38ff7622}
+.section-heading p{color:#63856e;font-size:9px;letter-spacing:1.1px}
+.panel{position:relative;padding:15px;margin:11px 0;border-radius:15px;overflow:hidden}
+.panel h2{color:#a7ffc0;font-size:13px;letter-spacing:1.1px;line-height:1.4}
+.muted,.small{color:var(--muted)}
+.small{font-size:10px;line-height:1.6}
+.item{border-bottom:1px solid rgba(67,255,130,.13);padding:12px 0}
+.item b,.click-upgrade-card h3,.business-card b{color:#b4ffca}
+.clicker-hero,.gramm-hero{padding:19px 14px;border-radius:18px;background:radial-gradient(ellipse at center,rgba(42,255,112,.11),transparent 68%),linear-gradient(145deg,#0d1d13,#050a07)}
+.hero-label,.coin-caption{color:#72a982;font-size:9px;letter-spacing:1.7px}
+.coin{
+ width:clamp(156px,48vw,190px);height:clamp(156px,48vw,190px);margin:22px auto 18px;
+ border:3px solid #65ff98;color:#06130a;background:radial-gradient(circle at 34% 26%,#d4ffe1 0,#73ff9d 20%,#20c65b 52%,#087735 78%,#03401d 100%);
+ box-shadow:0 0 0 5px #0b2815,0 0 0 7px #1e8b47,0 0 38px rgba(42,255,112,.34),inset 0 4px 14px #fff9;
+ text-shadow:0 1px 1px #fff7;transition:transform .1s,filter .1s
+}
+.coin:active{transform:scale(.93);filter:brightness(1.2)}
+.click-reward-info{background:linear-gradient(145deg,#102819,#07100a);border:1px solid rgba(67,255,130,.3);border-radius:12px;padding:13px;margin-top:14px}
+.click-reward-info .balance{color:var(--hacker);font-size:27px}
+button{
+ background:linear-gradient(135deg,#a4ffc0 0%,#42ed7b 48%,#15964a 100%);color:#041109;
+ border:1px solid #9dffb9;border-radius:10px;padding:11px 14px;margin:4px 2px;
+ font-family:inherit;font-size:10px;font-weight:1000;letter-spacing:.55px;
+ box-shadow:0 4px 14px #0008,0 0 12px rgba(52,255,119,.09);transition:transform .13s,filter .13s,box-shadow .13s
+}
+button:active{transform:translateY(2px) scale(.985);filter:brightness(1.12)}
+button:disabled{opacity:.38;filter:grayscale(.7)}
+.button-secondary{background:linear-gradient(145deg,#14251a,#0a130d);color:#a7ffc0;border-color:#287c46;box-shadow:none}
+.button-danger{background:linear-gradient(145deg,#421a20,#200c10);color:#ffc1c8;border-color:#9c3947}
+.button-full{width:100%;margin:7px 0 0;min-height:42px}
+input,select,textarea{
+ background:#050d08!important;color:#caffd8!important;border:1px solid #24683c!important;border-radius:10px!important;
+ font-family:inherit!important;outline:none!important;box-shadow:inset 0 1px 8px #0008
+}
+input:focus,select:focus,textarea:focus{border-color:#5cff91!important;box-shadow:0 0 0 2px #3dff7620,0 0 14px #3dff7620!important}
+input::placeholder{color:#53765e}
+.click-upgrade-card{padding:14px}.click-upgrade-card.owned{border-color:#3ab969;box-shadow:0 0 16px #2aff7020}
+.click-upgrade-bonus{color:var(--hacker)}.click-upgrade-price{color:#86a991}
+.business-card{padding:14px}.business-card-content p{color:#91b79a}
+.boost-active,.boost-permanent{color:#64ff9b!important;text-shadow:0 0 10px #48ff8340}
+.boost-inactive{color:#63806b}
+.bp-header{background:radial-gradient(ellipse at top,rgba(50,255,120,.15),transparent 70%),linear-gradient(145deg,#102619,#07100a);border-color:#38bd68}
+.bp-level{color:var(--hacker)}
+.bp-progress,.bp-task-progress{background:#102418;border:1px solid #205c36}
+.bp-progress-fill,.bp-task-fill{background:linear-gradient(90deg,#087d37,#4aff87,#b5ffca);box-shadow:0 0 12px #38ff76}
+.bp-task,.bp-reward{background:linear-gradient(145deg,#102117,#080f0b);border-color:#225b37}
+.bp-task-title,.bp-reward-title,.bp-level-number{color:#aaffc1}
+.bp-reward.free{border-color:#2b9951}.bp-reward.premium{border-color:#64ff97;background:linear-gradient(120deg,#102b1a,#080f0b)}
+.bp-tag{background:#12351e;color:#aaffc1;border:1px solid #286d40}
+.bp-claimed{color:#67ff9b}.bp-locked{color:#6e8875}
+.farm-hero{background:radial-gradient(ellipse at center,rgba(42,255,112,.13),transparent 70%),linear-gradient(145deg,#102719,#07100a);border-color:#2a9b50}
+.farm-stat{padding:12px}.farm-stat-value{font-size:18px}.farm-equipment{padding:14px}.farm-equipment h3{color:#adffc3}.farm-rate{color:#63ff98}.farm-badge{background:#12351e;color:#aaffc1;border:1px solid #286d40}
+.bottom-nav{
+ position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:min(100%,560px);
+ padding:8px 7px calc(8px + env(safe-area-inset-bottom));z-index:100;
+ background:rgba(4,11,7,.96);border-top:1px solid rgba(65,255,130,.3);
+ box-shadow:0 -10px 28px #000a,0 0 25px #20ff6810;backdrop-filter:blur(16px);
+ display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px
+}
+.nav-button{background:transparent;color:#66816d;border:1px solid transparent;box-shadow:none;border-radius:10px;padding:8px 2px;margin:0;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:8px;letter-spacing:.25px;white-space:nowrap}
+.nav-icon{font-size:18px;line-height:1}
+.nav-button.active{color:#aaffc1;background:linear-gradient(145deg,#12341e,#09140d);border-color:#2b8a4a;box-shadow:inset 0 0 14px #29ff7018,0 0 12px #29ff7018}
+#status{color:#5f9870;font-size:9px;letter-spacing:.6px;padding:14px 5px}
+.toast{background:linear-gradient(145deg,#10291a,#07100a);border-color:#39b965;color:#b8ffca;box-shadow:0 8px 28px #000d,0 0 20px #28ff7020;font-family:inherit}
+.toast.error{border-color:#a53e4a;color:#ffc1c8}.toast.success{border-color:#39d978}.toast.info{border-color:#3e7451;color:#c4ffd2}
+.float-reward{color:#9dffb8;text-shadow:0 2px 8px #000,0 0 14px #39ff76}
+.coin-particle{background:radial-gradient(circle,#eaffef,#42ff83 65%,#087735);box-shadow:0 0 10px #42ff83}
+.simulator-hub-heading>span,.simulator-card-status{color:#62ff97}
+.simulator-hub-heading h2,.simulator-card-info h3{color:#caffd8}
+.simulator-hub-heading p,.simulator-card-info p{color:#85a991}
+.simulator-card{border:1px solid #286b40;border-radius:15px;background:linear-gradient(145deg,#102419,#080f0b);box-shadow:var(--panel-shadow)}
+.simulator-card-art:before{background:radial-gradient(circle,#2aff7050,transparent 68%)}
+.simulator-card-art i{background:#07150cdd;border:1px solid #3da963;color:#9dffb7}
+.simulator-card-info button,.simulator-back-button{background:linear-gradient(135deg,#a4ffc0,#42ed7b 55%,#15964a);border:1px solid #9dffb9;color:#041109}
+.simulator-card-soon{border-color:#405e49}.simulator-card-soon .simulator-card-status{color:#88a990}
+.sim-management-switch button{border:1px solid #286b40;background:#0b190f;color:#83b993}
+.sim-management-switch button.active{background:linear-gradient(145deg,#164326,#0b1c11);border-color:#54ff8a;color:#caffd8;box-shadow:0 0 15px #22ff6030}
+.sim-hud>div,.sim-component,.sim-queue-row,.sim-session-row,.sim-console-panel,.sim-tap-panel{
+ background:linear-gradient(145deg,#102419,#08110b)!important;border-color:#287442!important;color:#caffd8
+}
+.sim-hud small,.sim-queue-row small,.sim-session-row span,.sim-controls-note{color:#7ea98a}
+.sim-hud strong,.sim-upgrade-head b,.sim-console-stats b{color:#70ff9e!important}
+.sim-stage{border:1px solid #38c96b!important;box-shadow:0 12px 34px #000c,0 0 22px #1cff6820!important}
+.sim-hint{border:1px solid #3cc66c!important;background:#06140de8!important;color:#baffcb!important}
+.sim-joystick{border-color:#60ff96!important;box-shadow:inset 0 0 24px #24ff6828,0 5px 18px #000a,0 0 15px #00ff5530!important}
+.sim-stick{background:radial-gradient(circle at 35% 25%,#fff,#79ffa3 42%,#087c38 100%)!important;border-color:#d8ffe3!important;box-shadow:0 0 18px #25ff70aa!important}
+.sim-action,.sim-tap-panel button,.sim-management button,.sim-queue-actions button,.sim-component button,#simBuyConsoleStation{
+ background:linear-gradient(145deg,#a4ffc0,#42ed7b 55%,#15964a)!important;border:1px solid #9dffb9!important;color:#041109!important
+}
+.sim-progress-track{background:#102418!important}.sim-progress-track>div{background:linear-gradient(90deg,#087d37,#4aff87,#b5ffca)!important}
+.sim-queue-actions select{background:#050d08!important;border-color:#24683c!important;color:#caffd8!important}
+.sim-reception-modal{background:#020a05dc!important}.sim-reception-card{background:linear-gradient(155deg,#102b1a,#07100a 72%)!important;border:1px solid #3bc86b!important;color:#d9ffe5!important}
+.sim-reception-kicker,.sim-reception-stats b{color:#70ff9e!important}.sim-reception-stats div{background:#09180e!important;border-color:#245e37!important}
+.sim-reception-card select{background:#050d08!important;border-color:#24683c!important;color:#caffd8!important}
+.sim-reception-confirm{background:linear-gradient(135deg,#a4ffc0,#42ed7b 55%,#15964a)!important;color:#041109!important}
+.resale-heading,.resale-market-banner,.resale-panel,.resale-stats>div,.resale-product-card,.resale-listing-row,.resale-stock-row,.resale-buyer-row,.resale-market-event,.resale-rules,.resale-exp-stat,.resale-exp-row,.resale-wholesale{
+ background:linear-gradient(145deg,#102419,#080f0b)!important;border-color:#286b40!important;color:#d9ffe5!important;box-shadow:var(--panel-shadow)
+}
+.resale-heading h2,.resale-panel-heading h3,.resale-stats strong,.resale-product-info h4,.resale-product-info b,.resale-stock-main b,.resale-listing-row b,.resale-exp-stat strong{color:#aaffc1!important}
+.resale-heading>span,.resale-market-banner span,.resale-panel-heading span,.resale-stats small{color:#68c984!important}
+.resale-heading p,.resale-product-info p,.resale-stock-main small,.resale-exp-muted{color:#83a98e!important}
+.resale-product-visual,.resale-stock-icon,.resale-buyer-avatar{background:#0b1c11!important;border-color:#286b40!important}
+.resale-product-card button,.resale-buyer-actions button,.resale-stock-action button,.resale-edit-listing button,.resale-exp-action button,.resale-buy-controls button{
+ background:linear-gradient(135deg,#a4ffc0,#42ed7b 55%,#15964a)!important;border-color:#9dffb9!important;color:#041109!important
+}
+.resale-green,.resale-super-deal-badge{color:#72ff9e!important}
+.resale-toast{background:#102b1a!important;border-color:#39c86b!important;color:#baffcb!important}
+.resale-demand,.resale-exp-tag{background:#12351e!important;color:#aaffc1!important;border-color:#286d40!important}
+.re-heading,.re-panel,.re-card,.re-stats>div,.re-finance>div,.re-banner,.re-project,.re-staff-card,.re-city-card,.re-plot,.re-construction,.re-loan,.re-extra-panel{
+ background:linear-gradient(145deg,#102419,#080f0b)!important;border-color:#286b40!important;color:#d9ffe5!important;box-shadow:var(--panel-shadow)
+}
+.re-heading h2,.re-panel-title h3,.re-stats strong,.re-finance strong,.re-card h4,.re-price,.re-banner b{color:#aaffc1!important}
+.re-heading>span,.re-panel-title span,.re-banner span{color:#65d58a!important}
+.re-heading p,.re-card p,.re-card small,.re-note,.re-stats small,.re-finance small{color:#83a98e!important}
+.re-card button,.re-project button,.re-staff-card button,.re-plot button,.re-construction button,.re-loan button{
+ background:linear-gradient(135deg,#a4ffc0,#42ed7b 55%,#15964a)!important;border-color:#9dffb9!important;color:#041109!important
+}
+.re-card button.secondary{background:#14271a!important;color:#baffcb!important;border-color:#347a4b!important}
+.re-card button.danger{background:#421a20!important;color:#ffc1c8!important;border-color:#9c3947!important}
+.re-stats>div,.re-finance>div{border-radius:12px}
+.re-banner{background:linear-gradient(120deg,#12351e,#0a170e)!important}
+.re-toast{background:#102b1a!important;border-color:#39c86b!important;color:#d9ffe5!important}
+.re-toast.error{background:#421a20!important;border-color:#9c3947!important;color:#ffc1c8!important}
+#fxLayer{pointer-events:none}
+@media(min-width:600px){
+ #app{padding-left:18px;padding-right:18px}
+ .balance-grid{gap:12px}
+ .re-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:390px){
+ #app{padding-left:10px;padding-right:10px}
+ .balance-card{padding:10px}.player-info{padding:10px}
+ .nav-button{font-size:7px;letter-spacing:0}.nav-icon{font-size:17px}
+ .panel{padding:13px}
+}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important}}
