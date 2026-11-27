@@ -322,3 +322,9 @@ img{max-width:100%}
  .page{animation:none}
  button,.nav-button{transition:none}
 }
+
+/* Resale product photo cleanup */
+.resale-product-visual{height:112px!important;min-height:112px!important;border-radius:10px 10px 0 0;background:#eef2f8!important}
+.resale-product-visual>img{object-fit:contain!important;padding:7px;box-sizing:border-box}
+.resale-product-info{padding:10px!important}
+@media(max-width:420px){.resale-product-visual{height:96px!important;min-height:96px!important}.resale-product-visual>img{height:96px!important;padding:6px}}
