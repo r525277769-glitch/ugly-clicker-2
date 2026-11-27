@@ -890,12 +890,12 @@ function bindControls() {
 }
 window.openSimulator = function(id) {
   const hub = $("simulatorHub"), page = $("simulator");
-  const pcView = $("pcSimulatorView"), resaleView = $("resaleSimulatorView");
+  const pcView = $("pcSimulatorView"), resaleView = $("resaleSimulatorView"), realEstateView = $("realEstateSimulatorView");
   if (!hub || !page) {
     console.error("UGLY SIMULATOR: не найдены элементы центра симуляторов");
     return;
   }
-  if (id !== "pc" && id !== "resale") return;
+  if (id !== "pc" && id !== "resale" && id !== "realestate") return;
   document.querySelectorAll(".page").forEach(el => el.classList.remove("active"));
   page.classList.add("active");
   document.querySelectorAll(".nav-button").forEach(button => button.classList.toggle("active", button.dataset.page === "simulator"));
@@ -908,14 +908,29 @@ window.openSimulator = function(id) {
     window.scrollTo({top:0,behavior:"smooth"});
     return;
   }
+  if (id === "realestate") {
+    if (!realEstateView) { hub.hidden = false; console.error("UGLY SIMULATOR: не найден экран недвижимости"); return; }
+    if (pcView) pcView.hidden = true;
+    if (resaleView) resaleView.hidden = true;
+    realEstateView.hidden = false;
+    if (typeof window.initRealEstateSimulator === "function") window.initRealEstateSimulator();
+    window.scrollTo({top:0,behavior:"smooth"});
+    return;
+  }
   if (!pcView) { hub.hidden = false; console.error("UGLY SIMULATOR: не найден экран ПК-клуба"); return; }
   if (resaleView) resaleView.hidden = true;
+  if (realEstateView) realEstateView.hidden = true;
   pcView.hidden = false;
   pcView.style.display = "block";
   requestAnimationFrame(() => {
     resize();
     if (typeof window.initUglyBusiness === "function") window.initUglyBusiness();
   });
+};
+window.closeRealEstateSimulator = function() {
+  const view = $("realEstateSimulatorView"), hub = $("simulatorHub");
+  if (view) view.hidden = true;
+  if (hub) hub.hidden = false;
 };
 window.closeSimulator = function() {
   const hub = $("simulatorHub"), view = $("pcSimulatorView");
