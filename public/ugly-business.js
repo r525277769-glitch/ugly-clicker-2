@@ -888,8 +888,30 @@ function bindControls() {
   window.addEventListener("keyup", event => { keys[event.code] = false; });
   window.addEventListener("blur", () => { Object.keys(keys).forEach(key => keys[key] = false); moveX = moveY = 0; });
 }
+window.openSimulator = function(id) {
+  if (id !== "pc") return;
+  const hub = $("simulatorHub"), view = $("pcSimulatorView"), page = $("simulator");
+  if (!hub || !view || !page) return;
+  hub.hidden = true;
+  view.hidden = false;
+  if (page.classList.contains("active") && !$("pcSimulatorView")?.hidden) window.initUglyBusiness();
+  requestAnimationFrame(() => resize());
+};
+window.closeSimulator = function() {
+  const hub = $("simulatorHub"), view = $("pcSimulatorView");
+  if (!hub || !view) return;
+  view.hidden = true;
+  hub.hidden = false;
+  if (raf) { cancelAnimationFrame(raf); raf = 0; }
+  moveX = moveY = 0;
+  Object.keys(keys).forEach(key => keys[key] = false);
+  $("simJoystick")?.classList.remove("is-pressed");
+  const stick = $("simStick");
+  if (stick) stick.style.transform = "translate(0,0)";
+};
 window.initUglyBusiness = async function() {
-  if (ready) { resize(); return; }
+  if ($("pcSimulatorView")?.hidden) return;
+  if (ready) { resize(); if (!raf && !document.hidden) { lastFrameAt = 0; clock.start(); animate(); } return; }
   if (!initData) { $("simHint").textContent = "Открой игру через Telegram"; return; }
   try {
     const canvas = $("uglyBusinessCanvas");
@@ -910,7 +932,7 @@ window.initUglyBusiness = async function() {
     if(stageResizeObserver)stageResizeObserver.disconnect();
     if("ResizeObserver" in window){stageResizeObserver=new ResizeObserver(()=>resize());const stage=canvas.closest(".sim-stage");if(stage)stageResizeObserver.observe(stage);}
     if(window.visualViewport)window.visualViewport.addEventListener("resize",resize,{passive:true});
-    if(statePollTimer)clearInterval(statePollTimer);statePollTimer=setInterval(()=>{if(ready&&$("simulator")?.classList.contains("active"))loadState();},5000);
+    if(statePollTimer)clearInterval(statePollTimer);statePollTimer=setInterval(()=>{if(ready&&$("simulator")?.classList.contains("active")&&!$("pcSimulatorView")?.hidden)loadState();},5000);
     yaw = 0; camera.position.set(0, 3.2, 11.2); camera.lookAt(player.position.x, 1, player.position.z);
     animate();
   } catch (error) {
@@ -921,14 +943,14 @@ window.initUglyBusiness = async function() {
 const page = $("simulator");
 if (page) {
   const observer = new MutationObserver(() => {
-    if (page.classList.contains("active")) window.initUglyBusiness();
+    if (page.classList.contains("active") && !$("pcSimulatorView")?.hidden) window.initUglyBusiness();
     else if (raf) { cancelAnimationFrame(raf); raf = 0; }
   });
   observer.observe(page, { attributes: true, attributeFilter: ["class"] });
-  if (page.classList.contains("active")) window.initUglyBusiness();
+  if (page.classList.contains("active") && !$("pcSimulatorView")?.hidden) window.initUglyBusiness();
 }
 window.addEventListener("resize", resize);
 document.addEventListener("visibilitychange", () => {
   if (document.hidden && raf) { cancelAnimationFrame(raf); raf = 0; }
-  else if (!document.hidden && ready && $("simulator")?.classList.contains("active") && !raf) { lastFrameAt=0; clock.start(); animate(); }
+  else if (!document.hidden && ready && $("simulator")?.classList.contains("active") && !$("pcSimulatorView")?.hidden && !raf) { lastFrameAt=0; clock.start(); animate(); }
 });
