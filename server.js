@@ -335,6 +335,17 @@ async function initDatabase() {
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
     ALTER TABLE ugly_simulator_players ADD COLUMN IF NOT EXISTS club_data JSONB NOT NULL DEFAULT '{"stations":[{"tier":1},{"tier":1},{"tier":1},{"tier":1}],"adLevel":0}'::jsonb, ADD COLUMN IF NOT EXISTS last_income_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
+    CREATE TABLE IF NOT EXISTS real_estate_players (
+      telegram_id BIGINT PRIMARY KEY REFERENCES players(telegram_id),
+      cash BIGINT NOT NULL DEFAULT 100000,
+      portfolio JSONB NOT NULL DEFAULT '[]'::jsonb,
+      company_level INTEGER NOT NULL DEFAULT 1,
+      company_xp BIGINT NOT NULL DEFAULT 0,
+      total_profit BIGINT NOT NULL DEFAULT 0,
+      last_income BIGINT NOT NULL DEFAULT 0,
+      last_accrued_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
   `);
 
   databaseReady = true;
@@ -2498,8 +2509,82 @@ app.post("/api/simulator/exchange",auth,async(req,res)=>{
  finally{c.release();}
 });
 // =====================================================
+// REAL ESTATE TYCOON
+// =====================================================
+const REAL_ESTATE_CATALOG = [
+ {id:"studio",name:"Студия",emoji:"🏙️",type:"ЖИЛЬЁ",price:65000,rent:520,cost:85,description:"Компактная квартира для долгосрочной аренды."},
+ {id:"apartment",name:"Двухкомнатная квартира",emoji:"🏢",type:"ЖИЛЬЁ",price:118000,rent:980,cost:145,description:"Популярный вариант для семей."},
+ {id:"loft",name:"Премиальный лофт",emoji:"🌇",type:"ЖИЛЬЁ",price:245000,rent:2050,cost:290,description:"Дорогая аренда в современном районе."},
+ {id:"country",name:"Загородный дом",emoji:"🏡",type:"ДОМА",price:180000,rent:1450,cost:240,description:"Дом с участком за городом."},
+ {id:"townhouse",name:"Таунхаус",emoji:"🏘️",type:"ДОМА",price:390000,rent:3350,cost:470,description:"Просторное жильё премиум-класса."},
+ {id:"villa",name:"Роскошная вилла",emoji:"🏰",type:"ЛЮКС",price:1500000,rent:14200,cost:1900,description:"Элитная недвижимость с высокой арендой."},
+ {id:"shop",name:"Коммерческий магазин",emoji:"🏬",type:"КОММЕРЦИЯ",price:520000,rent:4800,cost:650,description:"Помещение под розничный бизнес."},
+ {id:"office",name:"Офисный этаж",emoji:"🏙️",type:"КОММЕРЦИЯ",price:2400000,rent:23000,cost:3100,description:"Площади для аренды компаниям."},
+ {id:"center",name:"Бизнес-центр",emoji:"🏢",type:"КОММЕРЦИЯ",price:15000000,rent:155000,cost:19000,description:"Крупный объект с несколькими арендаторами."},
+ {id:"tower",name:"Небоскрёб",emoji:"🌆",type:"МЕГА-ПРОЕКТ",price:250000000,rent:2800000,cost:330000,description:"Флагманский актив твоей империи."}
+];
+async function getRealEstate(client, telegramId, accrue=true) {
+ await client.query("INSERT INTO real_estate_players (telegram_id) VALUES ($1) ON CONFLICT (telegram_id) DO NOTHING",[telegramId]);
+ const result=await client.query("SELECT * FROM real_estate_players WHERE telegram_id=$1 FOR UPDATE",[telegramId]);
+ const row=result.rows[0];let portfolio=Array.isArray(row.portfolio)?row.portfolio:[];
+ let earned=0;
+ if(accrue){
+  const elapsed=Math.min(30*24*3600000,Math.max(0,Date.now()-new Date(row.last_accrued_at).getTime()));
+  const gross=portfolio.reduce((sum,p)=>sum+Math.max(0,Number(p.rent)||0)*Math.max(1,Number(p.level)||1),0);
+  const costs=portfolio.reduce((sum,p)=>sum+Math.max(0,Number(p.cost)||0),0);
+  earned=Math.floor((gross-costs)*elapsed/3600000);
+  if(earned!==0){row.cash=String(BigInt(row.cash)+BigInt(earned));row.total_profit=String(BigInt(row.total_profit)+BigInt(earned));}
+  const xp=Math.max(0,Math.floor(elapsed/3600000*Math.max(0,gross-costs)/1000));
+  row.company_xp=String(BigInt(row.company_xp)+BigInt(xp));
+  row.company_level=Math.min(100,1+Math.floor(Number(row.company_xp)/5000));
+  await client.query("UPDATE real_estate_players SET cash=$1,portfolio=$2::jsonb,total_profit=$3,company_xp=$4,company_level=$5,last_income=$6,last_accrued_at=NOW(),updated_at=NOW() WHERE telegram_id=$7",
+   [row.cash,JSON.stringify(portfolio),row.total_profit,row.company_xp,row.company_level,earned,telegramId]);
+ } else {
+  await client.query("UPDATE real_estate_players SET last_accrued_at=NOW() WHERE telegram_id=$1",[telegramId]);
+ }
+ const gross=portfolio.reduce((sum,p)=>sum+Math.max(0,Number(p.rent)||0)*Math.max(1,Number(p.level)||1),0);
+ const costs=portfolio.reduce((sum,p)=>sum+Math.max(0,Number(p.cost)||0),0);
+ return {cash:Number(row.cash),portfolio,companyLevel:Number(row.company_level),companyXp:Number(row.company_xp),totalProfit:Number(row.total_profit),lastIncome:earned,hourlyIncome:gross-costs,hourlyCosts:costs,catalog:REAL_ESTATE_CATALOG};
+}
+app.get("/api/real-estate/state",auth,async(req,res)=>{
+ const c=await pool.connect();try{await c.query("BEGIN");const state=await getRealEstate(c,req.player.id,true);await c.query("COMMIT");res.json(state);}catch(e){await c.query("ROLLBACK");console.error("Real estate state:",e);res.status(500).json({error:"Не удалось загрузить недвижимость"});}finally{c.release();}
+});
+app.post("/api/real-estate/action",auth,async(req,res)=>{
+ const {action,id}=req.body||{};const c=await pool.connect();
+ try{
+  await c.query("BEGIN");let s=await getRealEstate(c,req.player.id,true);let msg="";
+  if(action==="buy"){
+   const item=REAL_ESTATE_CATALOG.find(x=>x.id===id);if(!item)throw Error("Объект не найден");
+   if(s.cash<item.price)throw Error("Недостаточно средств для покупки");
+   const property={uid:Date.now().toString(36)+Math.random().toString(36).slice(2,7),id:item.id,name:item.name,emoji:item.emoji,type:item.type,purchasePrice:item.price,marketValue:item.price,rent:item.rent,cost:item.cost,level:1,purchasedAt:new Date().toISOString()};
+   s.portfolio.push(property);s.cash-=item.price;msg=item.name+" приобретён!";
+  }else if(action==="sell"){
+   const index=s.portfolio.findIndex(p=>p.uid===id);if(index<0)throw Error("Объект не найден");
+   const p=s.portfolio[index],refund=Math.floor(Number(p.marketValue||p.purchasePrice)*.82);s.cash+=refund;s.portfolio.splice(index,1);msg="Объект продан за $"+refund.toLocaleString("ru-RU");
+  }else if(action==="upgrade"){
+   const p=s.portfolio.find(x=>x.uid===id);if(!p)throw Error("Объект не найден");
+   if(Number(p.level)>=5)throw Error("Максимальный уровень улучшения уже достигнут");
+   const price=Math.round(Number(p.purchasePrice)*(.12+Number(p.level)*.08));
+   if(s.cash<price)throw Error("Для улучшения нужно $"+price.toLocaleString("ru-RU"));
+   s.cash-=price;p.level=Number(p.level)+1;p.rent=Math.round(Number(p.rent)*1.28);p.cost=Math.round(Number(p.cost)*1.12);p.marketValue=Math.round(Number(p.marketValue)*1.16);msg=p.name+" улучшен до уровня "+p.level;
+  }else if(action==="build"){
+   const price=50000;if(s.cash<price)throw Error("Строительный участок и разрешения стоят $50 000");
+   const p={uid:Date.now().toString(36)+Math.random().toString(36).slice(2,7),id:"custom-building",name:"Новый жилой комплекс",emoji:"🏗️",type:"СТРОИТЕЛЬСТВО",purchasePrice:price,marketValue:price*1.45,rent:720,cost:100,level:1,purchasedAt:new Date().toISOString()};
+   s.cash-=price;s.portfolio.push(p);msg="Жилой комплекс построен и готов к сдаче!";
+  }else if(action==="office"){
+   const price=250000;if(s.cash<price)throw Error("Корпоративный офис стоит $250 000");
+   if(s.portfolio.some(p=>p.id==="company-office"))throw Error("Офис компании уже куплен");
+   s.cash-=price;s.portfolio.push({uid:"company-office",id:"company-office",name:"Штаб-квартира компании",emoji:"🏢",type:"ОФИС",purchasePrice:price,marketValue:price,rent:0,cost:250,level:1,purchasedAt:new Date().toISOString()});msg="Штаб-квартира открыта!";
+  }else throw Error("Неизвестное действие");
+  await c.query("UPDATE real_estate_players SET cash=$1,portfolio=$2::jsonb,updated_at=NOW() WHERE telegram_id=$3",[s.cash,JSON.stringify(s.portfolio),req.player.id]);
+  const next=await getRealEstate(c,req.player.id,false);await c.query("COMMIT");res.json({success:true,message:msg,state:next});
+ }catch(e){await c.query("ROLLBACK");res.status(400).json({error:e.message});}finally{c.release();}
+});
+
+// =====================================================
 // ЗАПУСК СЕРВЕРА
 // =====================================================
+
 
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`UGLY CLICKER 2.0 running on port ${PORT}`);
