@@ -190,7 +190,7 @@ function renderResale(){
  const catalog=document.getElementById("resaleCatalog");
  catalog.innerHTML=resaleState.storeItems.map(id=>resaleProduct(id)).filter(Boolean).map(p=>{
   const demand=resaleDemand(p),market=resaleMarketPrice(p),buyPrice=resaleStorePrice(p),stock=Number(resaleState.storeStock[p.id])||0;
-  return '<article class="resale-product-card"><div class="resale-product-visual" style="position:relative;overflow:hidden;height:112px;min-height:112px;background:#eef2f8"><img src="'+resalePhoto(p)+'" alt="'+p.name+'" loading="lazy" decoding="async" style="width:100%;height:112px;object-fit:contain;display:block;padding:7px;box-sizing:border-box" onerror="this.nextElementSibling.style.display=\'grid\';this.remove()"><span class="resale-photo-fallback" style="display:none;position:absolute;inset:0;place-items:center;font-size:48px;background:linear-gradient(135deg,#243b5d,#17243d)">'+p.emoji+'</span><small style="position:absolute;right:7px;bottom:7px;background:#101827dd;padding:5px 8px;border-radius:8px">'+p.category+'</small></div><div class="resale-product-info"><h3>'+p.name+'</h3><p>'+p.desc+'</p><div class="resale-demand"><span>СПРОС</span><b>'+demand+'%</b><i><em style="width:'+demand+'%"></em></i></div><div class="resale-price-line"><span>Цена магазина</span><b>'+resaleMoney(buyPrice)+'</b></div><div class="resale-price-line"><span>Рыночная цена</span><b class="resale-green">'+resaleMoney(market)+'</b></div><div class="resale-price-line"><span>Осталось в магазине</span><b>'+stock+' шт.</b></div><div class="resale-buy-controls"><label>Количество <input type="number" min="1" max="'+Math.max(1,Math.min(stock,Math.floor(resaleState.cash/Math.max(1,buyPrice))))+'" value="1" step="1" data-resale-qty="'+p.id+'" '+(stock<1||resaleState.cash<buyPrice?"disabled":"")+'></label><button type="button" data-resale-buy="'+p.id+'" '+(resaleState.cash<buyPrice||stock<1?"disabled":"")+'>КУПИТЬ</button></div></div></article>';
+  return '<article class="resale-product-card"><div class="resale-product-visual" style="position:relative;overflow:hidden;height:112px;min-height:112px;background:#eef2f8"><img src="'+resalePhoto(p)+'" alt="'+p.name+'" loading="lazy" decoding="async" style="width:100%;height:112px;object-fit:contain;display:block;padding:7px;box-sizing:border-box" onerror="this.nextElementSibling.style.display=\'grid\';this.remove()"><span class="resale-photo-fallback" style="display:none;position:absolute;inset:0;place-items:center;font-size:48px;background:linear-gradient(135deg,#243b5d,#17243d)">'+p.emoji+'</span><small style="position:absolute;right:7px;bottom:7px;background:#101827dd;padding:5px 8px;border-radius:8px">'+p.category+'</small></div><div class="resale-product-info"><h3>'+p.name+'</h3><p>'+p.desc+'</p><div class="resale-demand"><span>СПРОС</span><b>'+demand+'%</b><i><em style="width:'+demand+'%"></em></i></div><div class="resale-price-line"><span>Цена магазина</span><b>'+resaleMoney(buyPrice)+'</b></div><div class="resale-price-line"><span>Рыночная цена</span><b class="resale-green">'+resaleMoney(market)+'</b></div><div class="resale-price-line"><span>Осталось в магазине</span><b>'+stock+' шт.</b></div><div class="resale-buy-controls"><button type="button" data-resale-buy="'+p.id+'" '+(resaleState.cash<buyPrice||stock<1?"disabled":"")+'>КУПИТЬ 1 ШТ.</button></div></div></article>';
  }).join("");
  const inventory=document.getElementById("resaleInventory");
  const owned=RESALE_PRODUCTS.filter(p=>(Number(resaleState.inventory[p.id])||0)>0);
@@ -322,7 +322,7 @@ window.closeResaleSimulator=function(){
  if(resaleEventTimer)clearInterval(resaleEventTimer);if(resaleBuyerTimer)clearInterval(resaleBuyerTimer);
 };
 document.addEventListener("click",event=>{
- const buy=event.target.closest("[data-resale-buy]");if(buy){const qty=document.querySelector('[data-resale-qty="'+buy.dataset.resaleBuy+'"]');buyResaleItem(buy.dataset.resaleBuy,qty?.value||1);return;}
+ const buy=event.target.closest("[data-resale-buy]");if(buy){buyResaleItem(buy.dataset.resaleBuy,1);return;}
  const list=event.target.closest("[data-resale-list]");if(list){listResaleItem(list.dataset.resaleList);return;}
  const update=event.target.closest("[data-resale-update]");if(update){updateResalePrice(update.dataset.resaleUpdate);return;}
  const accept=event.target.closest("[data-resale-accept]");if(accept){acceptResaleOffer(accept.dataset.resaleAccept);return;}
@@ -407,12 +407,13 @@ function resaleWholesaleBuy(id){
  if(qty<2||qty>100){resaleBusinessToast("Для оптовой закупки укажи от 2 до 100 единиц");return;}
  if(qty>stock){resaleBusinessToast("В магазине осталось только "+stock+" шт.");return;}
  if(!resaleCanStore(qty)){resaleBusinessToast("На складе недостаточно места. Расширь склад.");return;}
- const unit=resaleStorePrice(p),discount=qty>=20?.15:qty>=10?.10:qty>=5?.05:0,total=Math.round(unit*qty*(1-discount));
- if(resaleState.cash<total){resaleBusinessToast("Не хватает денег на оптовую закупку: нужно $"+total.toLocaleString("en-US"));return;}
- resaleState.cash-=total;resaleState.storeStock[id]=stock-qty;resaleState.inventory[id]=(Number(resaleState.inventory[id])||0)+qty;
+ const unit=resaleStorePrice(p),discount=.15,total=Math.round(unit*stock*(1-discount));
+ if(!resaleCanStore(stock)){resaleBusinessToast("На складе недостаточно места для всей партии: "+stock+" шт.");return;}
+ if(resaleState.cash<total){resaleBusinessToast("Не хватает денег на всю оптовую партию: нужно $"+total.toLocaleString("en-US"));return;}
+ resaleState.cash-=total;resaleState.storeStock[id]=0;resaleState.inventory[id]=(Number(resaleState.inventory[id])||0)+stock;
  if(!Array.isArray(resaleState.inventoryCosts[id]))resaleState.inventoryCosts[id]=[];
- const each=total/qty;for(let i=0;i<qty;i++)resaleState.inventoryCosts[id].push(each);
- saveResaleState();renderResale();resaleToast("Оптовая партия куплена со скидкой "+Math.round(discount*100)+"%!");
+ const each=total/stock;for(let i=0;i<stock;i++)resaleState.inventoryCosts[id].push(each);
+ saveResaleState();renderResale();resaleToast("Весь запас куплен: "+stock+" шт. · скидка 15% · ИТОГО: $"+total.toLocaleString("en-US"));
 }
 function resaleBuyBroken(id){
  const p=resaleProduct(id);if(!p)return;
@@ -422,7 +423,7 @@ function resaleBuyBroken(id){
  if(resaleState.cash<price){resaleToast("Не хватает денег на неисправный товар");return;}
  resaleState.cash-=price;resaleState.storeStock[id]=stock-1;resaleState.brokenInventory[id]=(Number(resaleState.brokenInventory[id])||0)+1;
  if(!Array.isArray(resaleState.brokenCosts[id]))resaleState.brokenCosts[id]=[];
- resaleState.brokenCosts[id].push(price);saveResaleState();renderResale();resaleToast("Неисправный товар куплен со скидкой. Его можно починить в мастерской.");
+ resaleState.brokenCosts[id].push(price);saveResaleState();renderResale();resaleToast("Куплено 1 сломанное устройство: "+p.name+" · скидка 62% · $"+price.toLocaleString("en-US")+" · отправлено в мастерскую.");
 }
 function resaleRepairItem(id){
  const p=resaleProduct(id);if(!p||!(Number(resaleState.brokenInventory[id])>0))return;
@@ -488,10 +489,10 @@ function resaleRenderBusinessAugment(){
  if(!resaleState)return;
  ensureResaleBusinessState();
  document.querySelectorAll("#resaleCatalog .resale-product-card").forEach(card=>{
-  const buy=card.querySelector("[data-resale-buy]");if(!buy||card.querySelector("[data-resale-qty]"))return;
+  const buy=card.querySelector("[data-resale-buy]");if(!buy||card.querySelector("[data-resale-wholesale]"))return;
   const id=buy.getAttribute("data-resale-buy");
   const area=document.createElement("div");area.className="resale-wholesale";
-  area.innerHTML='<input class="resale-exp-input" type="number" min="2" max="100" value="5" inputmode="numeric" aria-label="Количество для оптовой закупки" data-resale-qty="'+id+'"><button type="button" data-resale-wholesale="'+id+'">ОПТ · ДО −15%</button><button type="button" class="button-secondary" data-resale-broken="'+id+'">НЕИСПРАВНЫЙ · −62%</button>';
+  area.innerHTML='<button type="button" data-resale-wholesale="'+id+'">КУПИТЬ ОПТОМ · −15% (ВЕСЬ ОСТАТОК)</button><button type="button" class="button-secondary" data-resale-broken="'+id+'">КУПИТЬ СЛОМАННОЕ · −62%</button>';
   buy.parentNode.appendChild(area);
  });
  document.querySelectorAll("#resaleInventory .resale-stock-row").forEach(row=>{
