@@ -420,15 +420,12 @@ body{min-height:100vh;min-height:100dvh}
   45%{border-color:var(--gold2);box-shadow:0 0 22px #e9bd5940}
 }
 
-/* DIAGONAL-BASED UI SCALE: scale the complete game to the available screen size. */
-:root{--screen-diagonal-scale:1}
-#app{
-  zoom:var(--screen-diagonal-scale);
-  width:calc(100% / var(--screen-diagonal-scale));
-  max-width:calc(980px / var(--screen-diagonal-scale));
+/* Prevent iOS/Telegram tap zoom and keep click feedback from changing coin size. */
+html,body{touch-action:pan-y}
+button,a,[role="button"],.coin{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.coin,.coin:active,.coin.coin-hit{
+  transform:none!important;
+  animation:none!important;
 }
-.bottom-nav{
-  zoom:var(--screen-diagonal-scale);
-  width:calc(100% / var(--screen-diagonal-scale));
-  max-width:calc(980px / var(--screen-diagonal-scale));
-}
+.coin{transition:filter .12s ease!important}
+.coin:active{filter:brightness(1.12)!important}
