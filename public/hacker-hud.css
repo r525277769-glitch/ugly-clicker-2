@@ -255,3 +255,20 @@ body.hud-scan-active:after{content:"";position:fixed;inset:0;z-index:900;pointer
 .page.hud-glitch-enter{animation:hudGlitchIn .42s steps(2,end) both!important}
 @keyframes hudGlitchIn{0%{opacity:0;transform:translateX(7px);filter:hue-rotate(70deg) saturate(1.8)}35%{opacity:.65;transform:translateX(-4px);filter:contrast(1.4)}65%{opacity:.85;transform:translateX(2px);filter:hue-rotate(-35deg)}100%{opacity:1;transform:translateX(0);filter:none}}
 @media(prefers-reduced-motion:reduce){body.hud-scan-active:after,.page.hud-glitch-enter,.hud-money-delta{animation:none!important}}
+
+
+/* RELIABLE CLICKER HUD TRANSITIONS + VISIBLE MAIN ALERT CENTER */
+#hudTransitionOverlay{position:fixed;inset:0;z-index:850;pointer-events:none;overflow:hidden;opacity:0;visibility:hidden}
+#hudTransitionOverlay.is-running{visibility:visible;opacity:1}
+.hud-scan-beam{position:absolute;left:0;right:0;top:-18%;height:18%;background:linear-gradient(180deg,transparent,rgba(72,255,132,.05) 25%,rgba(72,255,132,.34) 50%,rgba(72,255,132,.08) 75%,transparent);box-shadow:0 0 32px rgba(72,255,132,.18);opacity:0}
+#hudTransitionOverlay.is-running .hud-scan-beam{animation:hudOverlayScan .68s ease-out forwards}
+.hud-glitch-bars{position:absolute;inset:0;opacity:0;background:repeating-linear-gradient(0deg,transparent 0 17px,rgba(92,255,145,.13) 18px,transparent 20px);mix-blend-mode:screen}
+#hudTransitionOverlay.is-running .hud-glitch-bars{animation:hudOverlayGlitch .42s steps(2,end) both}
+@keyframes hudOverlayScan{0%{top:-18%;opacity:0}12%{opacity:1}100%{top:105%;opacity:0}}
+@keyframes hudOverlayGlitch{0%{opacity:0;transform:translateX(0)}18%{opacity:.9;transform:translateX(5px)}36%{opacity:.35;transform:translateX(-4px)}54%{opacity:.8;transform:translateX(3px)}100%{opacity:0;transform:translateX(0)}}
+.page.hud-glitch-enter{animation:hudGlitchIn .46s steps(2,end) both!important}
+.hud-main-warnings{margin:12px 0;padding:13px;border:1px solid #a83e4c;border-radius:14px;background:linear-gradient(145deg,#32151c,#13090d);box-shadow:0 0 20px #ff334422}
+.hud-main-warnings[hidden]{display:none!important}
+.hud-main-warnings-title{margin-bottom:9px;color:#ff8793;font-size:10px;font-weight:1000;letter-spacing:1.2px}
+.hud-main-warnings .hud-warning-list{gap:7px}
+@media(prefers-reduced-motion:reduce){#hudTransitionOverlay.is-running .hud-scan-beam,#hudTransitionOverlay.is-running .hud-glitch-bars,.page.hud-glitch-enter{animation-duration:.01ms!important}}
