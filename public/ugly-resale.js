@@ -48,7 +48,22 @@ const RESALE_PRODUCTS = [
  {id:"guitar",name:"Электрогитара",emoji:"🎸",category:"ХОББИ",buy:290,sell:430,desc:"Инструмент для начинающих музыкантов",demand:52},
  {id:"boardgame",name:"Настольная игра",emoji:"🎲",category:"ХОББИ",buy:22,sell:49,desc:"Игра для вечеров с друзьями",demand:71},
  {id:"suitcase",name:"Чемодан",emoji:"🧳",category:"ПУТЕШЕСТВИЯ",buy:115,sell:195,desc:"Чемодан для поездок",demand:57},
- {id:"helmet",name:"Велошлем",emoji:"⛑️",category:"СПОРТ",buy:38,sell:79,desc:"Защитный шлем для катания",demand:66}
+ {id:"helmet",name:"Велошлем",emoji:"⛑️",category:"СПОРТ",buy:38,sell:79,desc:"Защитный шлем для катания",demand:66},
+ {id:"luxurywatch",name:"Премиальные механические часы",emoji:"⌚",category:"ЛЮКС",buy:8500,sell:11200,desc:"Коллекционные часы высокого класса",demand:38},
+ {id:"gamingpc",name:"Мощный игровой ПК",emoji:"🖥️",category:"ПРЕМИУМ-ТЕХНИКА",buy:6200,sell:8400,desc:"Топовая сборка для игр и стриминга",demand:48},
+ {id:"macbookpro",name:"Профессиональный ноутбук",emoji:"💻",category:"ПРЕМИУМ-ТЕХНИКА",buy:4800,sell:6500,desc:"Флагманский ноутбук для профессионалов",demand:52},
+ {id:"procamera",name:"Профессиональная кинокамера",emoji:"📸",category:"ПРОФЕССИОНАЛЬНАЯ ТЕХНИКА",buy:12500,sell:16800,desc:"Камера для коммерческих съёмок",demand:32},
+ {id:"electriccar",name:"Электровелосипед премиум-класса",emoji:"🚲",category:"ТРАНСПОРТ",buy:3900,sell:5400,desc:"Мощный электровелосипед с большим запасом хода",demand:43},
+ {id:"motorcycle",name:"Спортивный мотоцикл",emoji:"🏍️",category:"ТРАНСПОРТ",buy:18500,sell:24900,desc:"Спортивная модель в отличном состоянии",demand:29},
+ {id:"luxurybag",name:"Дизайнерская сумка",emoji:"👜",category:"ЛЮКС",buy:7200,sell:9800,desc:"Редкая модель из премиальной коллекции",demand:34},
+ {id:"diamond",name:"Бриллиантовое украшение",emoji:"💎",category:"ЮВЕЛИРНЫЕ ИЗДЕЛИЯ",buy:22000,sell:29500,desc:"Ювелирное изделие с драгоценным камнем",demand:24},
+ {id:"goldchain",name:"Золотая цепь",emoji:"📿",category:"ЮВЕЛИРНЫЕ ИЗДЕЛИЯ",buy:5600,sell:7600,desc:"Золотое украшение высокой пробы",demand:36},
+ {id:"piano",name:"Рояль",emoji:"🎹",category:"ХОББИ",buy:14500,sell:19800,desc:"Акустический рояль для ценителей музыки",demand:22},
+ {id:"boat",name:"Моторная лодка",emoji:"🛥️",category:"ТРАНСПОРТ",buy:32000,sell:42500,desc:"Прогулочная лодка с мощным мотором",demand:18},
+ {id:"atv",name:"Квадроцикл",emoji:"🏁",category:"ТРАНСПОРТ",buy:11500,sell:15700,desc:"Внедорожный квадроцикл",demand:27},
+ {id:"projector",name:"Лазерный проектор 4K",emoji:"📽️",category:"ПРЕМИУМ-ТЕХНИКА",buy:6800,sell:9200,desc:"Профессиональный проектор для домашнего кинотеатра",demand:31},
+ {id:"server",name:"Серверная стойка",emoji:"🗄️",category:"ПРОФЕССИОНАЛЬНАЯ ТЕХНИКА",buy:17800,sell:23800,desc:"Комплект серверного оборудования для бизнеса",demand:20},
+ {id:"supercar",name:"Коллекционная модель суперкара",emoji:"🏎️",category:"КОЛЛЕКЦИОННОЕ",buy:9500,sell:13200,desc:"Редкая коллекционная модель премиум-класса",demand:25}
 ];
 const RESALE_BUYERS=["Александр","Максим","Артём","Даниил","Марк","Егор","София","Алина","Полина","Виктория","Илья","Кирилл"];
 const RESALE_EVENTS=[
