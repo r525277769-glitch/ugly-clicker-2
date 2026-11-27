@@ -77,6 +77,11 @@ input{background:#090909;border:1px solid var(--gold-dark);border-radius:11px;pa
 .farm-equipment{background:linear-gradient(145deg,#1b1811,#101010);border:1px solid var(--border);border-radius:15px;padding:15px;margin:11px 0;text-align:left}.farm-equipment h3{color:var(--gold2);margin:3px 0 10px}.farm-equipment p{font-size:12px;margin:7px 0}.farm-rate{color:var(--green);font-weight:bold}.farm-exchange-rate{color:var(--gold2);font-weight:bold;font-size:14px;margin:8px 0}.farm-badge{display:inline-block;color:var(--gold2);background:#35280e;border:1px solid var(--gold-dark);border-radius:8px;padding:6px 9px;font-size:10px;margin:3px}
 @media(max-width:360px){#app{padding:0 10px}.coin{width:165px;height:165px}.balance-value{font-size:19px}.bp-columns{grid-template-columns:1fr}.brand-name{font-size:18px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important}}
+
+/* REAL ESTATE SIMULATOR */
+.realestate-art{background:radial-gradient(circle at 50% 20%,#6da9bd,#183c50 58%,#101b2b)!important}.realestate-art span{filter:drop-shadow(0 8px 12px #0008)}
+.re-heading{padding:25px 18px 20px;border-radius:20px;background:radial-gradient(circle at 80% 0,#3d8190 0,transparent 48%),linear-gradient(145deg,#152d3b,#10151d);border:1px solid #4e9aaa;color:#eaf8f7;text-align:left;margin:14px 0}.re-heading>span,.re-panel-title span{font-size:9px;letter-spacing:2px;color:#8ed8d8;font-weight:900}.re-heading h2{font-size:21px;margin:10px 0;color:#fff}.re-heading p{font-size:11px;color:#b8d0d4;margin:0}.re-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}.re-stats>div,.re-finance>div{background:linear-gradient(145deg,#17242c,#101419);border:1px solid #31515a;border-radius:13px;padding:12px;text-align:left;min-width:0}.re-stats small,.re-finance small{display:block;color:#8da5aa;font-size:9px;letter-spacing:.7px}.re-stats strong,.re-finance strong{display:block;color:#a8ece2;font-size:18px;margin-top:7px;overflow-wrap:anywhere}.re-banner{display:flex;justify-content:space-between;align-items:center;text-align:left;padding:16px;border:1px solid #527e76;border-radius:15px;background:linear-gradient(120deg,#203e35,#14251f);margin:12px 0}.re-banner span{display:block;font-size:9px;letter-spacing:1px;color:#a9d6c7}.re-banner b{display:block;font-size:24px;color:#d8ffe9;margin:5px 0}.re-banner small{display:block;color:#a8c6b8;font-size:10px}.re-banner>div:last-child{font-size:40px}.re-panel{background:linear-gradient(145deg,#172027,#101419);border:1px solid #29434b;border-radius:17px;padding:14px;margin:12px 0;text-align:left}.re-panel-title{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}.re-panel-title h3{font-size:14px;color:#e6f4f1;margin:5px 0 0}.re-panel-title>b{font-size:9px;color:#9db7b8;background:#20343a;padding:7px 9px;border-radius:8px}.re-grid{display:grid;grid-template-columns:1fr;gap:9px}.re-card{background:linear-gradient(145deg,#1b2b33,#12191e);border:1px solid #35535a;border-radius:13px;padding:13px;color:#e8f3f2}.re-card-head{display:flex;align-items:center;gap:10px}.re-emoji{font-size:29px}.re-card h4{font-size:13px;margin:0 0 4px;color:#e7fff8}.re-card small{font-size:9px;color:#9ab2b4}.re-card p{font-size:11px;color:#b7c9c9;margin:8px 0;line-height:1.5}.re-price{font-size:17px;color:#b5f0dc;font-weight:900;margin:8px 0}.re-metrics{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:9px 0}.re-metrics span{font-size:10px;color:#a8bdbd;background:#10191e;border-radius:8px;padding:7px}.re-card button{width:100%;margin:5px 0 0;background:linear-gradient(145deg,#9ce3ce,#4c9c89);border-color:#9ce3ce;color:#10231e}.re-card button.secondary{background:#263d46;color:#d6eeeb;border-color:#466a70}.re-card button.danger{background:#492b2a;color:#ffd5c8;border-color:#80504a}.re-empty{color:#92a9aa;font-size:11px;text-align:center;padding:18px}.re-finance{display:grid;grid-template-columns:1fr 1fr;gap:8px}.re-note{font-size:10px;line-height:1.6;color:#91a9aa}.re-toast{display:none;position:sticky;bottom:80px;padding:12px;border-radius:12px;background:#1b443b;border:1px solid #62b79b;color:#d9fff0;font-size:12px;font-weight:bold;z-index:20}.re-toast.show{display:block}.re-toast.error{background:#482725;border-color:#a85d53;color:#ffe0d8}
+@media(min-width:600px){.re-grid{grid-template-columns:1fr 1fr}.re-stats{grid-template-columns:repeat(4,1fr)}}
 </style>
 </head>
 <body>
@@ -163,6 +168,10 @@ input{background:#090909;border:1px solid var(--gold-dark);border-radius:11px;pa
    <div class="simulator-card-art resale-art"><span>🛍️</span><i>NEW</i></div>
    <div class="simulator-card-info"><span class="simulator-card-status">ДОСТУПЕН</span><h3>ПЕРЕПРОДАЖА ВЕЩЕЙ</h3><p>Покупай товары по оптовой цене, создавай объявления, продавай дороже и развивай свой магазин.</p><button type="button" onclick="openSimulator('resale')">ОТКРЫТЬ СИМУЛЯТОР <b>→</b></button></div>
   </article>
+  <article class="simulator-card simulator-card-ready realestate-hub-card">
+   <div class="simulator-card-art realestate-art"><span>🏙️</span><i>NEW</i></div>
+   <div class="simulator-card-info"><span class="simulator-card-status">ДОСТУПЕН</span><h3>НЕДВИЖИМОСТЬ</h3><p>Покупай квартиры, дома, виллы и коммерческие здания. Сдавай их в аренду, улучшай и строй империю.</p><button type="button" onclick="openSimulator('realestate')">ОТКРЫТЬ СИМУЛЯТОР <b>→</b></button></div>
+  </article>
  </div>
 </div>
 <div id="pcSimulatorView" hidden>
@@ -201,6 +210,17 @@ input{background:#090909;border:1px solid var(--gold-dark);border-radius:11px;pa
  </div>
  <div class="resale-rules">ПОКУПАЙ ТОВАРЫ НА ОПТОВОМ РЫНКЕ · ВЫСТАВЛЯЙ ИХ ПО РЕКОМЕНДОВАННОЙ ЦЕНЕ · ЗАВЕРШАЙ СДЕЛКИ И ПОЛУЧАЙ ПРИБЫЛЬ</div>
  <div id="resaleToast" class="resale-toast" role="status" aria-live="polite"></div>
+</div>
+<div id="realEstateSimulatorView" hidden>
+ <button type="button" class="simulator-back-button" onclick="closeRealEstateSimulator()">← НАЗАД К ВЫБОРУ СИМУЛЯТОРОВ</button>
+ <div class="re-heading"><span>UGLY PROPERTY GROUP · REAL ESTATE TYCOON</span><h2>ИМПЕРИЯ НЕДВИЖИМОСТИ</h2><p>Покупай активы, получай аренду и развивай свою компанию.</p></div>
+ <div class="re-stats"><div><small>КАПИТАЛ</small><strong id="reCash">$100,000</strong></div><div><small>АКТИВЫ</small><strong id="reAssets">0</strong></div><div><small>АРЕНДА / ЧАС</small><strong id="reIncome">$0</strong></div><div><small>УРОВЕНЬ КОМПАНИИ</small><strong id="reLevel">1</strong></div></div>
+ <div class="re-banner"><div><span>ТВОЙ СТАРТОВЫЙ КАПИТАЛ</span><b> $100 000</b><small>Отдельный счёт недвижимости · офлайн-доход 24/7</small></div><div>🏢</div></div>
+ <section class="re-panel"><div class="re-panel-title"><div><span>ТВОИ ИНВЕСТИЦИИ</span><h3>ПОРТФЕЛЬ НЕДВИЖИМОСТИ</h3></div><b id="rePortfolioCount">0 ОБЪЕКТОВ</b></div><div id="rePortfolio" class="re-grid"><p class="re-empty">Пока нет недвижимости. Выбери первый объект в каталоге.</p></div></section>
+ <section class="re-panel"><div class="re-panel-title"><div><span>РЫНОК НЕДВИЖИМОСТИ</span><h3>ДОСТУПНЫЕ ОБЪЕКТЫ</h3></div><b>MARKET</b></div><div id="reMarket" class="re-grid"></div></section>
+ <section class="re-panel"><div class="re-panel-title"><div><span>РАЗВИТИЕ</span><h3>СТРОИТЕЛЬСТВО И УЛУЧШЕНИЯ</h3></div><b>TYCOON</b></div><div id="reDevelopment" class="re-grid"></div></section>
+ <section class="re-panel"><div class="re-panel-title"><div><span>ФИНАНСЫ</span><h3>ДОХОДЫ И РАСХОДЫ</h3></div><b>24/7</b></div><div class="re-finance"><div><small>ПОСЛЕДНИЙ ДОХОД ОТ АРЕНДЫ</small><strong id="reLastIncome">$0</strong></div><div><small>ОБСЛУЖИВАНИЕ / ЧАС</small><strong id="reCosts">$0</strong></div><div><small>ОБЩАЯ ПРИБЫЛЬ</small><strong id="reProfit">$0</strong></div></div><p class="re-note">Аренда начисляется автоматически, даже когда игра закрыта. Доход рассчитывается за прошедшее время (максимум 30 дней за один период).</p></section>
+ <div id="reToast" class="re-toast" role="status" aria-live="polite"></div>
 </div>
 </section>
 <p id="status">Подключение...</p>
@@ -324,5 +344,6 @@ setInterval(async()=>{if(!initData||document.visibilityState==="hidden")return;t
 </script>
 <script type="module" src="/ugly-business.js?v=resale-simulator-2"></script>
 <script type="module" src="/ugly-resale.js?v=resale-business-levels-4"></script>
+<script src="/ugly-real-estate.js?v=real-estate-1"></script>
 </body>
 </html>
