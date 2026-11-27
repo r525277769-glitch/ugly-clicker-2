@@ -38,7 +38,7 @@ const RESALE_PRODUCT_PHOTOS = {
  motherboard:"https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=900&q=82",
  psu:"https://images.unsplash.com/photo-1585218356057-dc3b2b7e9e2a?auto=format&fit=crop&w=900&q=82",
  scooter:"https://images.unsplash.com/photo-1600712242805-5f78671b24da?auto=format&fit=crop&w=900&q=82",
- tent:"https://images.unsplash.com/photo-1478131143081-80f7f84ca84d?auto=format&fit=crop&w=900&q=82"
+ tent:"https://images.unsplash.com/photo-1478131143081-80f7f84ca84d?auto=format&fit=crop&w=900&q=82",
  football:"https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=900&q=82",
  perfume:"https://images.unsplash.com/photo-1541643600914-78b084683601?auto=format&fit=crop&w=900&q=82",
  wallet:"https://images.unsplash.com/photo-1627123424574-724758594e93?auto=format&fit=crop&w=900&q=82",
@@ -63,6 +63,7 @@ const RESALE_PRODUCT_PHOTOS = {
  projector:"https://images.unsplash.com/photo-1535016120720-40c646be5580?auto=format&fit=crop&w=900&q=82",
  server:"https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=900&q=82",
  supercar:"https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=900&q=82",
+ helmet:"https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&w=900&q=82",
 };
 function resalePhoto(p){return p&&RESALE_PRODUCT_PHOTOS[p.id]||"";}
 
