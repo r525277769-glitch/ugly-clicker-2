@@ -285,3 +285,40 @@
  .resale-edit-listing>.resale-stock-main{flex:1}
  .resale-edit-listing>button{width:100%;flex:1 1 100%}
 }
+
+
+/* UGLY CLICKER 2.0 — GLOBAL POLISH SAFE UI LAYER */
+:root{color-scheme:dark;--uc-focus:#61dcff;--uc-panel:rgba(18,25,43,.94);--uc-line:rgba(104,190,235,.28)}
+html{scroll-behavior:smooth;scroll-padding-top:18px}
+body{overscroll-behavior-y:contain}
+button,input,select,textarea{font-family:inherit}
+button{transition:transform .16s ease,filter .16s ease,box-shadow .16s ease}
+button:active:not(:disabled){transform:translateY(1px) scale(.985)}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,[role=button]:focus-visible{outline:2px solid var(--uc-focus);outline-offset:3px}
+button:disabled{cursor:not-allowed}
+img{max-width:100%}
+.page{min-width:0;animation:uc-page-in .2s ease both}
+@keyframes uc-page-in{from{opacity:.72;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+#app{width:min(100%,760px);margin-inline:auto}
+.bottom-nav{padding-bottom:max(8px,env(safe-area-inset-bottom))}
+.nav-button{min-width:0;transition:background .18s ease,color .18s ease,transform .18s ease}
+.nav-button:active{transform:scale(.96)}
+.sim-stage,.re-panel,.resale-panel,.farm-equipment,.farm-stat{contain:layout paint}
+.sim-stage canvas{max-width:100%}
+@media(max-width:600px){
+ body{padding-bottom:calc(94px + env(safe-area-inset-bottom))}
+ #app{padding-left:12px;padding-right:12px}
+ .bottom-nav{padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right)}
+ .nav-button{padding-inline:2px}
+ .sim-stage{height:min(68svh,620px);min-height:390px}
+}
+@media(max-width:380px){
+ #app{padding-left:9px;padding-right:9px}
+ .sim-hud{gap:6px}
+ .sim-hud>div{padding:9px 6px}
+ .sim-hud strong{font-size:14px}
+}
+@media(prefers-reduced-motion:reduce){
+ .page{animation:none}
+ button,.nav-button{transition:none}
+}
