@@ -55,3 +55,20 @@
 #simConsoleUpgradePanel{margin-top:10px}.sim-console-panel .sim-component{border-color:#3687a8;background:linear-gradient(145deg,#15344c,#171a36)}
 #simConsoleMinutes{width:100%;max-width:none;background:#101f32;color:#fff;border:1px solid #38617f;border-radius:12px;padding:13px;font-size:13px;margin:8px 0}
 #simBuyConsoleStation{border:1px solid #38d9ff;background:linear-gradient(145deg,#174c70,#252052 70%,#111a30);color:#e2faff}
+
+/* ULTRA GRAPHICS — mixed cinematic lighting presentation */
+.sim-stage{
+  border:1px solid rgba(105,205,255,.72);
+  background:radial-gradient(ellipse at 18% 8%,rgba(34,205,255,.18),transparent 36%),radial-gradient(ellipse at 88% 82%,rgba(157,83,255,.2),transparent 42%),linear-gradient(145deg,#101c2c,#15152a 58%,#111b29);
+  box-shadow:0 0 0 1px rgba(127,104,255,.22),0 18px 48px #000d,0 0 34px rgba(28,190,255,.16);
+}
+.sim-stage canvas{filter:saturate(1.09) contrast(1.035);}
+.sim-stage:after{
+  content:"";position:absolute;inset:0;z-index:1;pointer-events:none;
+  background:linear-gradient(180deg,rgba(7,13,25,.06),transparent 24%,transparent 72%,rgba(4,8,17,.24)),
+    radial-gradient(ellipse at center,transparent 48%,rgba(3,8,18,.28) 100%);
+}
+.sim-crosshair{z-index:2;color:#eafaffcc;text-shadow:0 1px 6px #000,0 0 12px #3bdcff88}
+.sim-hint{z-index:3;backdrop-filter:blur(12px);box-shadow:0 6px 20px #0009,0 0 18px #22cfff22}
+.sim-joystick,.sim-action{z-index:5;backdrop-filter:blur(8px)}
+@media(prefers-reduced-motion:reduce){.sim-stage canvas{filter:none}}
