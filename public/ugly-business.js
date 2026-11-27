@@ -60,6 +60,31 @@ function canvasTexture(draw, width = 512, height = 256) {
   texture.anisotropy = renderer?.capabilities?.getMaxAnisotropy?.() || 4;
   return texture;
 }
+function studioEnvironmentTexture() {
+  const texture = canvasTexture((ctx,w,h) => {
+    const sky=ctx.createLinearGradient(0,0,0,h);
+    sky.addColorStop(0,"#52647d");sky.addColorStop(.42,"#202d43");sky.addColorStop(1,"#080e1b");
+    ctx.fillStyle=sky;ctx.fillRect(0,0,w,h);
+    const panels=[
+      [w*.12,h*.34,w*.055,h*.3,"rgba(111,224,255,.95)"],
+      [w*.36,h*.28,w*.075,h*.22,"rgba(255,222,177,.92)"],
+      [w*.64,h*.31,w*.07,h*.26,"rgba(164,125,255,.9)"],
+      [w*.88,h*.38,w*.045,h*.28,"rgba(255,111,170,.82)"]
+    ];
+    for(const [x,y,pw,ph,color] of panels){
+      const glow=ctx.createRadialGradient(x,y,2,x,y,Math.max(pw,ph)*1.9);
+      glow.addColorStop(0,color);glow.addColorStop(1,"rgba(20,35,58,0)");
+      ctx.fillStyle=glow;ctx.fillRect(x-pw*2,y-ph*2,pw*4,ph*4);
+      ctx.fillStyle=color;ctx.fillRect(x-pw/2,y-ph/2,pw,ph);
+    }
+    const warm=ctx.createRadialGradient(w*.5,h*.08,4,w*.5,h*.08,h*.48);
+    warm.addColorStop(0,"rgba(255,236,205,.36)");warm.addColorStop(1,"rgba(255,236,205,0)");
+    ctx.fillStyle=warm;ctx.fillRect(0,0,w,h);
+  },1024,512);
+  texture.mapping=THREE.EquirectangularReflectionMapping;
+  texture.needsUpdate=true;
+  return texture;
+}
 function signMaterial(title, subtitle = "") {
   const texture = canvasTexture((ctx, w, h) => {
     const g = ctx.createLinearGradient(0, 0, w, h);
@@ -314,6 +339,8 @@ function makeConsoleStation(x,z,index,data){
 }
 function buildStore(){
  scene=new THREE.Scene();scene.background=new THREE.Color("#111a29");scene.fog=new THREE.Fog("#111a29",36,76);camera=new THREE.PerspectiveCamera(56,1,.1,120);
+ // A lightweight procedural studio environment gives metal, glass and glossy plastic subtle reflections.
+ scene.environment=studioEnvironmentTexture();
  // Ultra Graphics lighting: soft neutral fill, warm key light and cool cinematic rim.
  scene.add(new THREE.AmbientLight("#9aabc5",.48));
  scene.add(new THREE.HemisphereLight("#d7eaff","#25283a",1.35));
