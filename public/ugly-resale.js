@@ -61,12 +61,14 @@ const RESALE_EVENTS=[
 const resaleMoney=n=>"$"+Math.round(Number(n)||0).toLocaleString("en-US");
 let resaleState;
 let resaleEventTimer=null,resaleBuyerTimer=null;
-function defaultResaleState(){return {cash:5000,sold:0,revenue:0,profit:0,reputation:0,inventory:{},listings:[],offers:[],nextListingId:1,eventIndex:4,eventUntil:Date.now()+45000,priceIndex:{},priceUntil:Date.now()+30000,storeItems:[],storePrices:{},storeStock:{},storeUntil:Date.now()+180000};}
+function defaultResaleState(){return {cash:5000,sold:0,revenue:0,profit:0,reputation:0,inventory:{},inventoryCosts:{},listings:[],offers:[],nextListingId:1,eventIndex:4,eventUntil:Date.now()+45000,priceIndex:{},priceUntil:Date.now()+30000,storeItems:[],storePrices:{},storeStock:{},storeUntil:Date.now()+180000};}
 function loadResaleState(){
  try{
   const saved=JSON.parse(localStorage.getItem(RESALE_KEY)||"null");
   resaleState={...defaultResaleState(),...(saved||{})};
   resaleState.inventory=resaleState.inventory||{};
+  resaleState.inventoryCosts=resaleState.inventoryCosts&&typeof resaleState.inventoryCosts==="object"?resaleState.inventoryCosts:{};
+  RESALE_PRODUCTS.forEach(p=>{if(!Array.isArray(resaleState.inventoryCosts[p.id]))resaleState.inventoryCosts[p.id]=Array(Number(resaleState.inventory[p.id])||0).fill(p.buy);});
   resaleState.listings=Array.isArray(resaleState.listings)?resaleState.listings:[];
   resaleState.offers=Array.isArray(resaleState.offers)?resaleState.offers:[];
   resaleState.priceIndex=resaleState.priceIndex&&typeof resaleState.priceIndex==="object"?resaleState.priceIndex:{};
@@ -128,13 +130,15 @@ function buyResaleItem(id){
  if(!(Number(resaleState.storeStock[id])>0)){resaleToast("Этот товар закончился — дождись обновления магазина");return;}
  if(resaleState.cash<cost){resaleToast("Не хватает денег на покупку");return;}
  resaleState.cash-=cost;resaleState.storeStock[id]=Math.max(0,(Number(resaleState.storeStock[id])||0)-1);resaleState.inventory[id]=(Number(resaleState.inventory[id])||0)+1;
+ if(!Array.isArray(resaleState.inventoryCosts[id]))resaleState.inventoryCosts[id]=[];resaleState.inventoryCosts[id].push(cost);
  saveResaleState();renderResale();resaleToast("Товар куплен и добавлен на склад");
 }
 function listResaleItem(id){
  const p=resaleProduct(id);if(!p||!(Number(resaleState.inventory[id])>0))return;
  if(resaleState.listings.length>=12){resaleToast("Можно разместить не больше 12 объявлений");return;}
  resaleState.inventory[id]-=1;
- resaleState.listings.push({lid:resaleState.nextListingId++,id,price:resaleMarketPrice(p),cost:p.buy,created:Date.now()});
+ const costList=resaleState.inventoryCosts[id]||[];const itemCost=Number(costList.shift())||p.buy;resaleState.inventoryCosts[id]=costList;
+ resaleState.listings.push({lid:resaleState.nextListingId++,id,price:resaleMarketPrice(p),cost:itemCost,created:Date.now()});
  saveResaleState();renderResale();resaleToast("Объявление опубликовано. Ждём покупателей!");
 }
 function updateResalePrice(lid){
@@ -215,6 +219,7 @@ window.initResaleSimulator=function(){
  if(!resaleState)loadResaleState();
  if(resaleState.eventUntil<Date.now())resaleState.eventUntil=Date.now()+45000;
  if(resaleState.priceUntil<Date.now())resaleState.priceUntil=Date.now()+30000;
+ if(resaleState.storeUntil<Date.now())refreshResaleStore(false);
  if(!Number(resaleState.storeUntil)||resaleState.storeUntil<Date.now())resaleState.storeUntil=Date.now()+180000;
  renderResale();
  if(resaleEventTimer)clearInterval(resaleEventTimer);
