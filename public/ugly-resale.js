@@ -1,81 +1,160 @@
 const RESALE_KEY = "uglyResaleSimulator_v1";
 const RESALE_PRODUCTS = [
-  {id:"phone",name:"Смартфон",emoji:"📱",category:"ЭЛЕКТРОНИКА",buy:420,sell:620,desc:"Популярная модель, высокий спрос"},
-  {id:"sneakers",name:"Кроссовки",emoji:"👟",category:"ОДЕЖДА",buy:180,sell:290,desc:"Уличная классика на каждый день"},
-  {id:"console",name:"Игровая приставка",emoji:"🎮",category:"ИГРЫ",buy:950,sell:1290,desc:"Игровая консоль с хорошей маржой"},
-  {id:"laptop",name:"Ноутбук",emoji:"💻",category:"ЭЛЕКТРОНИКА",buy:1250,sell:1690,desc:"Для работы, учёбы и игр"},
-  {id:"headphones",name:"Наушники",emoji:"🎧",category:"АКСЕССУАРЫ",buy:95,sell:165,desc:"Компактный товар с быстрым оборотом"},
-  {id:"watch",name:"Смарт-часы",emoji:"⌚",category:"АКСЕССУАРЫ",buy:260,sell:390,desc:"Умный аксессуар с хорошим спросом"}
+ {id:"phone",name:"Смартфон",emoji:"📱",category:"ЭЛЕКТРОНИКА",buy:420,sell:620,desc:"Популярная модель, высокий спрос",demand:78},
+ {id:"sneakers",name:"Кроссовки",emoji:"👟",category:"ОДЕЖДА",buy:180,sell:290,desc:"Уличная классика на каждый день",demand:86},
+ {id:"console",name:"Игровая приставка",emoji:"🎮",category:"ИГРЫ",buy:950,sell:1290,desc:"Игровая консоль с хорошей маржой",demand:72},
+ {id:"laptop",name:"Ноутбук",emoji:"💻",category:"ЭЛЕКТРОНИКА",buy:1250,sell:1690,desc:"Для работы, учёбы и игр",demand:64},
+ {id:"headphones",name:"Наушники",emoji:"🎧",category:"АКСЕССУАРЫ",buy:95,sell:165,desc:"Компактный товар с быстрым оборотом",demand:91},
+ {id:"watch",name:"Смарт-часы",emoji:"⌚",category:"АКСЕССУАРЫ",buy:260,sell:390,desc:"Умный аксессуар с хорошим спросом",demand:69}
 ];
-const resaleMoney = n => "$" + Math.round(Number(n)||0).toLocaleString("en-US");
+const RESALE_BUYERS=["Александр","Максим","Артём","Даниил","Марк","Егор","София","Алина","Полина","Виктория","Илья","Кирилл"];
+const RESALE_EVENTS=[
+ {title:"🔥 ХАЙП НА ГАДЖЕТЫ",desc:"Спрос на электронику вырос. Покупатели готовы платить больше.",category:"ЭЛЕКТРОНИКА",factor:1.18},
+ {title:"👟 МОДНЫЙ ТРЕНД",desc:"Кроссовки сейчас в топе. Продажи одежды ускорились.",category:"ОДЕЖДА",factor:1.2},
+ {title:"🎮 ИГРОВОЙ БУМ",desc:"Игровые товары стали популярнее. Хороший момент для продажи.",category:"ИГРЫ",factor:1.2},
+ {title:"🎧 СПРОС НА АКСЕССУАРЫ",desc:"Наушники и аксессуары покупают активнее обычного.",category:"АКСЕССУАРЫ",factor:1.22},
+ {title:"📉 СПОКОЙНЫЙ РЫНОК",desc:"Покупатели стали осторожнее. Снижай цену, чтобы продать быстрее.",category:"*",factor:.9}
+];
+const resaleMoney=n=>"$"+Math.round(Number(n)||0).toLocaleString("en-US");
 let resaleState;
-function defaultResaleState(){return {cash:5000,sold:0,revenue:0,profit:0,reputation:0,inventory:{},listings:[]};}
+let resaleEventTimer=null,resaleBuyerTimer=null;
+function defaultResaleState(){return {cash:5000,sold:0,revenue:0,profit:0,reputation:0,inventory:{},listings:[],offers:[],nextListingId:1,eventIndex:4,eventUntil:Date.now()+45000};}
 function loadResaleState(){
-  try{
-    const saved=JSON.parse(localStorage.getItem(RESALE_KEY)||"null");
-    resaleState={...defaultResaleState(),...(saved||{})};
-    resaleState.inventory=resaleState.inventory||{};
-    resaleState.listings=Array.isArray(resaleState.listings)?resaleState.listings:[];
-  }catch(_){resaleState=defaultResaleState();}
+ try{
+  const saved=JSON.parse(localStorage.getItem(RESALE_KEY)||"null");
+  resaleState={...defaultResaleState(),...(saved||{})};
+  resaleState.inventory=resaleState.inventory||{};
+  resaleState.listings=Array.isArray(resaleState.listings)?resaleState.listings:[];
+  resaleState.offers=Array.isArray(resaleState.offers)?resaleState.offers:[];
+  resaleState.nextListingId=Number(resaleState.nextListingId)||1;
+  resaleState.listings.forEach(item=>{if(!item.lid)item.lid=resaleState.nextListingId++;if(!item.price)item.price=resaleProduct(item.id)?.sell||100;});
+ }catch(_){resaleState=defaultResaleState();}
 }
 function saveResaleState(){try{localStorage.setItem(RESALE_KEY,JSON.stringify(resaleState));}catch(_){}}
 function resaleProduct(id){return RESALE_PRODUCTS.find(p=>p.id===id);}
+function resaleDemand(p){
+ const event=RESALE_EVENTS[resaleState.eventIndex]||RESALE_EVENTS[4];
+ const boost=event.category==="*"||event.category===p.category?event.factor:1;
+ return Math.max(15,Math.min(100,Math.round(p.demand*boost)));
+}
+function resaleMarketPrice(p){return Math.round(p.sell*resaleDemand(p)/p.demand);}
 function renderResale(){
-  const cash=document.getElementById("resaleCash");
-  if(!cash)return;
-  cash.textContent=resaleMoney(resaleState.cash);
-  document.getElementById("resaleSold").textContent=resaleState.sold;
-  document.getElementById("resaleProfit").textContent=resaleMoney(resaleState.profit);
-  document.getElementById("resaleRep").textContent=resaleState.reputation;
-  const catalog=document.getElementById("resaleCatalog");
-  catalog.innerHTML=RESALE_PRODUCTS.map(p=>`<article class="resale-product-card">
-    <div class="resale-product-visual"><span>${p.emoji}</span><small>${p.category}</small></div>
-    <div class="resale-product-info"><h3>${p.name}</h3><p>${p.desc}</p>
-      <div class="resale-price-line"><span>Закупка</span><b>${resaleMoney(p.buy)}</b></div>
-      <div class="resale-price-line"><span>Ориентир продажи</span><b class="resale-green">${resaleMoney(p.sell)}</b></div>
-      <button type="button" data-resale-buy="${p.id}" ${resaleState.cash<p.buy?"disabled":""}>КУПИТЬ ТОВАР</button>
-    </div></article>`).join("");
-  const inventory=document.getElementById("resaleInventory");
-  const owned=RESALE_PRODUCTS.filter(p=>(Number(resaleState.inventory[p.id])||0)>0);
-  inventory.innerHTML=owned.length?owned.map(p=>`<div class="resale-stock-row">
-    <div class="resale-stock-icon">${p.emoji}</div><div class="resale-stock-main"><b>${p.name}</b><small>В наличии: ${resaleState.inventory[p.id]} шт. · закупка ${resaleMoney(p.buy)}</small></div>
-    <div class="resale-stock-action"><button type="button" data-resale-list="${p.id}" ${resaleState.listings.length>=12?"disabled":""}>ВЫСТАВИТЬ · ${resaleMoney(p.sell)}</button></div>
-  </div>`).join(""):'<div class="resale-empty">На складе пока пусто. Купи первый товар на рынке.</div>';
-  const listings=document.getElementById("resaleListings");
-  listings.innerHTML=resaleState.listings.length?resaleState.listings.map((item,index)=>{const p=resaleProduct(item.id);if(!p)return "";return `<div class="resale-listing-row"><div class="resale-stock-icon">${p.emoji}</div><div class="resale-stock-main"><b>${p.name}</b><small>Объявление активно · цена ${resaleMoney(item.price)}</small></div><button type="button" data-resale-sell="${index}">ПРОДАТЬ</button></div>`;}).join(""):'<div class="resale-empty">Активных объявлений нет. Выстави товар со склада.</div>';
+ const cash=document.getElementById("resaleCash");if(!cash)return;
+ cash.textContent=resaleMoney(resaleState.cash);
+ document.getElementById("resaleSold").textContent=resaleState.sold;
+ document.getElementById("resaleProfit").textContent=resaleMoney(resaleState.profit);
+ document.getElementById("resaleRep").textContent=resaleState.reputation;
+ const event=RESALE_EVENTS[resaleState.eventIndex]||RESALE_EVENTS[4];
+ const eventEl=document.getElementById("resaleMarketEvent");
+ if(eventEl)eventEl.innerHTML='<div><b>'+event.title+'</b><span>'+event.desc+'</span></div><small>СМЕНА РЫНКА ЧЕРЕЗ '+Math.max(0,Math.ceil((resaleState.eventUntil-Date.now())/1000))+' СЕК.</small>';
+ const catalog=document.getElementById("resaleCatalog");
+ catalog.innerHTML=RESALE_PRODUCTS.map(p=>{
+  const demand=resaleDemand(p),market=resaleMarketPrice(p);
+  return '<article class="resale-product-card"><div class="resale-product-visual"><span>'+p.emoji+'</span><small>'+p.category+'</small></div><div class="resale-product-info"><h3>'+p.name+'</h3><p>'+p.desc+'</p><div class="resale-demand"><span>СПРОС</span><b>'+demand+'%</b><i><em style="width:'+demand+'%"></em></i></div><div class="resale-price-line"><span>Закупка</span><b>'+resaleMoney(p.buy)+'</b></div><div class="resale-price-line"><span>Рынок сейчас</span><b class="resale-green">'+resaleMoney(market)+'</b></div><button type="button" data-resale-buy="'+p.id+'" '+(resaleState.cash<p.buy?"disabled":"")+'>КУПИТЬ ТОВАР</button></div></article>';
+ }).join("");
+ const inventory=document.getElementById("resaleInventory");
+ const owned=RESALE_PRODUCTS.filter(p=>(Number(resaleState.inventory[p.id])||0)>0);
+ inventory.innerHTML=owned.length?owned.map(p=>'<div class="resale-stock-row"><div class="resale-stock-icon">'+p.emoji+'</div><div class="resale-stock-main"><b>'+p.name+'</b><small>В наличии: '+resaleState.inventory[p.id]+' шт. · закупка '+resaleMoney(p.buy)+'</small></div><div class="resale-stock-action"><button type="button" data-resale-list="'+p.id+'" '+(resaleState.listings.length>=12?"disabled":"")+'>ВЫСТАВИТЬ НА РЫНОК</button></div></div>').join(""):'<div class="resale-empty">На складе пока пусто. Купи первый товар на рынке.</div>';
+ const listings=document.getElementById("resaleListings");
+ listings.innerHTML=resaleState.listings.length?resaleState.listings.map(item=>{
+  const p=resaleProduct(item.id);if(!p)return "";
+  const market=resaleMarketPrice(p),price=Number(item.price)||market;
+  return '<div class="resale-listing-row resale-edit-listing"><div class="resale-stock-icon">'+p.emoji+'</div><div class="resale-stock-main"><b>'+p.name+'</b><small>Закупка '+resaleMoney(item.cost)+' · рынок '+resaleMoney(market)+'</small><label class="resale-price-editor"><span>ТВОЯ ЦЕНА</span><input type="number" min="1" max="10000000" step="1" value="'+price+'" data-resale-price="'+item.lid+'" inputmode="numeric"></label></div><button type="button" data-resale-update="'+item.lid+'">СОХРАНИТЬ</button></div>';
+ }).join(""):'<div class="resale-empty">Активных объявлений нет. Выстави товар со склада.</div>';
+ const buyers=document.getElementById("resaleBuyers");
+ buyers.innerHTML=resaleState.offers.length?resaleState.offers.map(o=>{
+  const p=resaleProduct(o.id);if(!p)return "";
+  return '<div class="resale-buyer-row"><div class="resale-buyer-avatar">👤</div><div class="resale-buyer-info"><b>'+o.name+' хочет купить: '+p.name+'</b><small>Предлагает '+resaleMoney(o.price)+' · твоя цена '+resaleMoney(o.ask)+'</small></div><div class="resale-buyer-actions"><button type="button" data-resale-accept="'+o.oid+'">ПРИНЯТЬ</button><button type="button" data-resale-counter="'+o.oid+'">ТОРГОВАТЬСЯ</button></div></div>';
+ }).join(""):'<div class="resale-empty">Покупатели ищут товары. Опубликуй объявление — предложения появятся автоматически.</div>';
 }
 function buyResaleItem(id){
-  const p=resaleProduct(id);if(!p)return;
-  if(resaleState.cash<p.buy){resaleToast("Не хватает денег на покупку");return;}
-  resaleState.cash-=p.buy;resaleState.inventory[id]=(Number(resaleState.inventory[id])||0)+1;
-  saveResaleState();renderResale();resaleToast("Товар куплен и добавлен на склад");
+ const p=resaleProduct(id);if(!p)return;
+ if(resaleState.cash<p.buy){resaleToast("Не хватает денег на покупку");return;}
+ resaleState.cash-=p.buy;resaleState.inventory[id]=(Number(resaleState.inventory[id])||0)+1;
+ saveResaleState();renderResale();resaleToast("Товар куплен и добавлен на склад");
 }
 function listResaleItem(id){
-  const p=resaleProduct(id);if(!p||!(Number(resaleState.inventory[id])>0))return;
-  if(resaleState.listings.length>=12){resaleToast("Можно разместить не больше 12 объявлений");return;}
-  resaleState.inventory[id]-=1;
-  resaleState.listings.push({id,price:p.sell,cost:p.buy,created:Date.now()});
-  saveResaleState();renderResale();resaleToast("Объявление опубликовано");
+ const p=resaleProduct(id);if(!p||!(Number(resaleState.inventory[id])>0))return;
+ if(resaleState.listings.length>=12){resaleToast("Можно разместить не больше 12 объявлений");return;}
+ resaleState.inventory[id]-=1;
+ resaleState.listings.push({lid:resaleState.nextListingId++,id,price:resaleMarketPrice(p),cost:p.buy,created:Date.now()});
+ saveResaleState();renderResale();resaleToast("Объявление опубликовано. Ждём покупателей!");
 }
-function sellResaleItem(index){
-  const item=resaleState.listings[index];if(!item)return;
-  const p=resaleProduct(item.id);if(!p)return;
-  const earned=Number(item.price)||p.sell;
-  resaleState.cash+=earned;resaleState.revenue+=earned;resaleState.profit+=earned-(Number(item.cost)||p.buy);
-  resaleState.sold+=1;resaleState.reputation=Math.min(100,resaleState.reputation+2);
-  resaleState.listings.splice(index,1);saveResaleState();renderResale();resaleToast("Сделка завершена! Прибыль: "+resaleMoney(earned-(Number(item.cost)||p.buy)));
+function updateResalePrice(lid){
+ const item=resaleState.listings.find(x=>Number(x.lid)===Number(lid));if(!item)return;
+ const input=document.querySelector('[data-resale-price="'+lid+'"]');
+ const price=Math.floor(Number(input?.value));
+ if(!Number.isFinite(price)||price<1||price>10000000){resaleToast("Укажи корректную цену от $1 до $10 000 000");return;}
+ item.price=price;saveResaleState();renderResale();resaleToast("Цена объявления обновлена");
+}
+function createResaleBuyer(){
+ if(!resaleState.listings.length||resaleState.offers.length>=5)return;
+ const listing=resaleState.listings[Math.floor(Math.random()*resaleState.listings.length)];
+ const p=resaleProduct(listing.id);if(!p)return;
+ const demand=resaleDemand(p),ask=Number(listing.price)||p.sell;
+ const market=resaleMarketPrice(p);
+ const willingness=market*(.72+demand/250);
+ const offer=Math.max(1,Math.round(Math.min(ask*.98,willingness)*(0.94+Math.random()*.12)));
+ const offerObj={oid:Date.now()+Math.floor(Math.random()*9999),lid:listing.lid,id:p.id,name:RESALE_BUYERS[Math.floor(Math.random()*RESALE_BUYERS.length)],price:offer,ask};
+ resaleState.offers.push(offerObj);saveResaleState();renderResale();
+}
+function completeResaleSale(listing,price){
+ const p=resaleProduct(listing.id);if(!p)return;
+ const earned=Math.max(1,Math.round(price)),cost=Number(listing.cost)||p.buy;
+ resaleState.cash+=earned;resaleState.revenue+=earned;resaleState.profit+=earned-cost;
+ resaleState.sold+=1;resaleState.reputation=Math.min(100,resaleState.reputation+2);
+ resaleState.listings=resaleState.listings.filter(x=>Number(x.lid)!==Number(listing.lid));
+ resaleState.offers=resaleState.offers.filter(x=>Number(x.lid)!==Number(listing.lid));
+ saveResaleState();renderResale();resaleToast("Сделка закрыта! Прибыль: "+resaleMoney(earned-cost));
+}
+function acceptResaleOffer(oid){
+ const offer=resaleState.offers.find(x=>Number(x.oid)===Number(oid));if(!offer)return;
+ const listing=resaleState.listings.find(x=>Number(x.lid)===Number(offer.lid));
+ if(!listing){resaleState.offers=resaleState.offers.filter(x=>x.oid!==offer.oid);saveResaleState();renderResale();return;}
+ completeResaleSale(listing,offer.price);
+}
+function counterResaleOffer(oid){
+ const offer=resaleState.offers.find(x=>Number(x.oid)===Number(oid));if(!offer)return;
+ const listing=resaleState.listings.find(x=>Number(x.lid)===Number(offer.lid));if(!listing)return;
+ const p=resaleProduct(listing.id),market=resaleMarketPrice(p),ask=Number(listing.price)||p.sell;
+ const chance=Math.max(.08,Math.min(.92,(market*1.12/Math.max(1,ask))));
+ if(Math.random()<chance){
+  completeResaleSale(listing,ask);
+  resaleToast("Покупатель согласился на твою цену!");
+ }else{
+  resaleState.offers=resaleState.offers.filter(x=>Number(x.oid)!==Number(oid));
+  saveResaleState();renderResale();resaleToast("Покупатель отказался. Попробуй снизить цену.");
+ }
+}
+function rotateResaleMarket(){
+ let next=Math.floor(Math.random()*RESALE_EVENTS.length);
+ if(next===resaleState.eventIndex)next=(next+1)%RESALE_EVENTS.length;
+ resaleState.eventIndex=next;resaleState.eventUntil=Date.now()+60000;
+ saveResaleState();renderResale();resaleToast("Рынок изменился: "+RESALE_EVENTS[next].title);
 }
 function resaleToast(message){
-  const el=document.getElementById("resaleToast");if(!el)return;
-  el.textContent=message;el.classList.add("show");clearTimeout(resaleToast.timer);resaleToast.timer=setTimeout(()=>el.classList.remove("show"),2200);
+ const el=document.getElementById("resaleToast");if(!el)return;
+ el.textContent=message;el.classList.add("show");clearTimeout(resaleToast.timer);
+ resaleToast.timer=setTimeout(()=>el.classList.remove("show"),2500);
 }
-window.initResaleSimulator=function(){if(!resaleState)loadResaleState();renderResale();};
+window.initResaleSimulator=function(){
+ if(!resaleState)loadResaleState();
+ if(resaleState.eventUntil<Date.now())resaleState.eventUntil=Date.now()+45000;
+ renderResale();
+ if(resaleEventTimer)clearInterval(resaleEventTimer);
+ if(resaleBuyerTimer)clearInterval(resaleBuyerTimer);
+ resaleEventTimer=setInterval(()=>{if(!document.getElementById("resaleSimulatorView")?.hidden){if(resaleState.eventUntil<=Date.now())rotateResaleMarket();else renderResale();}},5000);
+ resaleBuyerTimer=setInterval(()=>{if(!document.getElementById("resaleSimulatorView")?.hidden)createResaleBuyer();},18000);
+};
 window.closeResaleSimulator=function(){
-  const hub=document.getElementById("simulatorHub"),view=document.getElementById("resaleSimulatorView");
-  if(!hub||!view)return;view.hidden=true;hub.hidden=false;
+ const hub=document.getElementById("simulatorHub"),view=document.getElementById("resaleSimulatorView");
+ if(!hub||!view)return;view.hidden=true;hub.hidden=false;
+ if(resaleEventTimer)clearInterval(resaleEventTimer);if(resaleBuyerTimer)clearInterval(resaleBuyerTimer);
 };
 document.addEventListener("click",event=>{
-  const buy=event.target.closest("[data-resale-buy]");if(buy){buyResaleItem(buy.dataset.resaleBuy);return;}
-  const list=event.target.closest("[data-resale-list]");if(list){listResaleItem(list.dataset.resaleList);return;}
-  const sell=event.target.closest("[data-resale-sell]");if(sell)sellResaleItem(Number(sell.dataset.resaleSell));
+ const buy=event.target.closest("[data-resale-buy]");if(buy){buyResaleItem(buy.dataset.resaleBuy);return;}
+ const list=event.target.closest("[data-resale-list]");if(list){listResaleItem(list.dataset.resaleList);return;}
+ const update=event.target.closest("[data-resale-update]");if(update){updateResalePrice(update.dataset.resaleUpdate);return;}
+ const accept=event.target.closest("[data-resale-accept]");if(accept){acceptResaleOffer(accept.dataset.resaleAccept);return;}
+ const counter=event.target.closest("[data-resale-counter]");if(counter)counterResaleOffer(counter.dataset.resaleCounter);
 });
