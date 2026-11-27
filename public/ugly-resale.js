@@ -161,6 +161,10 @@ function loadResaleState(){
   resaleState.storePrices=resaleState.storePrices&&typeof resaleState.storePrices==="object"?resaleState.storePrices:{};
   resaleState.storeStock=resaleState.storeStock&&typeof resaleState.storeStock==="object"?resaleState.storeStock:{};
   if(!resaleState.storeItems.length||!Number(resaleState.storeUntil)||resaleState.storeUntil<=Date.now())refreshResaleStore(false);
+  if(Number(resaleState.storePricingVersion||0)<2){
+   resaleState.storeItems.forEach(id=>{const p=resaleProduct(id);if(p){const market=resaleMarketPrice(p),factor=.65+Math.random()*.60;resaleState.storePrices[id]=Math.max(1,Math.round(market*factor));}});
+   resaleState.storePricingVersion=2;
+  }
   resaleState.nextListingId=Number(resaleState.nextListingId)||1;
   resaleState.listings.forEach(item=>{if(!item.lid)item.lid=resaleState.nextListingId++;if(!item.price)item.price=resaleProduct(item.id)?.sell||100;});
  }catch(_){resaleState=defaultResaleState();}
@@ -281,7 +285,8 @@ function refreshResaleStore(showToast=true){
  for(let i=pool.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]];}
  const chosen=pool.slice(0,12);
  resaleState.storeItems=chosen.map(p=>p.id);resaleState.storePrices={};resaleState.storeStock={};
- chosen.forEach(p=>{const market=resaleMarketPrice(p);const factor=.78+Math.random()*.62;resaleState.storePrices[p.id]=Math.max(1,Math.round(market*factor));resaleState.storeStock[p.id]=1+Math.floor(Math.random()*4);});
+ chosen.forEach(p=>{const market=resaleMarketPrice(p);const factor=.65+Math.random()*.60;resaleState.storePrices[p.id]=Math.max(1,Math.round(market*factor));resaleState.storeStock[p.id]=1+Math.floor(Math.random()*4);});
+ resaleState.storePricingVersion=2;
  resaleState.storeUntil=Date.now()+180000;saveResaleState();renderResale();
  if(showToast)resaleToast("Магазин обновлён! Поступили новые товары и цены.");
 }
