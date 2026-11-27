@@ -2560,7 +2560,7 @@ async function getRealEstate(client, telegramId, accrue=true) {
  const row=result.rows[0];let portfolio=Array.isArray(row.portfolio)?row.portfolio:[],economy=normalizeREconomy(row.economy_data);
  const now=Date.now();let completed=[];
  economy.constructions=economy.constructions.filter(job=>{if(new Date(job.completeAt).getTime()<=now){completed.push(job);return false;}return true;});
- for(const job of completed){const project=REAL_ESTATE_PROJECTS.find(x=>x.id===job.projectId);if(project)portfolio.push({uid:"build-"+job.id,id:"built-"+project.id,name:project.name,emoji:project.emoji,type:"ПОСТРОЕНО",purchasePrice:job.cost,marketValue:Math.round(job.cost*1.22),rent:project.rent,cost:project.expense,level:1,districtId:job.districtId,districtName:job.districtName,purchasedAt:new Date().toISOString()});}
+ for(const job of completed){const project=REAL_ESTATE_PROJECTS.find(x=>x.id===job.projectId);if(project)portfolio.push({uid:"build-"+job.id,id:"built-"+project.id,name:project.name,emoji:project.emoji,type:"ПОСТРОЕНО",purchasePrice:job.cost,marketValue:Math.round(job.cost*1.22),landId:job.landId,rent:project.rent,cost:project.expense,level:1,districtId:job.districtId,districtName:job.districtName,purchasedAt:new Date().toISOString()});}
  const managerCount=economy.staff.filter(x=>x.id==="manager").length,techCount=economy.staff.filter(x=>x.id==="maintenance").length;
  let earned=0;
  if(accrue){
