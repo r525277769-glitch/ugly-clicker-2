@@ -891,11 +891,21 @@ function bindControls() {
 window.openSimulator = function(id) {
   if (id !== "pc") return;
   const hub = $("simulatorHub"), view = $("pcSimulatorView"), page = $("simulator");
-  if (!hub || !view || !page) return;
+  if (!hub || !view || !page) {
+    console.error("UGLY SIMULATOR: не найдены элементы меню или ПК-симулятора");
+    return;
+  }
+  // Ensure the simulator page itself is active before initializing the 3D scene.
+  document.querySelectorAll(".page").forEach(el => el.classList.remove("active"));
+  page.classList.add("active");
+  document.querySelectorAll(".nav-button").forEach(button => button.classList.toggle("active", button.dataset.page === "simulator"));
   hub.hidden = true;
   view.hidden = false;
-  if (page.classList.contains("active") && !$("pcSimulatorView")?.hidden) window.initUglyBusiness();
-  requestAnimationFrame(() => resize());
+  view.style.display = "block";
+  requestAnimationFrame(() => {
+    resize();
+    if (typeof window.initUglyBusiness === "function") window.initUglyBusiness();
+  });
 };
 window.closeSimulator = function() {
   const hub = $("simulatorHub"), view = $("pcSimulatorView");
