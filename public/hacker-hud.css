@@ -394,3 +394,28 @@ body{min-height:100vh;min-height:100dvh}
 @media(prefers-reduced-motion:reduce){
  .page.active,.page.hud-glitch-enter,#hudTransitionOverlay.is-running .hud-scan-beam{animation:none!important}
 }
+
+/* STABLE TAP FEEDBACK: prevent mobile page zoom and layout scaling on clicks. */
+.coin{
+  touch-action:manipulation!important;
+  -webkit-tap-highlight-color:transparent;
+}
+.coin:active{
+  transform:none!important;
+  filter:brightness(1.08)!important;
+}
+.coin.coin-hit{
+  animation:coinHitStable .16s ease!important;
+}
+@keyframes coinHitStable{
+  0%,100%{filter:brightness(1)}
+  45%{filter:brightness(1.22)}
+}
+/* Balance feedback should glow, never grow/shrink the card. */
+.balance-card.pulse{
+  animation:balancePulseStable .5s ease!important;
+}
+@keyframes balancePulseStable{
+  0%,100%{border-color:var(--border);box-shadow:0 8px 25px #0008}
+  45%{border-color:var(--gold2);box-shadow:0 0 22px #e9bd5940}
+}
