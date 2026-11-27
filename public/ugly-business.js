@@ -727,7 +727,7 @@ function animate() {
   }
   for(let i=clubNPCs.length-1;i>=0;i--){if(clubNPCs[i].mode==="exit"&&clubNPCs[i].mesh.position.z>8.25){scene.remove(clubNPCs[i].mesh);const ai=animated.findIndex(a=>a.root===clubNPCs[i].mesh);if(ai>=0)animated.splice(ai,1);clubNPCs.splice(i,1);}}
 
-  stationGroups.forEach(g=>{g.visible=true;if(g.parent!==scene)scene.add(g);});consoleGroups.forEach((g,i)=>g.visible=i<(state.clubData.consoleStations||[]).length);
+  stationGroups.forEach(g=>{g.visible=true;if(g.parent!==scene)scene.add(g);});consoleGroups.forEach(g=>{g.visible=true;if(g.parent!==scene)scene.add(g);});
   updateCamera(dt);
   activeObject = findInteractable();
   $("simHint").textContent = activeObject ? activeObject.hint : "Двигайся по клубу. Подойди к ресепшену или игровому месту.";
