@@ -328,3 +328,11 @@ img{max-width:100%}
 .resale-product-visual>img{object-fit:contain!important;padding:7px;box-sizing:border-box}
 .resale-product-info{padding:10px!important}
 @media(max-width:420px){.resale-product-visual{height:96px!important;min-height:96px!important}.resale-product-visual>img{height:96px!important;padding:6px}}
+
+/* Force clean, correctly sized resale product photography */
+#resaleCatalog .resale-product-card{align-self:start;overflow:hidden}
+#resaleCatalog .resale-product-visual{display:block!important;position:relative!important;width:100%!important;height:124px!important;min-height:124px!important;max-height:124px!important;overflow:hidden!important;padding:0!important;background:#f1f3f6!important;border-radius:10px 10px 0 0!important}
+#resaleCatalog .resale-product-visual>img{position:absolute!important;inset:0!important;display:block!important;width:100%!important;height:124px!important;max-height:124px!important;max-width:100%!important;object-fit:contain!important;object-position:center!important;padding:8px!important;margin:0!important;box-sizing:border-box!important;opacity:1!important;filter:none!important;mix-blend-mode:normal!important;background:#f1f3f6!important}
+#resaleCatalog .resale-product-visual>.resale-photo-fallback{position:absolute!important;inset:0!important;display:none;place-items:center!important;background:#e9edf3!important;color:#334155!important;font-size:44px!important;filter:none!important}
+#resaleCatalog .resale-product-visual small{z-index:2;top:auto!important;left:auto!important;right:7px!important;bottom:7px!important;background:#17243ddd!important;color:#fff!important}
+@media(max-width:420px){#resaleCatalog .resale-product-visual{height:112px!important;min-height:112px!important;max-height:112px!important}#resaleCatalog .resale-product-visual>img{height:112px!important;max-height:112px!important}}
