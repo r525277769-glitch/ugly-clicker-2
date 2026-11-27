@@ -63,7 +63,7 @@ const RESALE_PRODUCT_PHOTOS = {
  projector:"https://images.unsplash.com/photo-1535016120720-40c646be5580?auto=format&fit=crop&w=900&q=82",
  server:"https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=900&q=82",
  supercar:"https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=900&q=82",
- helmet:"https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&w=900&q=82",
+ helmet:"https://images.pexels.com/photos/19351989/pexels-photo-19351989.jpeg?auto=compress&cs=tinysrgb&w=900",
 };
 function resalePhoto(p){return p&&RESALE_PRODUCT_PHOTOS[p.id]||"";}
 
