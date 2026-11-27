@@ -190,7 +190,7 @@ function renderResale(){
  const catalog=document.getElementById("resaleCatalog");
  catalog.innerHTML=resaleState.storeItems.map(id=>resaleProduct(id)).filter(Boolean).map(p=>{
   const demand=resaleDemand(p),market=resaleMarketPrice(p),buyPrice=resaleStorePrice(p),stock=Number(resaleState.storeStock[p.id])||0;
-  return '<article class="resale-product-card"><div class="resale-product-visual" style="position:relative;overflow:hidden;height:112px;min-height:112px;background:#eef2f8"><img src="'+resalePhoto(p)+'" alt="'+p.name+'" loading="lazy" decoding="async" style="width:100%;height:112px;object-fit:contain;display:block;padding:7px;box-sizing:border-box" onerror="this.nextElementSibling.style.display=\'grid\';this.remove()"><span class="resale-photo-fallback" style="display:none;position:absolute;inset:0;place-items:center;font-size:48px;background:linear-gradient(135deg,#243b5d,#17243d)">'+p.emoji+'</span><small style="position:absolute;right:7px;bottom:7px;background:#101827dd;padding:5px 8px;border-radius:8px">'+p.category+'</small></div><div class="resale-product-info"><h3>'+p.name+'</h3><p>'+p.desc+'</p><div class="resale-demand"><span>СПРОС</span><b>'+demand+'%</b><i><em style="width:'+demand+'%"></em></i></div><div class="resale-price-line"><span>Цена магазина</span><b>'+resaleMoney(buyPrice)+'</b></div><div class="resale-price-line"><span>Рыночная цена</span><b class="resale-green">'+resaleMoney(market)+'</b></div><div class="resale-price-line"><span>Осталось в магазине</span><b>'+stock+' шт.</b></div><button type="button" data-resale-buy="'+p.id+'" '+(resaleState.cash<buyPrice||stock<1?"disabled":"")+'>КУПИТЬ ТОВАР</button></div></article>';
+  return '<article class="resale-product-card"><div class="resale-product-visual" style="position:relative;overflow:hidden;height:112px;min-height:112px;background:#eef2f8"><img src="'+resalePhoto(p)+'" alt="'+p.name+'" loading="lazy" decoding="async" style="width:100%;height:112px;object-fit:contain;display:block;padding:7px;box-sizing:border-box" onerror="this.nextElementSibling.style.display=\'grid\';this.remove()"><span class="resale-photo-fallback" style="display:none;position:absolute;inset:0;place-items:center;font-size:48px;background:linear-gradient(135deg,#243b5d,#17243d)">'+p.emoji+'</span><small style="position:absolute;right:7px;bottom:7px;background:#101827dd;padding:5px 8px;border-radius:8px">'+p.category+'</small></div><div class="resale-product-info"><h3>'+p.name+'</h3><p>'+p.desc+'</p><div class="resale-demand"><span>СПРОС</span><b>'+demand+'%</b><i><em style="width:'+demand+'%"></em></i></div><div class="resale-price-line"><span>Цена магазина</span><b>'+resaleMoney(buyPrice)+'</b></div><div class="resale-price-line"><span>Рыночная цена</span><b class="resale-green">'+resaleMoney(market)+'</b></div><div class="resale-price-line"><span>Осталось в магазине</span><b>'+stock+' шт.</b></div><div class="resale-buy-controls"><label>Количество <input type="number" min="1" max="'+Math.max(1,Math.min(stock,Math.floor(resaleState.cash/Math.max(1,buyPrice))))+'" value="1" step="1" data-resale-qty="'+p.id+'" '+(stock<1||resaleState.cash<buyPrice?"disabled":"")+'></label><button type="button" data-resale-buy="'+p.id+'" '+(resaleState.cash<buyPrice||stock<1?"disabled":"")+'>КУПИТЬ</button></div></div></article>';
  }).join("");
  const inventory=document.getElementById("resaleInventory");
  const owned=RESALE_PRODUCTS.filter(p=>(Number(resaleState.inventory[p.id])||0)>0);
@@ -207,14 +207,20 @@ function renderResale(){
   return '<div class="resale-buyer-row"><div class="resale-buyer-avatar">👤</div><div class="resale-buyer-info"><b>'+o.name+' хочет купить: '+p.name+'</b><small>Предлагает '+resaleMoney(o.price)+' · твоя цена '+resaleMoney(o.ask)+'</small></div><div class="resale-buyer-actions"><button type="button" data-resale-accept="'+o.oid+'">ПРИНЯТЬ</button><button type="button" data-resale-counter="'+o.oid+'">ТОРГОВАТЬСЯ</button></div></div>';
  }).join(""):'<div class="resale-empty">Покупатели ищут товары. Опубликуй объявление — предложения появятся автоматически.</div>';
 }
-function buyResaleItem(id){
+function buyResaleItem(id,requestedQty=1){
  const p=resaleProduct(id);if(!p)return;
- const cost=resaleStorePrice(p);
- if(!(Number(resaleState.storeStock[id])>0)){resaleToast("Этот товар закончился — дождись обновления магазина");return;}
- if(resaleState.cash<cost){resaleToast("Не хватает денег на покупку");return;}
- resaleState.cash-=cost;resaleState.storeStock[id]=Math.max(0,(Number(resaleState.storeStock[id])||0)-1);resaleState.inventory[id]=(Number(resaleState.inventory[id])||0)+1;
- if(!Array.isArray(resaleState.inventoryCosts[id]))resaleState.inventoryCosts[id]=[];resaleState.inventoryCosts[id].push(cost);
- saveResaleState();renderResale();resaleToast("Товар куплен и добавлен на склад");
+ const cost=resaleStorePrice(p),stock=Math.max(0,Number(resaleState.storeStock[id])||0);
+ const qty=Math.floor(Number(requestedQty)||1);
+ if(stock<1){resaleToast("Этот товар закончился — дождись обновления магазина");return;}
+ if(!Number.isSafeInteger(qty)||qty<1){resaleToast("Укажи корректное количество товара");return;}
+ if(qty>stock){resaleToast("В магазине осталось только "+stock+" шт.");return;}
+ const total=cost*qty;
+ if(resaleState.cash<total){resaleToast("Не хватает денег. Нужно "+resaleMoney(total));return;}
+ resaleState.cash-=total;resaleState.storeStock[id]=stock-qty;resaleState.inventory[id]=(Number(resaleState.inventory[id])||0)+qty;
+ if(!Array.isArray(resaleState.inventoryCosts[id]))resaleState.inventoryCosts[id]=[];
+ for(let i=0;i<qty;i++)resaleState.inventoryCosts[id].push(cost);
+ saveResaleState();renderResale();
+ resaleToast("Куплено: "+qty+" × "+p.name+" · за 1 шт. "+resaleMoney(cost)+" · ИТОГО: "+resaleMoney(total));
 }
 function listResaleItem(id){
  const p=resaleProduct(id);if(!p||!(Number(resaleState.inventory[id])>0))return;
@@ -316,7 +322,7 @@ window.closeResaleSimulator=function(){
  if(resaleEventTimer)clearInterval(resaleEventTimer);if(resaleBuyerTimer)clearInterval(resaleBuyerTimer);
 };
 document.addEventListener("click",event=>{
- const buy=event.target.closest("[data-resale-buy]");if(buy){buyResaleItem(buy.dataset.resaleBuy);return;}
+ const buy=event.target.closest("[data-resale-buy]");if(buy){const qty=document.querySelector('[data-resale-qty="'+buy.dataset.resaleBuy+'"]');buyResaleItem(buy.dataset.resaleBuy,qty?.value||1);return;}
  const list=event.target.closest("[data-resale-list]");if(list){listResaleItem(list.dataset.resaleList);return;}
  const update=event.target.closest("[data-resale-update]");if(update){updateResalePrice(update.dataset.resaleUpdate);return;}
  const accept=event.target.closest("[data-resale-accept]");if(accept){acceptResaleOffer(accept.dataset.resaleAccept);return;}
