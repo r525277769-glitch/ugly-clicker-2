@@ -4,8 +4,30 @@ const crypto = require("crypto");
 const { Pool } = require("pg");
 
 const app = express();
-app.use(express.json());
-app.use(express.static("public"));
+
+// Безопасные HTTP-заголовки и компактный лимит JSON-запросов.
+// Игровые механики и форматы API не меняются.
+app.disable("x-powered-by");
+app.use((req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+  if (req.path === "/" || req.path === "/index.html") {
+    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+  }
+  next();
+});
+app.use(express.json({ limit: "64kb", strict: true }));
+app.use(express.static("public", {
+  etag: true,
+  lastModified: true,
+  maxAge: "1h",
+  setHeaders(res, filePath) {
+    if (filePath.endsWith("index.html")) {
+      res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+    }
+  }
+}));
 
 const PORT = process.env.PORT || 3000;
 const BOT_TOKEN = process.env.BOT_TOKEN;
@@ -14,7 +36,10 @@ const DATABASE_URL = process.env.DATABASE_URL;
 const pool = new Pool({
   connectionString: DATABASE_URL,
   ssl: DATABASE_URL ? { rejectUnauthorized: false } : false,
-  connectionTimeoutMillis: 10000
+  connectionTimeoutMillis: 10000,
+  idleTimeoutMillis: 30000,
+  max: 15,
+  allowExitOnIdle: true
 });
 
 let databaseReady = false;
@@ -365,7 +390,7 @@ function authenticate(initData) {
   const params = new URLSearchParams(initData);
   const hash = params.get("hash");
 
-  if (!hash) {
+  if (!hash || !/^[a-f0-9]{64}$/i.test(hash)) {
     throw new Error("Invalid Telegram data");
   }
 
@@ -400,9 +425,14 @@ function authenticate(initData) {
     throw new Error("Telegram authentication failed");
   }
 
-  const user = JSON.parse(params.get("user") || "{}");
+  let user;
+  try {
+    user = JSON.parse(params.get("user") || "{}");
+  } catch {
+    throw new Error("Invalid Telegram user data");
+  }
 
-  if (!user.id) {
+  if (!user || !/^\\d+$/.test(String(user.id || "")) || BigInt(user.id) <= 0n) {
     throw new Error("Player not found");
   }
 
@@ -415,6 +445,7 @@ async function auth(req, res, next) {
       return res.status(503).json({ error: "Database is starting" });
     }
 
+    res.setHeader("Cache-Control", "no-store");
     req.player = authenticate(req.headers["x-telegram-init-data"]);
 
     await pool.query(
