@@ -159,9 +159,9 @@ input{background:#090909;border:1px solid var(--gold-dark);border-radius:11px;pa
    <div class="simulator-card-art pc-art"><span>🖥️</span><i>3D</i></div>
    <div class="simulator-card-info"><span class="simulator-card-status">ДОСТУПЕН</span><h3>ПК-КЛУБ</h3><p>Управляй компьютерным клубом, обслуживай посетителей, улучшай игровые места и расширяй бизнес.</p><button type="button" onclick="openSimulator('pc')">ОТКРЫТЬ СИМУЛЯТОР <b>→</b></button></div>
   </article>
-  <article class="simulator-card simulator-card-soon">
-   <div class="simulator-card-art future-art"><span>🎮</span><i>NEW</i></div>
-   <div class="simulator-card-info"><span class="simulator-card-status">НОВЫЙ РЕЖИМ</span><h3>ДРУГОЙ СИМУЛЯТОР</h3><p>Свободный слот для следующего режима. Новые симуляторы можно добавлять независимо от ПК-клуба.</p><button type="button" disabled>СКОРО БУДЕТ ДОСТУПЕН</button></div>
+  <article class="simulator-card simulator-card-ready resale-hub-card">
+   <div class="simulator-card-art resale-art"><span>🛍️</span><i>NEW</i></div>
+   <div class="simulator-card-info"><span class="simulator-card-status">ДОСТУПЕН</span><h3>ПЕРЕПРОДАЖА ВЕЩЕЙ</h3><p>Покупай товары по оптовой цене, создавай объявления, продавай дороже и развивай свой магазин.</p><button type="button" onclick="openSimulator('resale')">ОТКРЫТЬ СИМУЛЯТОР <b>→</b></button></div>
   </article>
  </div>
 </div>
@@ -180,7 +180,28 @@ input{background:#090909;border:1px solid var(--gold-dark);border-radius:11px;pa
 <div class="sim-reception-modal" id="simReceptionModal" aria-hidden="true"><div class="sim-reception-card"><button type="button" class="sim-reception-close" id="simReceptionClose" aria-label="Закрыть">×</button><div class="sim-reception-kicker">UGLY CYBER CLUB · ADMIN</div><h2>💻 ОФОРМЛЕНИЕ ПОСЕТИТЕЛЯ</h2><div class="sim-reception-guest" id="simReceptionGuest">Посетитель</div><div class="sim-reception-stats"><div><small>ВРЕМЯ АРЕНДЫ</small><b id="simReceptionDuration">—</b></div><div><small>ОПЛАТА ЗА СЕССИЮ</small><b id="simReceptionPrice">—</b></div></div><label for="simReceptionStation">ВЫБЕРИ СВОБОДНЫЙ ПК</label><select id="simReceptionStation"></select><label for="simConsoleMinutes">ВРЕМЯ ИГРЫ НА КОНСОЛИ</label><select id="simConsoleMinutes" style="display:none"><option value="3">3 минуты</option><option value="4" selected>4 минуты</option><option value="5">5 минут</option></select><p class="small" id="simReceptionHint">Выбери компьютер для посетителя.</p><button type="button" id="simReceptionConfirm" class="sim-reception-confirm">ВЫДАТЬ ПК И НАЧАТЬ СЕССИЮ</button><p class="small">Оплата будет зачислена в кассу клуба после завершения аренды.</p></div></div>
 <div class="panel sim-console-panel"><h2>🛋 КОНСОЛЬНАЯ ЗОНА · PLAYSTATION / XBOX</h2><p class="small">Отдельная игровая комната с телевизорами, приставками и диванами. Каждое место можно улучшить до 4 уровня.</p><div class="sim-console-stats">КОНСОЛЬНЫЕ МЕСТА: <b id="simConsoleCount">2 / 8</b></div><div class="panel sim-queue-panel"><h2>🎮 ОЧЕРЕДЬ КОНСОЛЬНОЙ ЗОНЫ</h2><p class="small">Эта очередь обслуживает только PlayStation и Xbox. Посетители ПК сюда не попадают.</p><div id="simConsoleQueue"><p class="small">Загрузка очереди консолей...</p></div></div><div id="simConsoleUpgradePanel"></div></div><div class="panel sim-sessions-panel"><h2>🎮 ИГРАЮТ СЕЙЧАС</h2><div id="simSessions"><p class="small">Активных сессий пока нет.</p></div></div>
 <div class="panel sim-upgrades-panel"><h2>🧩 УЛУЧШЕНИЯ КОМПЬЮТЕРОВ</h2><p class="small">Каждое место состоит из семи отдельных компонентов. Доход за посетителя рассчитывается по самому слабому компоненту.</p><div id="simUpgradePanel"></div></div>
-<div class="panel sim-progress"><h2>ПРОГРЕСС КОМПЬЮТЕРНОГО КЛУБА</h2><div class="sim-progress-track"><div id="simXpFill"></div></div><p id="simXpText" class="small">0 / 100 опыта</p><p class="small">Улучшай каждый компонент ПК, расширяй зал и привлекай посетителей рекламой. Оплата начисляется после завершения игровой сессии.</p><p class="small">Вывод в основной баланс: $100 = 1 GRAMM.</p></div></div></section>
+<div class="panel sim-progress"><h2>ПРОГРЕСС КОМПЬЮТЕРНОГО КЛУБА</h2><div class="sim-progress-track"><div id="simXpFill"></div></div><p id="simXpText" class="small">0 / 100 опыта</p><p class="small">Улучшай каждый компонент ПК, расширяй зал и привлекай посетителей рекламой. Оплата начисляется после завершения игровой сессии.</p><p class="small">Вывод в основной баланс: $100 = 1 GRAMM.</p></div></div>
+<div id="resaleSimulatorView" hidden>
+ <button type="button" class="simulator-back-button" onclick="closeResaleSimulator()">← НАЗАД К ВЫБОРУ СИМУЛЯТОРОВ</button>
+ <div class="resale-heading"><span>UGLY MARKET · RESELLER TYCOON</span><h2>ПЕРЕПРОДАЖА ВЕЩЕЙ</h2><p>Покупай выгодно. Создавай объявления. Зарабатывай на каждой сделке.</p></div>
+ <div class="resale-stats">
+  <div><small>ТВОЙ БАЛАНС</small><strong id="resaleCash">$5,000</strong></div>
+  <div><small>ПРОДАНО ТОВАРОВ</small><strong id="resaleSold">0</strong></div>
+  <div><small>ОБЩАЯ ПРИБЫЛЬ</small><strong id="resaleProfit">$0</strong></div>
+  <div><small>РЕПУТАЦИЯ</small><strong id="resaleRep">0</strong></div>
+ </div>
+ <div class="resale-market-banner"><div><span>ТВОЙ ПУТЬ К УСПЕХУ</span><b>Найди товар — купи дешевле — продай дороже</b><small>Начальный капитал: $5,000 · До 12 активных объявлений</small></div><div class="resale-banner-icon">📦</div></div>
+ <div class="resale-market-layout">
+  <section class="resale-panel resale-catalog-panel"><div class="resale-panel-heading"><div><span>ОПТОВЫЙ РЫНОК</span><h3>ТОВАРЫ ДЛЯ ПОКУПКИ</h3></div><b>01</b></div><div id="resaleCatalog" class="resale-catalog"></div></section>
+  <div class="resale-side-column">
+   <section class="resale-panel"><div class="resale-panel-heading"><div><span>ТВОЙ СКЛАД</span><h3>КУПЛЕННЫЕ ТОВАРЫ</h3></div><b>02</b></div><div id="resaleInventory" class="resale-list"></div></section>
+   <section class="resale-panel"><div class="resale-panel-heading"><div><span>ОНЛАЙН-МАРКЕТ</span><h3>АКТИВНЫЕ ОБЪЯВЛЕНИЯ</h3></div><b>03</b></div><div id="resaleListings" class="resale-list"></div></section>
+  </div>
+ </div>
+ <div class="resale-rules">ПОКУПАЙ ТОВАРЫ НА ОПТОВОМ РЫНКЕ · ВЫСТАВЛЯЙ ИХ ПО РЕКОМЕНДОВАННОЙ ЦЕНЕ · ЗАВЕРШАЙ СДЕЛКИ И ПОЛУЧАЙ ПРИБЫЛЬ</div>
+ <div id="resaleToast" class="resale-toast" role="status" aria-live="polite"></div>
+</div>
+</section>
 <p id="status">Подключение...</p>
 </div>
 
@@ -301,5 +322,6 @@ setInterval(async()=>{if(!initData||document.visibilityState==="hidden")return;t
 setInterval(async()=>{if(!initData||document.visibilityState==="hidden")return;try{await loadBitcoinFarm();}catch(error){console.warn("Farm synchronization:",error);}},60000);
 </script>
 <script type="module" src="/ugly-business.js?v=multi-simulator-fix-1"></script>
+<script type="module" src="/ugly-resale.js?v=resale-simulator-1"></script>
 </body>
 </html>
