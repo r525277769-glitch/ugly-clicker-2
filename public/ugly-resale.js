@@ -28,7 +28,7 @@ const RESALE_PRODUCT_PHOTOS = {
  printer:"https://images.unsplash.com/photo-1612815154858-60aa4c59eaa6?auto=format&fit=crop&w=900&q=82",
  tv:"https://images.philips.com/is/image/philipsconsumer/d9bd9267e01d4beb9b06afb100d5fcd8?$png$=&hei=900&wid=1200",
  phonecase:"https://images.unsplash.com/photo-1601593346740-925612772716?auto=format&fit=crop&w=900&q=82",
- powerbank:"https://images.unsplash.com/photo-1564286027156-9ad736dfbbbb?auto=format&fit=crop&w=900&q=85",
+ powerbank:"https://rivacase.com/images/virtuemart/product/2040_black.4260403578933.ver11.jpg",
  router:"https://images.unsplash.com/photo-1606904825846-647eb07f5be2?auto=format&fit=crop&w=900&q=82",
  consolepad:"https://images.unsplash.com/photo-1606144042614-b2417e99c4e3?auto=format&fit=crop&w=900&q=82",
  game:"https://images.unsplash.com/photo-1493711662062-fa541adb3fc8?auto=format&fit=crop&w=900&q=82",
