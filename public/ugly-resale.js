@@ -350,7 +350,7 @@ function resaleMoveToOwnShop(id){
 }
 function resaleRemoveOwnShop(index){
  const entry=resaleState.ownShop[index];if(!entry)return;
- const qty=Number(entry.qty)||0;if(!resaleCanStore(qty)){resaleToast("На складе недостаточно места");return;}
+ const qty=Number(entry.qty)||0;
  resaleState.inventory[entry.id]=(Number(resaleState.inventory[entry.id])||0)+qty;
  if(!Array.isArray(resaleState.inventoryCosts[entry.id]))resaleState.inventoryCosts[entry.id]=[];
  resaleState.inventoryCosts[entry.id].push(...entry.costs);
