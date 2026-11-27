@@ -196,10 +196,11 @@ function makeBoxProduct(parent, x, y, z, color, label = false) {
   return group;
 }
 function addCeilingLight(x, z) {
-  box(scene, 1.35, .07, .48, x, 3.78, z, M.steel, false);
-  box(scene, 1.15, .035, .31, x, 3.73, z, mat("#fff4d9", .2), false);
-  const light = new THREE.PointLight("#ffe7c3", 22, 8.5, 2);
-  light.position.set(x, 3.45, z); light.castShadow = false; scene.add(light);
+  // Recessed fixture mounted directly below the room ceiling, with a visible luminous diffuser.
+  box(scene, 1.65, .10, .62, x, 4.78, z, surfaceMat("#26384c","metal",.28,.72), false);
+  box(scene, 1.42, .035, .40, x, 4.705, z, mat("#fff4d9", .16, .05, {emissive:"#ffe5b2",emissiveIntensity:1.35}), false);
+  const light = new THREE.PointLight("#ffe7c3", 48, 10, 2);
+  light.position.set(x, 4.48, z); light.castShadow = false; scene.add(light);
 }
 function addShelf(x, z, facing = 1) {
   const rack = new THREE.Group(); rack.position.set(x, 0, z); scene.add(rack);
@@ -368,6 +369,8 @@ function buildStore(){
     box(scene,.34,4.65,.14,roomHalf,2.34,side*(doorwayHalf+.035),surfaceMat("#172a43","metal",.34,.62));
   }
   box(scene,roomSize,.25,roomSize,0,5,0,surfaceMat("#ffffff","ceiling",.82,.08));
+  // Four large recessed soft-white fixtures make the PC room visibly brighter and more dimensional.
+  addCeilingLight(-4.8,-4.8);addCeilingLight(4.8,-4.8);addCeilingLight(-4.8,4.8);addCeilingLight(4.8,4.8);
   const wingX=roomHalf+4.75;
   const consoleRoomLevel=Number(state.clubData.consoleRoomLevel||0),consoleDepth=22+consoleRoomLevel*4,consoleCenterZ=consoleRoomLevel*2;
   box(scene,9.5,.3,consoleDepth,wingX,-.18,consoleCenterZ,surfaceMat("#ffffff","floor",.32,.18));
@@ -375,9 +378,30 @@ function buildStore(){
   wallBox(9.5,5,.3,wingX,2.35,11+consoleRoomLevel*4); // console room front wall
   wallBox(.3,5,consoleDepth,roomHalf+9.5,2.35,consoleCenterZ); // console room outer side wall
   box(scene,9.5,.25,consoleDepth,wingX,5,consoleCenterZ,surfaceMat("#ffffff","ceiling",.88,.04));
-  // Warm ceiling fixtures balance the cool RGB accents in both independent rooms.
-  addCeilingLight(-5,-5);addCeilingLight(5,-5);addCeilingLight(-5,5);addCeilingLight(5,5);
-  addCeilingLight(wingX,-6);addCeilingLight(wingX,6);
+  // 3D architectural finishing: metallic skirting, luminous floor guides and wall-corner trims.
+  const trimMetal=surfaceMat("#6f879d","metal",.3,.78);
+  const cyanGlow=mat("#20dfff",.22,.18,{emissive:"#00a9e8",emissiveIntensity:1.15});
+  const violetGlow=mat("#a96bff",.22,.18,{emissive:"#7025d5",emissiveIntensity:1.05});
+  // PC room perimeter detailing.
+  box(scene,roomSize-.5,.16,.10,0,.09,-roomHalf+.22,trimMetal,false);
+  box(scene,.10,.16,roomSize-.5,-roomHalf+.22,.09,0,trimMetal,false);
+  box(scene,.10,.16,roomSize-.5,roomHalf-.22,.09,0,trimMetal,false);
+  box(scene,roomSize-.5,.035,.055,0,.035,-roomHalf+.29,cyanGlow,false);
+  box(scene,.055,.035,roomSize-.5,-roomHalf+.29,.035,0,violetGlow,false);
+  box(scene,.055,.035,roomSize-.5,roomHalf-.29,.035,0,cyanGlow,false);
+  // Console room gets its own independent trim and light guides.
+  box(scene,9.1,.16,.10,wingX,.09,-consoleDepth/2+.22,trimMetal,false);
+  box(scene,9.1,.16,.10,wingX,.09,consoleDepth/2-.22,trimMetal,false);
+  box(scene,.10,.16,consoleDepth-.5,roomHalf+9.5-.22,.09,consoleCenterZ,trimMetal,false);
+  box(scene,9.1,.035,.055,wingX,.035,-consoleDepth/2+.29,violetGlow,false);
+  box(scene,9.1,.035,.055,wingX,.035,consoleDepth/2-.29,cyanGlow,false);
+  // Visible vertical metal corner guards give the walls real depth.
+  for(const [x,z] of [[-roomHalf+.22,-roomHalf+.22],[roomHalf-.22,-roomHalf+.22],[-roomHalf+.22,roomHalf-.22],[roomHalf-.22,roomHalf-.22]]){
+    box(scene,.09,4.65,.09,x,2.35,z,trimMetal,false);
+  }
+  // Warm ceiling fixtures balance the cool RGB accents in the separate console room.
+  addCeilingLight(wingX-3.1,-6);addCeilingLight(wingX+3.1,-6);
+  addCeilingLight(wingX-3.1,6);addCeilingLight(wingX+3.1,6);
  box(scene,.12,3.5,.18,roomHalf+.08,2.1,-2.3,mat("#21cfff",.2,.3,{emissive:"#087fa8",emissiveIntensity:1}),false);box(scene,.12,3.5,.18,roomHalf+.08,2.1,2.3,mat("#a55cff",.2,.3,{emissive:"#4a138c",emissiveIntensity:1}),false);
  const wingSign=new THREE.Mesh(new THREE.PlaneGeometry(3.4,.65),signMaterial("CONSOLE LOUNGE","PLAYSTATION • XBOX"));wingSign.position.set(roomHalf+4.75,3.7,-10.78);scene.add(wingSign);
  box(scene,.12,2.5,3.2,-2.45,1.25,6.0,surfaceMat("#263d58","plastic",.35,.3));box(scene,.12,2.5,3.2,2.45,1.25,6.0,surfaceMat("#263d58","plastic",.35,.3));// Keep the entrance-to-club passage open: rear reception partition removed.
