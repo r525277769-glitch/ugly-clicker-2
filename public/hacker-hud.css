@@ -429,3 +429,18 @@ button,a,[role="button"],.coin{touch-action:manipulation;-webkit-tap-highlight-c
 }
 .coin{transition:filter .12s ease!important}
 .coin:active{filter:brightness(1.12)!important}
+
+
+/* PC club upgrade buttons: lock only during the server request, never dim the whole panel. */
+.sim-upgrades-panel.is-upgrading,.sim-upgrades-panel .is-upgrading{filter:none!important;opacity:1!important}
+.sim-upgrades-panel button:disabled,.sim-component button:disabled{
+  opacity:1!important;
+  filter:none!important;
+}
+.sim-upgrades-panel.is-upgrading button:disabled,
+#simUpgradePanel.is-upgrading button:disabled,
+#simConsoleUpgradePanel.is-upgrading button:disabled{
+  opacity:.88!important;
+  filter:none!important;
+  cursor:wait!important;
+}
