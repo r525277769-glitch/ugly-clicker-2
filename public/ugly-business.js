@@ -173,8 +173,8 @@ function makeBoxProduct(parent, x, y, z, color, label = false) {
 function addCeilingLight(x, z) {
   box(scene, 1.35, .07, .48, x, 3.78, z, M.steel, false);
   box(scene, 1.15, .035, .31, x, 3.73, z, mat("#fff4d9", .2), false);
-  const light = new THREE.PointLight("#ffe7c3", 38, 8, 2);
-  light.position.set(x, 3.45, z); scene.add(light);
+  const light = new THREE.PointLight("#ffe7c3", 22, 8.5, 2);
+  light.position.set(x, 3.45, z); light.castShadow = false; scene.add(light);
 }
 function addShelf(x, z, facing = 1) {
   const rack = new THREE.Group(); rack.position.set(x, 0, z); scene.add(rack);
@@ -313,10 +313,13 @@ function makeConsoleStation(x,z,index,data){
  for(const key of ["tv","console","sofa"])interactables.push({position:new THREE.Vector3(x+(key==="tv"?-.65:key==="console"?.65:0),0,z+(key==="sofa"?1.2:-.8)),name:({tv:"Телевизор",console:"Приставка",sofa:"Диван"})[key],hint:"КОНСОЛЬНАЯ ЗОНА · "+({tv:"ТЕЛЕВИЗОР",console:"ПРИСТАВКА",sofa:"ДИВАН"})[key]+" · НАЖМИ ДЛЯ УЛУЧШЕНИЯ",action:"upgrade_console_component",station:index,component:key,radius:1.8});
 }
 function buildStore(){
- scene=new THREE.Scene();scene.background=new THREE.Color("#101a32");scene.fog=new THREE.Fog("#101a32",27,52);camera=new THREE.PerspectiveCamera(58,1,.1,100);
- scene.add(new THREE.HemisphereLight("#c8eaff","#22233d",1.8));
- const key=new THREE.DirectionalLight("#fff0d4",2.8);key.position.set(-6,12,7);key.castShadow=true;key.shadow.mapSize.set(2048,2048);key.shadow.bias=-0.00012;key.shadow.normalBias=.025;key.shadow.camera.left=-15;key.shadow.camera.right=15;key.shadow.camera.top=15;key.shadow.camera.bottom=-15;scene.add(key);
- for(const [color,intensity,pos] of [["#21cfff",70,[-5,3,-4]],["#9c4dff",65,[6,3,2]],["#ff4e9b",35,[0,3,7]]]){const l=new THREE.PointLight(color,intensity,20,2);l.position.set(...pos);scene.add(l);}
+ scene=new THREE.Scene();scene.background=new THREE.Color("#111a29");scene.fog=new THREE.Fog("#111a29",36,76);camera=new THREE.PerspectiveCamera(56,1,.1,120);
+ // Ultra Graphics lighting: soft neutral fill, warm key light and cool cinematic rim.
+ scene.add(new THREE.AmbientLight("#9aabc5",.48));
+ scene.add(new THREE.HemisphereLight("#d7eaff","#25283a",1.35));
+ const key=new THREE.DirectionalLight("#fff0d8",3.35);key.position.set(-7,13,8);key.castShadow=true;key.shadow.mapSize.set(2048,2048);key.shadow.bias=-.00008;key.shadow.normalBias=.02;key.shadow.radius=4;key.shadow.camera.left=-19;key.shadow.camera.right=19;key.shadow.camera.top=19;key.shadow.camera.bottom=-19;key.shadow.camera.near=.5;key.shadow.camera.far=42;scene.add(key);
+ const rim=new THREE.DirectionalLight("#83bfff",1.05);rim.position.set(9,8,-10);scene.add(rim);
+ for(const [color,intensity,pos] of [["#21cfff",27,[-5,3,-4]],["#9c4dff",24,[6,3,2]],["#ff4e9b",14,[0,3,7]]]){const l=new THREE.PointLight(color,intensity,19,2);l.position.set(...pos);scene.add(l);}
  const roomSize=18+Number(state.clubData.roomLevel||0)*4,roomHalf=roomSize/2;
  box(scene,roomSize,.35,roomSize,0,-.18,0,surfaceMat("#ffffff","floor",.32,.18));
   // Apply wall texture directly to the room-facing faces of each solid wall mesh.
@@ -344,7 +347,10 @@ function buildStore(){
   wallBox(9.5,5,.3,wingX,2.35,-11); // console room rear wall
   wallBox(9.5,5,.3,wingX,2.35,11+consoleRoomLevel*4); // console room front wall
   wallBox(.3,5,consoleDepth,roomHalf+9.5,2.35,consoleCenterZ); // console room outer side wall
-  box(scene,9.5,.25,consoleDepth,wingX,5,consoleCenterZ,surfaceMat("#ffffff","ceiling",.82,.08));
+  box(scene,9.5,.25,consoleDepth,wingX,5,consoleCenterZ,surfaceMat("#ffffff","ceiling",.88,.04));
+  // Warm ceiling fixtures balance the cool RGB accents in both independent rooms.
+  addCeilingLight(-5,-5);addCeilingLight(5,-5);addCeilingLight(-5,5);addCeilingLight(5,5);
+  addCeilingLight(wingX,-6);addCeilingLight(wingX,6);
  box(scene,.12,3.5,.18,roomHalf+.08,2.1,-2.3,mat("#21cfff",.2,.3,{emissive:"#087fa8",emissiveIntensity:1}),false);box(scene,.12,3.5,.18,roomHalf+.08,2.1,2.3,mat("#a55cff",.2,.3,{emissive:"#4a138c",emissiveIntensity:1}),false);
  const wingSign=new THREE.Mesh(new THREE.PlaneGeometry(3.4,.65),signMaterial("CONSOLE LOUNGE","PLAYSTATION • XBOX"));wingSign.position.set(roomHalf+4.75,3.7,-10.78);scene.add(wingSign);
  box(scene,.12,2.5,3.2,-2.45,1.25,6.0,surfaceMat("#263d58","plastic",.35,.3));box(scene,.12,2.5,3.2,2.45,1.25,6.0,surfaceMat("#263d58","plastic",.35,.3));// Keep the entrance-to-club passage open: rear reception partition removed.
@@ -787,11 +793,13 @@ window.initUglyBusiness = async function() {
   if (!initData) { $("simHint").textContent = "Открой игру через Telegram"; return; }
   try {
     const canvas = $("uglyBusinessCanvas");
-    renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: "high-performance" });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
+    renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: "high-performance", stencil: false, depth: true });
+    const compactScreen = window.matchMedia?.("(max-width: 700px)").matches || /iPhone|Android/i.test(navigator.userAgent);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, compactScreen ? 1.5 : 2));
     renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.outputColorSpace = THREE.SRGBColorSpace;
-    renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.12;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.18;
+    renderer.setClearColor("#111a29", 1);
     await loadState(); buildStore(); clock = new THREE.Clock(); bindControls(); ready = true; resize();
     if(statePollTimer)clearInterval(statePollTimer);statePollTimer=setInterval(()=>{if(ready&&$("simulator")?.classList.contains("active"))loadState();},5000);
     yaw = 0; camera.position.set(0, 3.2, 11.2); camera.lookAt(player.position.x, 1, player.position.z);
