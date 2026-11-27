@@ -2600,8 +2600,11 @@ async function getRealEstate(client, telegramId, accrue=true) {
   const costs=portfolio.reduce((sum,p)=>sum+Math.max(0,Number(p.cost)||0),0)*(1-techCount*.05);
   earned=Math.floor((gross-costs)*elapsed/3600000);
   if(earned!==0){row.cash=String(BigInt(row.cash)+BigInt(earned));row.total_profit=String(BigInt(row.total_profit)+BigInt(earned));}
-  const xp=Math.max(0,Math.floor(elapsed/3600000*Math.max(0,gross-costs)/1000));
-  row.company_xp=String(BigInt(row.company_xp)+BigInt(xp));row.company_level=Math.min(100,1+Math.floor(Number(row.company_xp)/5000));
+  // Ускоренная прокачка недвижимости: в 5 раз больше XP за доход.
+  // Порог уровня снижен с 5 000 до 4 000 XP; текущий уровень никогда не уменьшается.
+  const xp=Math.max(0,Math.floor(elapsed/3600000*Math.max(0,gross-costs)/1000))*5;
+  row.company_xp=String(BigInt(row.company_xp)+BigInt(xp));
+  row.company_level=Math.max(Number(row.company_level)||1,Math.min(100,1+Math.floor(Number(row.company_xp)/4000)));
   await client.query("UPDATE real_estate_players SET cash=$1,portfolio=$2::jsonb,economy_data=$3::jsonb,total_profit=$4,company_xp=$5,company_level=$6,last_income=$7,last_accrued_at=NOW(),updated_at=NOW() WHERE telegram_id=$8",
    [row.cash,JSON.stringify(portfolio),JSON.stringify(economy),row.total_profit,row.company_xp,row.company_level,earned,telegramId]);
  }else{
