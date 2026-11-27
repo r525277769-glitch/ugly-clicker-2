@@ -152,6 +152,21 @@ input{background:#090909;border:1px solid var(--gold-dark);border-radius:11px;pa
  <div class="panel"><h2>REWARD TRACK</h2><p class="small">100 УРОВНЕЙ НАГРАД</p><p><span class="bp-tag">FREE</span><span class="bp-tag">PREMIUM x2</span></p><div id="bpRewards">Загрузка наград...</div></div>
 </section>
 <section id="simulator" class="page ugly-sim-page">
+<div class="simulator-hub" id="simulatorHub">
+ <div class="simulator-hub-heading"><span>UGLY SIMULATOR CENTER</span><h2>ВЫБЕРИ СИМУЛЯТОР</h2><p>Каждый режим открывается отдельно и имеет собственный игровой процесс.</p></div>
+ <div class="simulator-cards">
+  <article class="simulator-card simulator-card-ready">
+   <div class="simulator-card-art pc-art"><span>🖥️</span><i>3D</i></div>
+   <div class="simulator-card-info"><span class="simulator-card-status">ДОСТУПЕН</span><h3>ПК-КЛУБ</h3><p>Управляй компьютерным клубом, обслуживай посетителей, улучшай игровые места и расширяй бизнес.</p><button type="button" onclick="openSimulator('pc')">ОТКРЫТЬ СИМУЛЯТОР <b>→</b></button></div>
+  </article>
+  <article class="simulator-card simulator-card-soon">
+   <div class="simulator-card-art future-art"><span>🎮</span><i>NEW</i></div>
+   <div class="simulator-card-info"><span class="simulator-card-status">НОВЫЙ РЕЖИМ</span><h3>ДРУГОЙ СИМУЛЯТОР</h3><p>Свободный слот для следующего режима. Новые симуляторы можно добавлять независимо от ПК-клуба.</p><button type="button" disabled>СКОРО БУДЕТ ДОСТУПЕН</button></div>
+  </article>
+ </div>
+</div>
+<div id="pcSimulatorView" hidden>
+ <button type="button" class="simulator-back-button" onclick="closeSimulator()">← НАЗАД К ВЫБОРУ СИМУЛЯТОРОВ</button>
 <div class="section-heading"><h2>UGLY BUSINESS</h2><p>3D CYBER CLUB · COMPUTER BUSINESS</p></div>
 <div class="sim-tap-panel"><div><small>БЫСТРЫЙ ЗАРАБОТОК</small><b>Тапай и получай игровые деньги</b><span>+$100 за каждое нажатие · деньги идут на счёт клуба</span></div><button id="simTapButton" type="button">💵 ТАП +$100</button></div>
 <div class="sim-hud"><div><small>КАССА КЛУБА</small><strong id="simCash">$0</strong></div><div><small>УРОВЕНЬ КЛУБА</small><strong id="simLevel">1</strong></div><div><small>ПОСЕТИТЕЛИ</small><strong id="simCustomers">0</strong></div><div><small>МЕСТА ПК</small><strong id="simStations">4 / 8</strong></div><div><small>РАСЧЁТНАЯ СТАВКА / Ч</small><strong id="simIncome">$0/ч</strong></div><div><small>РЕКЛАМА</small><strong id="simAdLevel">0</strong></div></div>
@@ -165,7 +180,7 @@ input{background:#090909;border:1px solid var(--gold-dark);border-radius:11px;pa
 <div class="sim-reception-modal" id="simReceptionModal" aria-hidden="true"><div class="sim-reception-card"><button type="button" class="sim-reception-close" id="simReceptionClose" aria-label="Закрыть">×</button><div class="sim-reception-kicker">UGLY CYBER CLUB · ADMIN</div><h2>💻 ОФОРМЛЕНИЕ ПОСЕТИТЕЛЯ</h2><div class="sim-reception-guest" id="simReceptionGuest">Посетитель</div><div class="sim-reception-stats"><div><small>ВРЕМЯ АРЕНДЫ</small><b id="simReceptionDuration">—</b></div><div><small>ОПЛАТА ЗА СЕССИЮ</small><b id="simReceptionPrice">—</b></div></div><label for="simReceptionStation">ВЫБЕРИ СВОБОДНЫЙ ПК</label><select id="simReceptionStation"></select><label for="simConsoleMinutes">ВРЕМЯ ИГРЫ НА КОНСОЛИ</label><select id="simConsoleMinutes" style="display:none"><option value="3">3 минуты</option><option value="4" selected>4 минуты</option><option value="5">5 минут</option></select><p class="small" id="simReceptionHint">Выбери компьютер для посетителя.</p><button type="button" id="simReceptionConfirm" class="sim-reception-confirm">ВЫДАТЬ ПК И НАЧАТЬ СЕССИЮ</button><p class="small">Оплата будет зачислена в кассу клуба после завершения аренды.</p></div></div>
 <div class="panel sim-console-panel"><h2>🛋 КОНСОЛЬНАЯ ЗОНА · PLAYSTATION / XBOX</h2><p class="small">Отдельная игровая комната с телевизорами, приставками и диванами. Каждое место можно улучшить до 4 уровня.</p><div class="sim-console-stats">КОНСОЛЬНЫЕ МЕСТА: <b id="simConsoleCount">2 / 8</b></div><div class="panel sim-queue-panel"><h2>🎮 ОЧЕРЕДЬ КОНСОЛЬНОЙ ЗОНЫ</h2><p class="small">Эта очередь обслуживает только PlayStation и Xbox. Посетители ПК сюда не попадают.</p><div id="simConsoleQueue"><p class="small">Загрузка очереди консолей...</p></div></div><div id="simConsoleUpgradePanel"></div></div><div class="panel sim-sessions-panel"><h2>🎮 ИГРАЮТ СЕЙЧАС</h2><div id="simSessions"><p class="small">Активных сессий пока нет.</p></div></div>
 <div class="panel sim-upgrades-panel"><h2>🧩 УЛУЧШЕНИЯ КОМПЬЮТЕРОВ</h2><p class="small">Каждое место состоит из семи отдельных компонентов. Доход за посетителя рассчитывается по самому слабому компоненту.</p><div id="simUpgradePanel"></div></div>
-<div class="panel sim-progress"><h2>ПРОГРЕСС КОМПЬЮТЕРНОГО КЛУБА</h2><div class="sim-progress-track"><div id="simXpFill"></div></div><p id="simXpText" class="small">0 / 100 опыта</p><p class="small">Улучшай каждый компонент ПК, расширяй зал и привлекай посетителей рекламой. Оплата начисляется после завершения игровой сессии.</p><p class="small">Вывод в основной баланс: $100 = 1 GRAMM.</p></div></section>
+<div class="panel sim-progress"><h2>ПРОГРЕСС КОМПЬЮТЕРНОГО КЛУБА</h2><div class="sim-progress-track"><div id="simXpFill"></div></div><p id="simXpText" class="small">0 / 100 опыта</p><p class="small">Улучшай каждый компонент ПК, расширяй зал и привлекай посетителей рекламой. Оплата начисляется после завершения игровой сессии.</p><p class="small">Вывод в основной баланс: $100 = 1 GRAMM.</p></div></div></section>
 <p id="status">Подключение...</p>
 </div>
 
