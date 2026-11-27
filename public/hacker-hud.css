@@ -170,3 +170,29 @@ input::placeholder{color:#53765e}
  .panel{padding:13px}
 }
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important}}
+
+
+/* FIX: load this theme after the legacy inline styles, but keep simulator controls anchored. */
+.sim-action{
+  position:absolute!important;right:15px!important;bottom:30px!important;
+  width:150px!important;min-height:58px!important;height:auto!important;
+  margin:0!important;padding:10px 12px!important;box-sizing:border-box!important;
+  z-index:5!important;white-space:normal!important;
+}
+.sim-joystick{position:absolute!important;left:17px!important;bottom:18px!important;margin:0!important;z-index:5!important}
+.sim-tap-panel button,.sim-management button,.sim-queue-actions button,
+.sim-component button,#simBuyConsoleStation{
+  margin:0!important;box-sizing:border-box!important;max-width:100%;
+}
+.sim-management button{width:100%;min-height:46px;padding:9px!important}
+.sim-queue-actions{display:flex!important;align-items:center!important;gap:5px!important;flex-wrap:nowrap!important}
+.sim-queue-actions button{white-space:nowrap!important}
+.sim-component-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:7px!important}
+@media(max-width:390px){
+ .sim-action{right:10px!important;bottom:19px!important;width:137px!important;min-height:54px!important;font-size:9px!important}
+ .sim-joystick{left:11px!important;bottom:12px!important;width:120px!important;height:120px!important}
+}
+@media(orientation:landscape) and (max-height:520px){
+ .sim-action{bottom:19px!important}
+ .sim-joystick{width:100px!important;height:100px!important}
+}
