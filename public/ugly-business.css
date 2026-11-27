@@ -196,3 +196,54 @@
 .simulator-back-button{width:100%;min-height:43px;margin:0 0 12px;padding:10px 13px;text-align:left;border:1px solid #3e9cbd;border-radius:12px;background:linear-gradient(100deg,#132e49,#201c43);color:#bdefff;font-size:10px;font-weight:900;letter-spacing:.5px}
 #pcSimulatorView[hidden],#simulatorHub[hidden]{display:none!important}
 @media(max-width:480px){.simulator-cards{grid-template-columns:1fr;gap:11px}.simulator-card{display:grid;grid-template-columns:108px minmax(0,1fr)}.simulator-card-art{height:100%;min-height:175px}.simulator-card-art>span{font-size:53px}.simulator-card-info{padding:12px}.simulator-card-info p{min-height:0;font-size:9px}.simulator-card-info h3{font-size:13px}.simulator-card-info button{font-size:8px;min-height:40px}}
+
+/* RESALE MARKET SIMULATOR */
+#resaleSimulatorView[hidden]{display:none!important}
+.resale-art{background:radial-gradient(circle at 50% 35%,#7c4dff66,transparent 42%),linear-gradient(145deg,#172b55,#301c58 55%,#102e48)}
+.resale-heading{padding:20px 18px 18px;border:1px solid #6652b7;border-radius:17px;background:radial-gradient(circle at 90% 0%,#6d4bd455,transparent 36%),linear-gradient(120deg,#111d3a,#1c2045 58%,#122d43);box-shadow:0 12px 30px #0004;margin:0 0 13px}
+.resale-heading>span,.resale-market-banner span,.resale-panel-heading span{font-size:9px;font-weight:1000;letter-spacing:1.5px;color:#9feaff}
+.resale-heading h2{margin:7px 0 5px;font-size:clamp(21px,4vw,31px);font-weight:1000;letter-spacing:.5px;color:#fff}
+.resale-heading p{margin:0;color:#b7c6e4;font-size:12px}
+.resale-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin-bottom:13px}
+.resale-stats>div{min-width:0;padding:13px 12px;border:1px solid #33476c;border-radius:13px;background:linear-gradient(145deg,#17243f,#101a30);box-shadow:0 7px 18px #0003}
+.resale-stats small{display:block;color:#8fa5c7;font-size:8px;font-weight:900;letter-spacing:.7px}
+.resale-stats strong{display:block;margin-top:6px;color:#fff;font-size:clamp(15px,2.5vw,22px);font-weight:1000;overflow-wrap:anywhere}
+.resale-stats>div:first-child strong,.resale-stats>div:nth-child(3) strong{color:#73f0c1}
+.resale-market-banner{display:flex;align-items:center;justify-content:space-between;gap:15px;padding:15px 18px;margin-bottom:13px;border:1px solid #276d83;border-radius:14px;background:linear-gradient(105deg,#123b51,#172b50 62%,#312653)}
+.resale-market-banner b{display:block;margin:5px 0;color:#fff;font-size:15px}
+.resale-market-banner small{color:#a9c6d8;font-size:10px}
+.resale-banner-icon{font-size:42px;filter:drop-shadow(0 5px 9px #0007)}
+.resale-market-layout{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:13px;align-items:start}
+.resale-side-column{display:grid;gap:13px;min-width:0}
+.resale-panel{min-width:0;padding:14px;border:1px solid #34496e;border-radius:15px;background:linear-gradient(145deg,#121f37,#10182c);box-shadow:0 8px 22px #0003}
+.resale-panel-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.resale-panel-heading h3{margin:4px 0 0;color:#fff;font-size:14px;font-weight:1000}
+.resale-panel-heading>b{color:#637b9f;font-size:22px;font-weight:1000}
+.resale-catalog{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.resale-product-card{overflow:hidden;min-width:0;border:1px solid #2d456a;border-radius:12px;background:#17243d}
+.resale-product-visual{height:91px;display:flex;align-items:center;justify-content:center;position:relative;background:radial-gradient(circle at 50% 55%,#3b5a9b88,transparent 52%),linear-gradient(140deg,#1e3456,#18213e)}
+.resale-product-visual>span{font-size:43px;filter:drop-shadow(0 6px 8px #0007)}
+.resale-product-visual small{position:absolute;top:8px;left:8px;padding:4px 6px;border-radius:5px;background:#0b1428bb;color:#9fb5d6;font-size:7px;font-weight:1000;letter-spacing:.6px}
+.resale-product-info{padding:10px}
+.resale-product-info h3{margin:0 0 4px;color:#fff;font-size:12px;font-weight:1000}
+.resale-product-info p{min-height:27px;margin:0 0 8px;color:#91a4c2;font-size:9px;line-height:1.4}
+.resale-price-line{display:flex;justify-content:space-between;gap:5px;margin:5px 0;color:#9eb0cb;font-size:9px}
+.resale-price-line b{color:#fff;font-size:10px}
+.resale-price-line .resale-green{color:#68e8b5}
+.resale-product-info button,.resale-stock-action button,.resale-listing-row>button{width:100%;min-height:34px;margin-top:8px;padding:7px 8px;border:1px solid #26a9d0;border-radius:8px;background:linear-gradient(110deg,#16b9d2,#6258e8);color:#07172b;font-size:8px;font-weight:1000;letter-spacing:.35px}
+.resale-product-info button:disabled,.resale-stock-action button:disabled{opacity:.4;filter:grayscale(1)}
+.resale-list{display:grid;gap:8px}
+.resale-stock-row,.resale-listing-row{display:flex;align-items:center;gap:9px;padding:9px;border:1px solid #2c4265;border-radius:10px;background:#17243b}
+.resale-stock-icon{width:37px;height:37px;flex:0 0 37px;display:grid;place-items:center;border-radius:9px;background:#253b60;font-size:21px}
+.resale-stock-main{flex:1;min-width:0}
+.resale-stock-main b{display:block;color:#fff;font-size:10px}
+.resale-stock-main small{display:block;margin-top:4px;color:#91a5c5;font-size:8px;line-height:1.4}
+.resale-stock-action{width:112px;flex:0 0 112px}
+.resale-stock-action button{margin:0;min-height:34px;font-size:8px}
+.resale-listing-row>button{width:85px;flex:0 0 85px;margin:0;min-height:34px;font-size:8px}
+.resale-empty{padding:17px 12px;border:1px dashed #3b4f70;border-radius:10px;color:#8499b9;text-align:center;font-size:10px;line-height:1.5}
+.resale-rules{margin:13px 0 0;padding:12px;border:1px solid #304768;border-radius:10px;background:#111d32;color:#91a9ca;text-align:center;font-size:8px;font-weight:900;line-height:1.7;letter-spacing:.5px}
+.resale-toast{position:fixed;z-index:9999;left:50%;bottom:85px;max-width:calc(100vw - 30px);padding:11px 16px;border:1px solid #43c9d9;border-radius:10px;background:#102c43;color:#d8fbff;font-size:11px;font-weight:800;box-shadow:0 10px 30px #0008;opacity:0;pointer-events:none;transform:translate(-50%,12px);transition:opacity .2s,transform .2s}
+.resale-toast.show{opacity:1;transform:translate(-50%,0)}
+@media(max-width:760px){.resale-market-layout{grid-template-columns:1fr}.resale-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.resale-catalog{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:420px){.resale-heading{padding:16px 13px}.resale-market-banner{padding:12px}.resale-market-banner b{font-size:12px}.resale-banner-icon{font-size:34px}.resale-panel{padding:10px}.resale-catalog{gap:7px}.resale-product-visual{height:75px}.resale-product-visual>span{font-size:36px}.resale-product-info{padding:8px}.resale-stock-row,.resale-listing-row{gap:7px;padding:7px}.resale-stock-action{width:94px;flex-basis:94px}.resale-stock-action button{font-size:7px}.resale-listing-row>button{width:73px;flex-basis:73px;font-size:7px}}
