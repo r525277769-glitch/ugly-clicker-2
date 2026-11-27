@@ -168,3 +168,31 @@
   .sim-joystick,.sim-stick,.sim-action,.sim-tap-panel button,.sim-management button,
   .sim-queue-actions button,.sim-component button{transition:none!important}
 }
+
+
+/* MULTI-SIMULATOR HUB */
+.simulator-hub{padding:8px 0 22px}
+.simulator-hub-heading{text-align:center;padding:22px 10px 18px}
+.simulator-hub-heading>span{font-size:9px;font-weight:1000;letter-spacing:2.5px;color:#5ce5ff}
+.simulator-hub-heading h2{margin:9px 0;color:#f1fbff;font-size:clamp(22px,5vw,30px);font-weight:1000;letter-spacing:.5px}
+.simulator-hub-heading p{max-width:440px;margin:0 auto;color:#9ebbd2;font-size:12px;line-height:1.55}
+.simulator-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+.simulator-card{overflow:hidden;min-width:0;border:1px solid #327da5;border-radius:18px;background:linear-gradient(145deg,#172e49,#1a1836 72%,#101b2c);box-shadow:0 10px 26px #0008,0 0 16px #21cfff12}
+.simulator-card-art{height:138px;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.simulator-card-art:before{content:"";position:absolute;width:180px;height:180px;border-radius:50%;background:radial-gradient(circle,#22d6ff55,transparent 68%)}
+.simulator-card-art>span{position:relative;font-size:68px;filter:drop-shadow(0 8px 13px #000b)}
+.simulator-card-art>i{position:absolute;right:12px;top:12px;padding:5px 8px;border-radius:8px;background:#07182dcc;border:1px solid #5ce5ff66;color:#8ff2ff;font-size:9px;font-style:normal;font-weight:1000;letter-spacing:1px}
+.pc-art{background:linear-gradient(135deg,#0e3d58,#29245a 60%,#131d39)}
+.future-art{background:linear-gradient(135deg,#1d2b43,#31234d 60%,#191e36)}
+.simulator-card-info{padding:14px}
+.simulator-card-status{color:#5de8ff;font-size:8px;font-weight:1000;letter-spacing:1.4px}
+.simulator-card-info h3{margin:7px 0;color:#f2fbff;font-size:15px;font-weight:1000}
+.simulator-card-info p{min-height:66px;margin:0 0 13px;color:#a9c2d8;font-size:10px;line-height:1.5}
+.simulator-card-info button{width:100%;min-height:43px;padding:9px;border:1px solid #b9f7ff;border-radius:11px;background:linear-gradient(110deg,#9bf5ff,#28bde9 58%,#6358e8);color:#07182b;font-size:9px;font-weight:1000;letter-spacing:.35px;box-shadow:0 4px 13px #00cfff33}
+.simulator-card-info button b{float:right;font-size:15px;line-height:10px}
+.simulator-card-info button:disabled{border-color:#44536d;background:linear-gradient(110deg,#26364d,#20233b);color:#8799b0;box-shadow:none}
+.simulator-card-soon{border-color:#485477;opacity:.82}
+.simulator-card-soon .simulator-card-status{color:#b6a9ff}
+.simulator-back-button{width:100%;min-height:43px;margin:0 0 12px;padding:10px 13px;text-align:left;border:1px solid #3e9cbd;border-radius:12px;background:linear-gradient(100deg,#132e49,#201c43);color:#bdefff;font-size:10px;font-weight:900;letter-spacing:.5px}
+#pcSimulatorView[hidden],#simulatorHub[hidden]{display:none!important}
+@media(max-width:480px){.simulator-cards{grid-template-columns:1fr;gap:11px}.simulator-card{display:grid;grid-template-columns:108px minmax(0,1fr)}.simulator-card-art{height:100%;min-height:175px}.simulator-card-art>span{font-size:53px}.simulator-card-info{padding:12px}.simulator-card-info p{min-height:0;font-size:9px}.simulator-card-info h3{font-size:13px}.simulator-card-info button{font-size:8px;min-height:40px}}
