@@ -419,3 +419,16 @@ body{min-height:100vh;min-height:100dvh}
   0%,100%{border-color:var(--border);box-shadow:0 8px 25px #0008}
   45%{border-color:var(--gold2);box-shadow:0 0 22px #e9bd5940}
 }
+
+/* DIAGONAL-BASED UI SCALE: scale the complete game to the available screen size. */
+:root{--screen-diagonal-scale:1}
+#app{
+  zoom:var(--screen-diagonal-scale);
+  width:calc(100% / var(--screen-diagonal-scale));
+  max-width:calc(980px / var(--screen-diagonal-scale));
+}
+.bottom-nav{
+  zoom:var(--screen-diagonal-scale);
+  width:calc(100% / var(--screen-diagonal-scale));
+  max-width:calc(980px / var(--screen-diagonal-scale));
+}
