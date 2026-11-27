@@ -1,4 +1,46 @@
 const RESALE_KEY = "uglyResaleSimulator_v1";
+const RESALE_PRODUCT_PHOTOS = {
+ phone:"https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=900&q=82",
+ sneakers:"https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=900&q=82",
+ console:"https://images.unsplash.com/photo-1486401899868-0e435ed85128?auto=format&fit=crop&w=900&q=82",
+ laptop:"https://images.unsplash.com/photo-149し?auto=format&fit=crop&w=900&q=82",
+ headphones:"https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=900&q=82",
+ watch:"https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=900&q=82",
+ tablet:"https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?auto=format&fit=crop&w=900&q=82",
+ camera:"https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=900&q=82",
+ speaker:"https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?auto=format&fit=crop&w=900&q=82",
+ keyboard:"https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&w=900&q=82",
+ mouse:"https://images.unsplash.com/photo-1527814050087-3793815479db?auto=format&fit=crop&w=900&q=82",
+ monitor:"https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&w=900&q=82",
+ gpu:"https://images.unsplash.com/photo-1591488320449-011701bb6704?auto=format&fit=crop&w=900&q=82",
+ cpu:"https://images.unsplash.com/photo-1555617981-dac3880eac6e?auto=format&fit=crop&w=900&q=82",
+ ram:"https://images.unsplash.com/photo-1562976540-1502c2145186?auto=format&fit=crop&w=900&q=82",
+ chair:"https://images.unsplash.com/photo-1589363360147-4f2d51541551?auto=format&fit=crop&w=900&q=82",
+ vr:"https://images.unsplash.com/photo-1622979135225-d2ba269cf1ac?auto=format&fit=crop&w=900&q=82",
+ drone:"https://images.unsplash.com/photo-1473968512647-3e447244af8f?auto=format&fit=crop&w=900&q=82",
+ bike:"https://images.unsplash.com/photo-1485965120184-e220f721d03e?auto=format&fit=crop&w=900&q=82",
+ backpack:"https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=900&q=82",
+ jacket:"https://images.unsplash.com/photo-1544923246-77307dd654cb?auto=format&fit=crop&w=900&q=82",
+ sunglasses:"https://images.unsplash.com/photo-1512?auto=format&fit=crop&w=900&q=82",
+ skate:"https://images.unsplash.com/photo-1547447134-cd3f5c716030?auto=format&fit=crop&w=900&q=82",
+ coffee:"https://images.unsplash.com/photo-1517668808822-9ebb02f2a0e6?auto=format&fit=crop&w=900&q=82",
+ printer:"https://images.unsplash.com/photo-1612815154858-60aa4c59eaa6?auto=format&fit=crop&w=900&q=82",
+ tv:"https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?auto=format&fit=crop&w=900&q=82",
+ phonecase:"https://images.unsplash.com/photo-1601593346740-925612772716?auto=format&fit=crop&w=900&q=82",
+ powerbank:"https://images.unsplash.com/photo-1609592806596-b43bada2f2f4?auto=format&fit=crop&w=900&q=82",
+ router:"https://images.unsplash.com/photo-1606904825846-647eb07f5be2?auto=format&fit=crop&w=900&q=82",
+ consolepad:"https://images.unsplash.com/photo-1606144042614-b2417e99c4e3?auto=format&fit=crop&w=900&q=82",
+ game:"https://images.unsplash.com/photo-1493711662062-fa541adb3fc8?auto=format&fit=crop&w=900&q=82",
+ microphone:"https://images.unsplash.com/photo-1590602847861-f357a9332bbc?auto=format&fit=crop&w=900&q=82",
+ webcam:"https://images.unsplash.com/photo-1587826080692-f439cd0b70da?auto=format&fit=crop&w=900&q=82",
+ ssd:"https://images.unsplash.com/photo-1597872200969-2b65d56bd16b?auto=format&fit=crop&w=900&q=82",
+ motherboard:"https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=900&q=82",
+ psu:"https://images.unsplash.com/photo-1585218356057-dc3b2b7e9e2a?auto=format&fit=crop&w=900&q=82",
+ scooter:"https://images.unsplash.com/photo-1600712242805-5f78671b24da?auto=format&fit=crop&w=900&q=82",
+ tent:"https://images.unsplash.com/photo-1478131143081-80f7f84ca84d?auto=format&fit=crop&w=900&q=82"
+};
+function resalePhoto(p){return p&&RESALE_PRODUCT_PHOTOS[p.id]||"";}
+
 const RESALE_PRODUCTS = [
  {id:"phone",name:"Смартфон",emoji:"📱",category:"ЭЛЕКТРОНИКА",buy:420,sell:620,desc:"Популярная модель, высокий спрос",demand:78},
  {id:"sneakers",name:"Кроссовки",emoji:"👟",category:"ОДЕЖДА",buy:180,sell:290,desc:"Уличная классика на каждый день",demand:86},
@@ -122,11 +164,11 @@ function renderResale(){
  const catalog=document.getElementById("resaleCatalog");
  catalog.innerHTML=resaleState.storeItems.map(id=>resaleProduct(id)).filter(Boolean).map(p=>{
   const demand=resaleDemand(p),market=resaleMarketPrice(p),buyPrice=resaleStorePrice(p),stock=Number(resaleState.storeStock[p.id])||0;
-  return '<article class="resale-product-card"><div class="resale-product-visual"><span>'+p.emoji+'</span><small>'+p.category+'</small></div><div class="resale-product-info"><h3>'+p.name+'</h3><p>'+p.desc+'</p><div class="resale-demand"><span>СПРОС</span><b>'+demand+'%</b><i><em style="width:'+demand+'%"></em></i></div><div class="resale-price-line"><span>Цена магазина</span><b>'+resaleMoney(buyPrice)+'</b></div><div class="resale-price-line"><span>Рыночная цена</span><b class="resale-green">'+resaleMoney(market)+'</b></div><div class="resale-price-line"><span>Осталось в магазине</span><b>'+stock+' шт.</b></div><button type="button" data-resale-buy="'+p.id+'" '+(resaleState.cash<buyPrice||stock<1?"disabled":"")+'>КУПИТЬ ТОВАР</button></div></article>';
+  return '<article class="resale-product-card"><div class="resale-product-visual" style="position:relative;overflow:hidden;min-height:150px"><img src="'+resalePhoto(p)+'" alt="'+p.name+'" loading="lazy" decoding="async" style="width:100%;height:150px;object-fit:cover;display:block" onerror="this.style.display=\'none\'"><span style="position:absolute;left:10px;top:10px;background:#101827bb;border-radius:10px;padding:5px">'+p.emoji+'</span><small style="position:absolute;right:8px;bottom:8px;background:#101827dd;padding:5px 8px;border-radius:8px">'+p.category+'</small></div><div class="resale-product-info"><h3>'+p.name+'</h3><p>'+p.desc+'</p><div class="resale-demand"><span>СПРОС</span><b>'+demand+'%</b><i><em style="width:'+demand+'%"></em></i></div><div class="resale-price-line"><span>Цена магазина</span><b>'+resaleMoney(buyPrice)+'</b></div><div class="resale-price-line"><span>Рыночная цена</span><b class="resale-green">'+resaleMoney(market)+'</b></div><div class="resale-price-line"><span>Осталось в магазине</span><b>'+stock+' шт.</b></div><button type="button" data-resale-buy="'+p.id+'" '+(resaleState.cash<buyPrice||stock<1?"disabled":"")+'>КУПИТЬ ТОВАР</button></div></article>';
  }).join("");
  const inventory=document.getElementById("resaleInventory");
  const owned=RESALE_PRODUCTS.filter(p=>(Number(resaleState.inventory[p.id])||0)>0);
- inventory.innerHTML=owned.length?owned.map(p=>'<div class="resale-stock-row"><div class="resale-stock-icon">'+p.emoji+'</div><div class="resale-stock-main"><b>'+p.name+'</b><small>В наличии: '+resaleState.inventory[p.id]+' шт. · закупка '+resaleMoney(p.buy)+'</small></div><div class="resale-stock-action"><button type="button" data-resale-list="'+p.id+'" '+(resaleState.listings.length>=12?"disabled":"")+'>ВЫСТАВИТЬ НА РЫНОК</button></div></div>').join(""):'<div class="resale-empty">На складе пока пусто. Купи первый товар на рынке.</div>';
+ inventory.innerHTML=owned.length?owned.map(p=>'<div class="resale-stock-row"><div class="resale-stock-icon" style="width:64px;height:56px;overflow:hidden;border-radius:9px;flex-shrink:0"><img src="'+resalePhoto(p)+'" alt="'+p.name+'" loading="lazy" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display=\'none\'"></div><div class="resale-stock-main"><b>'+p.name+'</b><small>В наличии: '+resaleState.inventory[p.id]+' шт. · закупка '+resaleMoney(p.buy)+'</small></div><div class="resale-stock-action"><button type="button" data-resale-list="'+p.id+'" '+(resaleState.listings.length>=12?"disabled":"")+'>ВЫСТАВИТЬ НА РЫНОК</button></div></div>').join(""):'<div class="resale-empty">На складе пока пусто. Купи первый товар на рынке.</div>';
  const listings=document.getElementById("resaleListings");
  listings.innerHTML=resaleState.listings.length?resaleState.listings.map(item=>{
   const p=resaleProduct(item.id);if(!p)return "";
