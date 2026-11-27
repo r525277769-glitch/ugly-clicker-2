@@ -397,3 +397,6 @@ img{max-width:100%}
 #resaleCatalog .resale-buy-controls label{display:flex;flex:1;min-width:0;flex-direction:column;gap:5px;font-size:11px;color:var(--muted,#64748b)}
 #resaleCatalog .resale-buy-controls input{width:100%;min-width:0;box-sizing:border-box;padding:10px;border:1px solid #cbd5e1;border-radius:9px;background:#fff;color:#172033;font-weight:700}
 #resaleCatalog .resale-buy-controls button{flex:1.3;min-height:40px}
+
+/* Rotating resale super-deal label */
+.resale-super-deal-badge{display:inline-block;margin:4px 0 0 5px;padding:4px 7px;border-radius:6px;background:linear-gradient(135deg,#f59e0b,#ef4444);color:#fff;font-size:10px;font-weight:900;letter-spacing:.35px;vertical-align:middle;box-shadow:0 2px 8px #ef444433}
