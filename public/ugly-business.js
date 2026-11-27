@@ -967,7 +967,7 @@ window.initUglyBusiness = async function() {
     if(stageResizeObserver)stageResizeObserver.disconnect();
     if("ResizeObserver" in window){stageResizeObserver=new ResizeObserver(()=>resize());const stage=canvas.closest(".sim-stage");if(stage)stageResizeObserver.observe(stage);}
     if(window.visualViewport)window.visualViewport.addEventListener("resize",resize,{passive:true});
-    if(statePollTimer)clearInterval(statePollTimer);statePollTimer=setInterval(()=>{if(ready&&$("simulator")?.classList.contains("active")&&!$("pcSimulatorView")?.hidden)loadState();},5000);
+    if(statePollTimer)clearInterval(statePollTimer);statePollTimer=setInterval(()=>{if(ready&&$("simulator")?.classList.contains("active")&&!$("pcSimulatorView")?.hidden)loadState();},15000);
     yaw = 0; camera.position.set(0, 3.2, 11.2); camera.lookAt(player.position.x, 1, player.position.z);
     animate();
   } catch (error) {
