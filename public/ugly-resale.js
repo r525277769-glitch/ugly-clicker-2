@@ -403,10 +403,9 @@ function renderResaleBusiness(){
 }
 function resaleWholesaleBuy(id){
  const p=resaleProduct(id);if(!p)return;
- const input=document.querySelector('[data-resale-qty="'+id+'"]'),qty=Math.floor(Number(input?.value)||1),stock=Number(resaleState.storeStock[id])||0;
- if(qty<2||qty>100){resaleBusinessToast("Для оптовой закупки укажи от 2 до 100 единиц");return;}
- if(qty>stock){resaleBusinessToast("В магазине осталось только "+stock+" шт.");return;}
- if(!resaleCanStore(qty)){resaleBusinessToast("На складе недостаточно места. Расширь склад.");return;}
+ const stock=Number(resaleState.storeStock[id])||0,qty=stock;
+ if(stock<1){resaleBusinessToast("Этот товар закончился");return;}
+ if(!resaleCanStore(qty)){resaleBusinessToast("На складе недостаточно места для всей партии. Расширь склад.");return;}
  const unit=resaleStorePrice(p),discount=.15,total=Math.round(unit*stock*(1-discount));
  if(!resaleCanStore(stock)){resaleBusinessToast("На складе недостаточно места для всей партии: "+stock+" шт.");return;}
  if(resaleState.cash<total){resaleBusinessToast("Не хватает денег на всю оптовую партию: нужно $"+total.toLocaleString("en-US"));return;}
