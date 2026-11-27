@@ -5,7 +5,25 @@ const RESALE_PRODUCTS = [
  {id:"console",name:"Игровая приставка",emoji:"🎮",category:"ИГРЫ",buy:950,sell:1290,desc:"Игровая консоль с хорошей маржой",demand:72},
  {id:"laptop",name:"Ноутбук",emoji:"💻",category:"ЭЛЕКТРОНИКА",buy:1250,sell:1690,desc:"Для работы, учёбы и игр",demand:64},
  {id:"headphones",name:"Наушники",emoji:"🎧",category:"АКСЕССУАРЫ",buy:95,sell:165,desc:"Компактный товар с быстрым оборотом",demand:91},
- {id:"watch",name:"Смарт-часы",emoji:"⌚",category:"АКСЕССУАРЫ",buy:260,sell:390,desc:"Умный аксессуар с хорошим спросом",demand:69}
+ {id:"watch",name:"Смарт-часы",emoji:"⌚",category:"АКСЕССУАРЫ",buy:260,sell:390,desc:"Умный аксессуар с хорошим спросом",demand:69},
+ {id:"tablet",name:"Планшет",emoji:"📲",category:"ЭЛЕКТРОНИКА",buy:540,sell:760,desc:"Устройство для работы и развлечений",demand:68},
+ {id:"camera",name:"Фотоаппарат",emoji:"📷",category:"ЭЛЕКТРОНИКА",buy:680,sell:940,desc:"Камера для любителей фотографии",demand:57},
+ {id:"speaker",name:"Bluetooth-колонка",emoji:"🔊",category:"АКСЕССУАРЫ",buy:120,sell:210,desc:"Портативный звук для дома и улицы",demand:82},
+ {id:"keyboard",name:"Игровая клавиатура",emoji:"⌨️",category:"АКСЕССУАРЫ",buy:145,sell:230,desc:"Механическая клавиатура с подсветкой",demand:79},
+ {id:"mouse",name:"Игровая мышь",emoji:"🖱️",category:"АКСЕССУАРЫ",buy:65,sell:115,desc:"Точная мышь для геймеров",demand:88},
+ {id:"monitor",name:"Игровой монитор",emoji:"🖥️",category:"ЭЛЕКТРОНИКА",buy:490,sell:690,desc:"Монитор с высокой частотой обновления",demand:63},
+ {id:"gpu",name:"Видеокарта",emoji:"🎛️",category:"КОМПЛЕКТУЮЩИЕ",buy:820,sell:1120,desc:"Мощная видеокарта для игрового ПК",demand:74},
+ {id:"cpu",name:"Процессор",emoji:"🧠",category:"КОМПЛЕКТУЮЩИЕ",buy:390,sell:560,desc:"Процессор для сборки компьютера",demand:61},
+ {id:"ram",name:"Оперативная память",emoji:"💾",category:"КОМПЛЕКТУЮЩИЕ",buy:110,sell:175,desc:"Комплект памяти для апгрейда ПК",demand:77},
+ {id:"chair",name:"Игровое кресло",emoji:"🪑",category:"ГЕЙМИНГ",buy:310,sell:450,desc:"Удобное кресло для долгих игровых сессий",demand:59},
+ {id:"vr",name:"VR-шлем",emoji:"🥽",category:"ГЕЙМИНГ",buy:590,sell:850,desc:"Погружение в виртуальную реальность",demand:66},
+ {id:"drone",name:"Квадрокоптер",emoji:"🚁",category:"ТЕХНИКА",buy:430,sell:620,desc:"Компактный дрон с камерой",demand:54},
+ {id:"bike",name:"Велосипед",emoji:"🚲",category:"ТРАНСПОРТ",buy:270,sell:410,desc:"Городской велосипед на каждый день",demand:62},
+ {id:"backpack",name:"Рюкзак",emoji:"🎒",category:"ОДЕЖДА",buy:75,sell:135,desc:"Вместительный городской рюкзак",demand:84},
+ {id:"jacket",name:"Куртка",emoji:"🧥",category:"ОДЕЖДА",buy:220,sell:340,desc:"Повседневная куртка",demand:71},
+ {id:"sunglasses",name:"Солнцезащитные очки",emoji:"🕶️",category:"ОДЕЖДА",buy:55,sell:105,desc:"Стильный сезонный аксессуар",demand:73},
+ {id:"skate",name:"Скейтборд",emoji:"🛹",category:"СПОРТ",buy:95,sell:160,desc:"Доска для городского катания",demand:58},
+ {id:"coffee",name:"Кофемашина",emoji:"☕",category:"ТЕХНИКА",buy:340,sell:490,desc:"Домашняя кофемашина",demand:52}
 ];
 const RESALE_BUYERS=["Александр","Максим","Артём","Даниил","Марк","Егор","София","Алина","Полина","Виктория","Илья","Кирилл"];
 const RESALE_EVENTS=[
@@ -18,7 +36,7 @@ const RESALE_EVENTS=[
 const resaleMoney=n=>"$"+Math.round(Number(n)||0).toLocaleString("en-US");
 let resaleState;
 let resaleEventTimer=null,resaleBuyerTimer=null;
-function defaultResaleState(){return {cash:5000,sold:0,revenue:0,profit:0,reputation:0,inventory:{},listings:[],offers:[],nextListingId:1,eventIndex:4,eventUntil:Date.now()+45000};}
+function defaultResaleState(){return {cash:5000,sold:0,revenue:0,profit:0,reputation:0,inventory:{},listings:[],offers:[],nextListingId:1,eventIndex:4,eventUntil:Date.now()+45000,priceIndex:{},priceUntil:Date.now()+30000};}
 function loadResaleState(){
  try{
   const saved=JSON.parse(localStorage.getItem(RESALE_KEY)||"null");
@@ -26,6 +44,9 @@ function loadResaleState(){
   resaleState.inventory=resaleState.inventory||{};
   resaleState.listings=Array.isArray(resaleState.listings)?resaleState.listings:[];
   resaleState.offers=Array.isArray(resaleState.offers)?resaleState.offers:[];
+  resaleState.priceIndex=resaleState.priceIndex&&typeof resaleState.priceIndex==="object"?resaleState.priceIndex:{};
+  RESALE_PRODUCTS.forEach(p=>{if(!Number.isFinite(Number(resaleState.priceIndex[p.id])))resaleState.priceIndex[p.id]=1+(Math.random()-.5)*.12;});
+  if(!Number(resaleState.priceUntil))resaleState.priceUntil=Date.now()+30000;
   resaleState.nextListingId=Number(resaleState.nextListingId)||1;
   resaleState.listings.forEach(item=>{if(!item.lid)item.lid=resaleState.nextListingId++;if(!item.price)item.price=resaleProduct(item.id)?.sell||100;});
  }catch(_){resaleState=defaultResaleState();}
@@ -37,7 +58,9 @@ function resaleDemand(p){
  const boost=event.category==="*"||event.category===p.category?event.factor:1;
  return Math.max(15,Math.min(100,Math.round(p.demand*boost)));
 }
-function resaleMarketPrice(p){return Math.round(p.sell*resaleDemand(p)/p.demand);}
+function resalePriceIndex(p){return Math.max(.72,Math.min(1.38,Number(resaleState.priceIndex[p.id])||1));}
+function resaleBuyPrice(p){return Math.max(1,Math.round(p.buy*resalePriceIndex(p)));}
+function resaleMarketPrice(p){return Math.round(p.sell*resaleDemand(p)/p.demand*resalePriceIndex(p));}
 function renderResale(){
  const cash=document.getElementById("resaleCash");if(!cash)return;
  cash.textContent=resaleMoney(resaleState.cash);
@@ -49,8 +72,8 @@ function renderResale(){
  if(eventEl)eventEl.innerHTML='<div><b>'+event.title+'</b><span>'+event.desc+'</span></div><small>СМЕНА РЫНКА ЧЕРЕЗ '+Math.max(0,Math.ceil((resaleState.eventUntil-Date.now())/1000))+' СЕК.</small>';
  const catalog=document.getElementById("resaleCatalog");
  catalog.innerHTML=RESALE_PRODUCTS.map(p=>{
-  const demand=resaleDemand(p),market=resaleMarketPrice(p);
-  return '<article class="resale-product-card"><div class="resale-product-visual"><span>'+p.emoji+'</span><small>'+p.category+'</small></div><div class="resale-product-info"><h3>'+p.name+'</h3><p>'+p.desc+'</p><div class="resale-demand"><span>СПРОС</span><b>'+demand+'%</b><i><em style="width:'+demand+'%"></em></i></div><div class="resale-price-line"><span>Закупка</span><b>'+resaleMoney(p.buy)+'</b></div><div class="resale-price-line"><span>Рынок сейчас</span><b class="resale-green">'+resaleMoney(market)+'</b></div><button type="button" data-resale-buy="'+p.id+'" '+(resaleState.cash<p.buy?"disabled":"")+'>КУПИТЬ ТОВАР</button></div></article>';
+  const demand=resaleDemand(p),market=resaleMarketPrice(p),buyPrice=resaleBuyPrice(p);
+  return '<article class="resale-product-card"><div class="resale-product-visual"><span>'+p.emoji+'</span><small>'+p.category+'</small></div><div class="resale-product-info"><h3>'+p.name+'</h3><p>'+p.desc+'</p><div class="resale-demand"><span>СПРОС</span><b>'+demand+'%</b><i><em style="width:'+demand+'%"></em></i></div><div class="resale-price-line"><span>Закупка сейчас</span><b>'+resaleMoney(buyPrice)+'</b></div><div class="resale-price-line"><span>Рынок сейчас</span><b class="resale-green">'+resaleMoney(market)+'</b></div><button type="button" data-resale-buy="'+p.id+'" '+(resaleState.cash<buyPrice?"disabled":"")+'>КУПИТЬ ТОВАР</button></div></article>';
  }).join("");
  const inventory=document.getElementById("resaleInventory");
  const owned=RESALE_PRODUCTS.filter(p=>(Number(resaleState.inventory[p.id])||0)>0);
@@ -69,8 +92,9 @@ function renderResale(){
 }
 function buyResaleItem(id){
  const p=resaleProduct(id);if(!p)return;
- if(resaleState.cash<p.buy){resaleToast("Не хватает денег на покупку");return;}
- resaleState.cash-=p.buy;resaleState.inventory[id]=(Number(resaleState.inventory[id])||0)+1;
+ const cost=resaleBuyPrice(p);
+ if(resaleState.cash<cost){resaleToast("Не хватает денег на покупку");return;}
+ resaleState.cash-=cost;resaleState.inventory[id]=(Number(resaleState.inventory[id])||0)+1;
  saveResaleState();renderResale();resaleToast("Товар куплен и добавлен на склад");
 }
 function listResaleItem(id){
@@ -126,6 +150,14 @@ function counterResaleOffer(oid){
   saveResaleState();renderResale();resaleToast("Покупатель отказался. Попробуй снизить цену.");
  }
 }
+function fluctuateResalePrices(){
+ RESALE_PRODUCTS.forEach(p=>{
+  const current=resalePriceIndex(p);
+  resaleState.priceIndex[p.id]=Math.max(.72,Math.min(1.38,current*(.93+Math.random()*.14)));
+ });
+ resaleState.priceUntil=Date.now()+30000;
+ saveResaleState();renderResale();
+}
 function rotateResaleMarket(){
  let next=Math.floor(Math.random()*RESALE_EVENTS.length);
  if(next===resaleState.eventIndex)next=(next+1)%RESALE_EVENTS.length;
@@ -140,10 +172,11 @@ function resaleToast(message){
 window.initResaleSimulator=function(){
  if(!resaleState)loadResaleState();
  if(resaleState.eventUntil<Date.now())resaleState.eventUntil=Date.now()+45000;
+ if(resaleState.priceUntil<Date.now())resaleState.priceUntil=Date.now()+30000;
  renderResale();
  if(resaleEventTimer)clearInterval(resaleEventTimer);
  if(resaleBuyerTimer)clearInterval(resaleBuyerTimer);
- resaleEventTimer=setInterval(()=>{if(!document.getElementById("resaleSimulatorView")?.hidden){if(resaleState.eventUntil<=Date.now())rotateResaleMarket();else renderResale();}},5000);
+ resaleEventTimer=setInterval(()=>{if(!document.getElementById("resaleSimulatorView")?.hidden){if(resaleState.eventUntil<=Date.now())rotateResaleMarket();else if(resaleState.priceUntil<=Date.now())fluctuateResalePrices();else renderResale();}},5000);
  resaleBuyerTimer=setInterval(()=>{if(!document.getElementById("resaleSimulatorView")?.hidden)createResaleBuyer();},18000);
 };
 window.closeResaleSimulator=function(){
