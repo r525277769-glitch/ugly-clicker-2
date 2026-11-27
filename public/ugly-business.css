@@ -342,3 +342,7 @@ img{max-width:100%}
 #resaleCatalog .resale-product-visual>img{background:#f5f6f8!important;filter:none!important;opacity:1!important;mix-blend-mode:normal!important;object-fit:contain!important}
 #resaleCatalog .resale-photo-fallback{background:#f5f6f8!important;color:#334155!important}
 #resaleCatalog .resale-product-visual small{background:#17243ddd!important;color:#fff!important}
+
+/* Broken product images: remove failed IMG node so it cannot sit over fallback */
+#resaleCatalog .resale-product-visual>img{display:block;opacity:1;filter:none;mix-blend-mode:normal}
+#resaleCatalog .resale-product-visual>.resale-photo-fallback{display:none;position:absolute;inset:0;place-items:center;background:#f5f6f8;color:#334155;font-size:46px;filter:none}
