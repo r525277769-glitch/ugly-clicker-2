@@ -258,8 +258,11 @@ document.addEventListener("click",event=>{
 
 
 /* RESELLER BUSINESS EXPANSION v2 */
-const RESALE_WAREHOUSE_CAPS=[30,60,100,160,250,500];
-const RESALE_WAREHOUSE_PRICES=[0,2500,10000,35000,100000,250000];
+const RESALE_WAREHOUSE_CAPS=[30,60,100,160,250,500,800,1200,1800];
+const RESALE_WAREHOUSE_PRICES=[0,2500,10000,35000,100000,250000,600000,1400000,3200000];
+const RESALE_SHOP_CAPS=[5,10,18,28,42,60,85,115,150];
+const RESALE_SHOP_PRICES=[0,8000,25000,70000,180000,450000,1000000,2500000,6000000];
+const RESALE_SHOP_NAMES=["Палатка","Киоск","Маленький магазин","Обычный магазин","Большой магазин","Супермаркет","Торговый центр","Сеть магазинов","Империя ритейла"];
 const RESALE_STAFF_TYPES={
  seller:{title:"Продавец",price:1800,wage:45,emoji:"🧑‍💼",desc:"Увеличивает поток заказов в собственном магазине."},
  manager:{title:"Управляющий",price:6500,wage:130,emoji:"📋",desc:"Повышает среднюю цену продаж и ускоряет работу магазина."},
@@ -267,7 +270,8 @@ const RESALE_STAFF_TYPES={
 };
 function ensureResaleBusinessState(){
  if(!resaleState)return;
- resaleState.warehouseLevel=Math.max(0,Math.min(5,Number(resaleState.warehouseLevel)||0));
+ resaleState.warehouseLevel=Math.max(0,Math.min(8,Number(resaleState.warehouseLevel)||0));
+  resaleState.shopLevel=Math.max(0,Math.min(8,Number(resaleState.shopLevel)||0));
  resaleState.employees=resaleState.employees&&typeof resaleState.employees==="object"?resaleState.employees:{seller:0,manager:0,repairer:0};
  Object.keys(RESALE_STAFF_TYPES).forEach(k=>resaleState.employees[k]=Math.max(0,Math.min(5,Number(resaleState.employees[k])||0)));
  resaleState.couriers=Math.max(0,Math.min(10,Number(resaleState.couriers)||0));
@@ -283,6 +287,8 @@ function resaleWarehouseUsed(){
  return RESALE_PRODUCTS.reduce((n,p)=>n+(Number(resaleState.inventory[p.id])||0)+(Number(resaleState.brokenInventory[p.id])||0),0)+resaleState.ownShop.reduce((n,x)=>n+(Number(x.qty)||0),0);
 }
 function resaleWarehouseCapacity(){return RESALE_WAREHOUSE_CAPS[resaleState.warehouseLevel]||30;}
+function resaleShopCapacity(){return RESALE_SHOP_CAPS[resaleState.shopLevel]||5;}
+function resaleShopUsed(){return resaleState.ownShop.reduce((n,x)=>n+(Number(x.qty)||0),0);}
 function resaleCanStore(qty){return resaleWarehouseUsed()+qty<=resaleWarehouseCapacity();}
 function resaleStaffCount(){return Object.values(resaleState.employees).reduce((a,b)=>a+Number(b||0),0);}
 function resalePayroll(){return Object.entries(RESALE_STAFF_TYPES).reduce((n,[k,v])=>n+Number(resaleState.employees[k]||0)*v.wage,0)+resaleState.couriers*55;}
@@ -292,17 +298,22 @@ function resaleInjectBusinessUI(){
  const style=document.createElement("style");
  style.textContent=".resale-exp-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.resale-exp-stat{background:#101b18;border:1px solid #315b48;border-radius:12px;padding:11px;text-align:left}.resale-exp-stat small{display:block;color:#9ab7a5;font-size:9px;letter-spacing:.7px}.resale-exp-stat b{display:block;color:#b9f5cb;font-size:17px;margin-top:6px}.resale-exp-row{display:flex;align-items:center;gap:9px;text-align:left;padding:11px 0;border-bottom:1px solid #2c4538}.resale-exp-row:last-child{border-bottom:0}.resale-exp-main{flex:1;min-width:0}.resale-exp-main b{display:block;color:#d6f6df;font-size:12px}.resale-exp-main small{display:block;color:#9ab7a5;font-size:10px;line-height:1.45;margin-top:4px}.resale-exp-row button,.resale-exp-action{font-size:10px;padding:9px 10px;margin:2px}.resale-exp-input{width:82px;max-width:82px;padding:8px;margin:3px;font-size:13px}.resale-exp-form{display:flex;gap:5px;align-items:center;flex-wrap:wrap;margin-top:7px}.resale-exp-muted{color:#9ab7a5;font-size:10px;line-height:1.5}.resale-wholesale{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-top:7px}.resale-product-card .resale-exp-input{background:#0a1110;border-color:#315b48;color:#c9f7d7}.resale-exp-tag{display:inline-block;padding:4px 7px;border-radius:7px;background:#173426;color:#b9f5cb;font-size:9px;margin:2px}";
  root.appendChild(style);
- const html='<section id="resaleBusinessExpansion" class="resale-panel" style="margin-top:14px;border-color:#315b48"><div class="resale-panel-heading"><div><span>TYCOON MANAGEMENT</span><h3>РАЗВИТИЕ ТВОЕГО БИЗНЕСА</h3></div><b>04</b></div><div id="resaleBusinessStats" class="resale-exp-grid"></div><div class="resale-exp-row"><div class="resale-exp-main"><b>🏬 Склад и расширение</b><small id="resaleWarehouseInfo"></small></div><button type="button" id="resaleWarehouseUpgrade">УЛУЧШИТЬ</button></div><div id="resaleStaffPanel"></div><div class="resale-exp-row"><div class="resale-exp-main"><b>🚚 Курьерская служба</b><small id="resaleCourierInfo"></small></div><button type="button" id="resaleHireCourier">НАНЯТЬ КУРЬЕРА</button></div><div class="resale-exp-muted" id="resalePayrollInfo" style="margin-top:10px"></div></section><section class="resale-panel" style="margin-top:14px;border-color:#315b48"><div class="resale-panel-heading"><div><span>YOUR OWN RETAIL</span><h3>СОБСТВЕННЫЙ МАГАЗИН</h3></div><b>05</b></div><p class="resale-exp-muted">Выставляй товары со склада. Покупатели оформляют заказы автоматически, курьеры доставляют их, а выручка поступает на твой баланс после доставки.</p><div id="resaleOwnShop"></div><div id="resaleDeliveryQueue"></div></section><section class="resale-panel" style="margin-top:14px;border-color:#8a6332"><div class="resale-panel-heading"><div><span>REPAIR WORKSHOP</span><h3>МАСТЕРСКАЯ · НЕИСПРАВНЫЕ ТОВАРЫ</h3></div><b>06</b></div><p class="resale-exp-muted">Покупай неисправные товары со скидкой, ремонтируй их и возвращай на склад. Мастер снижает стоимость ремонта.</p><div id="resaleBrokenStock"></div></section>';
+ const html='<section id="resaleBusinessExpansion" class="resale-panel" style="margin-top:14px;border-color:#315b48"><div class="resale-panel-heading"><div><span>TYCOON MANAGEMENT</span><h3>РАЗВИТИЕ ТВОЕГО БИЗНЕСА</h3></div><b>04</b></div><div id="resaleBusinessStats" class="resale-exp-grid"></div><div class="resale-exp-row"><div class="resale-exp-main"><b>🏬 Склад и расширение</b><small id="resaleWarehouseInfo"></small></div><button type="button" id="resaleWarehouseUpgrade">УЛУЧШИТЬ</button></div><div class="resale-exp-row"><div class="resale-exp-main"><b>🏪 Уровень магазина</b><small id="resaleShopInfo"></small></div><button type="button" id="resaleShopUpgrade">УЛУЧШИТЬ</button></div><div id="resaleStaffPanel"></div><div class="resale-exp-row"><div class="resale-exp-main"><b>🚚 Курьерская служба</b><small id="resaleCourierInfo"></small></div><button type="button" id="resaleHireCourier">НАНЯТЬ КУРЬЕРА</button></div><div class="resale-exp-muted" id="resalePayrollInfo" style="margin-top:10px"></div></section><section class="resale-panel" style="margin-top:14px;border-color:#315b48"><div class="resale-panel-heading"><div><span>YOUR OWN RETAIL</span><h3>СОБСТВЕННЫЙ МАГАЗИН</h3></div><b>05</b></div><p class="resale-exp-muted">Выставляй товары со склада. Покупатели оформляют заказы автоматически, курьеры доставляют их, а выручка поступает на твой баланс после доставки.</p><div id="resaleOwnShop"></div><div id="resaleDeliveryQueue"></div></section><section class="resale-panel" style="margin-top:14px;border-color:#8a6332"><div class="resale-panel-heading"><div><span>REPAIR WORKSHOP</span><h3>МАСТЕРСКАЯ · НЕИСПРАВНЫЕ ТОВАРЫ</h3></div><b>06</b></div><p class="resale-exp-muted">Покупай неисправные товары со скидкой, ремонтируй их и возвращай на склад. Мастер снижает стоимость ремонта.</p><div id="resaleBrokenStock"></div></section>';
  const rules=root.querySelector(".resale-rules");if(rules)rules.insertAdjacentHTML("beforebegin",html);else root.insertAdjacentHTML("beforeend",html);
 }
 function renderResaleBusiness(){
  if(!resaleState||!document.getElementById("resaleBusinessExpansion"))return;
  ensureResaleBusinessState();
  const used=resaleWarehouseUsed(),cap=resaleWarehouseCapacity(),level=resaleState.warehouseLevel,nextPrice=RESALE_WAREHOUSE_PRICES[level+1];
+ const shopLevel=resaleState.shopLevel,shopPrice=RESALE_SHOP_PRICES[shopLevel+1],shopUsed=resaleShopUsed(),shopCap=resaleShopCapacity();
  const stats=document.getElementById("resaleBusinessStats");
  stats.innerHTML='<div class="resale-exp-stat"><small>СКЛАД ЗАНЯТ</small><b>'+used+' / '+cap+'</b></div><div class="resale-exp-stat"><small>ПРОДАЖИ СВОЕГО МАГАЗИНА</small><b>'+resaleState.ownShopSold+'</b></div><div class="resale-exp-stat"><small>СОТРУДНИКИ</small><b>'+resaleStaffCount()+'</b></div><div class="resale-exp-stat"><small>КУРЬЕРЫ</small><b>'+resaleState.couriers+'</b></div>';
- document.getElementById("resaleWarehouseInfo").textContent=level>=5?"Максимальная вместимость — 500 единиц.":"Вместимость "+cap+" единиц. Следующий уровень: "+RESALE_WAREHOUSE_CAPS[level+1]+" мест · цена $"+Number(nextPrice).toLocaleString("en-US")+".";
- const upgrade=document.getElementById("resaleWarehouseUpgrade");upgrade.disabled=level>=5||resaleState.cash<nextPrice;upgrade.textContent=level>=5?"МАКСИМУМ":"УЛУЧШИТЬ · $"+Number(nextPrice).toLocaleString("en-US");
+ document.getElementById("resaleWarehouseInfo").textContent=level>=8?"Максимальная вместимость — 1 800 единиц.":"Уровень "+(level+1)+"/9 · вместимость "+cap+" единиц. Следующий уровень: "+RESALE_WAREHOUSE_CAPS[level+1]+" мест · цена $"+Number(nextPrice).toLocaleString("en-US")+".";
+ const upgrade=document.getElementById("resaleWarehouseUpgrade");upgrade.disabled=level>=8||resaleState.cash<nextPrice;upgrade.textContent=level>=8?"МАКСИМУМ":"УЛУЧШИТЬ · $"+Number(nextPrice).toLocaleString("en-US");
+ const shopUpgrade=document.getElementById("resaleShopUpgrade");
+ if(shopUpgrade){document.getElementById("resaleShopInfo").textContent=RESALE_SHOP_NAMES[shopLevel]+" · уровень "+(shopLevel+1)+"/9 · занято "+shopUsed+"/"+shopCap+" мест. "+(shopLevel>=8?"Достигнут максимальный уровень.":"Следующий уровень: "+RESALE_SHOP_NAMES[shopLevel+1]+" · "+RESALE_SHOP_CAPS[shopLevel+1]+" мест · $"+shopPrice.toLocaleString("en-US")+".");
+ shopUpgrade.disabled=shopLevel>=8||resaleState.cash<shopPrice;
+ shopUpgrade.textContent=shopLevel>=8?"МАКСИМУМ":"УЛУЧШИТЬ · $"+shopPrice.toLocaleString("en-US");}
  const staff=document.getElementById("resaleStaffPanel");
  staff.innerHTML=Object.entries(RESALE_STAFF_TYPES).map(([key,v])=>'<div class="resale-exp-row"><div class="resale-exp-main"><b>'+v.emoji+' '+v.title+' · '+resaleState.employees[key]+'/5</b><small>'+v.desc+' Зарплата: $'+v.wage+' за 5 минут.</small></div><button type="button" data-resale-hire-staff="'+key+'" '+(resaleState.employees[key]>=5||resaleState.cash<v.price?"disabled":"")+'>'+(resaleState.employees[key]>=5?"МАКСИМУМ":"НАНЯТЬ · $"+v.price.toLocaleString("en-US"))+'</button></div>').join("");
  document.getElementById("resaleCourierInfo").textContent=resaleState.couriers+"/10 курьеров. Курьеры ускоряют доставку заказов собственного магазина. Найм $1 250, зарплата $55 за 5 минут.";
@@ -357,6 +368,7 @@ function resaleMoveToOwnShop(id){
  const qty=Math.max(1,Math.min(Number(resaleState.inventory[id]),Math.floor(Number(qtyInput?.value)||1)));
  const price=Math.floor(Number(priceInput?.value)||resaleMarketPrice(p));
  if(price<1||price>10000000){resaleToast("Укажи цену от $1 до $10 000 000");return;}
+  if(resaleShopUsed()+qty>resaleShopCapacity()){resaleToast("В магазине нет места. Повышай уровень магазина!");return;}
  let entry=resaleState.ownShop.find(x=>x.id===id);if(!entry){entry={id,qty:0,price,costs:[]};resaleState.ownShop.push(entry);}
  const costs=resaleState.inventoryCosts[id]||[];
  for(let i=0;i<qty;i++)entry.costs.push(Number(costs.shift())||p.buy);
@@ -376,9 +388,10 @@ function resaleOwnShopBuyer(){
  const entry=stock[Math.floor(Math.random()*stock.length)],p=resaleProduct(entry.id);if(!p)return;
  const managerBoost=1+Math.min(.12,resaleState.employees.manager*.025);
  const willingness=resaleMarketPrice(p)*(.78+resaleDemand(p)/400)*managerBoost;
- if(entry.price>willingness*1.25&&Math.random()<.7)return;
+ const shopDemandBoost=1+resaleState.shopLevel*.035;
+  if(entry.price>willingness*shopDemandBoost*1.25&&Math.random()<.7)return;
  const price=Math.max(1,Math.min(Number(entry.price),Math.round(willingness)));
- const delay=resaleState.couriers?Math.max(8,35-resaleState.couriers*3):75;
+ const delay=Math.max(8,(resaleState.couriers?35-resaleState.couriers*3:75)-resaleState.shopLevel*2);
  const order={oid:Date.now()+Math.floor(Math.random()*9999),id:entry.id,price,cost:Number(entry.costs.shift())||p.buy,endsAt:Date.now()+delay*1000};
  entry.qty--;resaleState.deliveryQueue.push(order);resaleState.ownShop=resaleState.ownShop.filter(x=>x.qty>0);
  saveResaleState();renderResale();
@@ -440,7 +453,8 @@ document.addEventListener("click",event=>{
  const own=event.target.closest("[data-resale-own-add]");if(own){resaleMoveToOwnShop(own.dataset.resaleOwnAdd);return;}
  const remove=event.target.closest("[data-resale-own-remove]");if(remove){resaleRemoveOwnShop(Number(remove.dataset.resaleOwnRemove));return;}
  const hire=event.target.closest("[data-resale-hire-staff]");if(hire){const key=hire.dataset.resaleHireStaff,v=RESALE_STAFF_TYPES[key];if(!v)return;if(resaleState.employees[key]>=5||resaleState.cash<v.price){resaleToast("Недостаточно средств или достигнут лимит сотрудников");return;}resaleState.cash-=v.price;resaleState.employees[key]++;saveResaleState();renderResale();resaleToast(v.title+" нанят!");return;}
- if(event.target.closest("#resaleWarehouseUpgrade")){const level=resaleState.warehouseLevel,price=RESALE_WAREHOUSE_PRICES[level+1];if(level>=5||resaleState.cash<price){resaleToast("Недостаточно денег или склад уже максимального уровня");return;}resaleState.cash-=price;resaleState.warehouseLevel++;saveResaleState();renderResale();resaleToast("Склад расширен до "+resaleWarehouseCapacity()+" мест!");return;}
+ if(event.target.closest("#resaleWarehouseUpgrade")){const level=resaleState.warehouseLevel,price=RESALE_WAREHOUSE_PRICES[level+1];if(level>=8||resaleState.cash<price){resaleToast("Недостаточно денег или склад уже максимального уровня");return;}resaleState.cash-=price;resaleState.warehouseLevel++;saveResaleState();renderResale();resaleToast("Склад расширен до "+resaleWarehouseCapacity()+" мест!");return;}
+  if(event.target.closest("#resaleShopUpgrade")){const level=resaleState.shopLevel,price=RESALE_SHOP_PRICES[level+1];if(level>=8||resaleState.cash<price){resaleToast("Недостаточно денег или магазин уже максимального уровня");return;}resaleState.cash-=price;resaleState.shopLevel++;saveResaleState();renderResale();resaleToast("Магазин улучшен: "+RESALE_SHOP_NAMES[level+1]+"!");return;}
  if(event.target.closest("#resaleHireCourier")){if(resaleState.couriers>=10||resaleState.cash<1250){resaleToast("Недостаточно средств или достигнут лимит курьеров");return;}resaleState.cash-=1250;resaleState.couriers++;saveResaleState();renderResale();resaleToast("Новый курьер нанят!");}
 });
 
