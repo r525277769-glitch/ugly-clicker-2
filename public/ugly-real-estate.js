@@ -13,13 +13,13 @@ const PROPERTY_PHOTOS={
  loft:"https://images-pw.pixieset.com/elementfield/561229393/20240204_043902613_iOS-f03bc667-1500.jpg",
  country:"https://uspic2.ok.com/post/image/21e20762-49cc-44cd-a338-22dbe79b420c.png?oh=400&ow=600",
  townhouse:"https://s3.cosmopolitan.co.id/articles/00b6e677-fcdc-429a-a458-8a9568fa9941-1742802050Z5sbu.jpg",
- villa:"https://mbluxury1.s3.amazonaws.com/2024/02/01151752/luxury-real-estate-website-design-1200x673.jpg",
+ villa:"https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&w=1200&q=85",
  shop:"https://my1-cdn.pgimgs.com/listing/500792051/UPHO.285345812.V800/Kiara-Residence-2-Residensi-Kiara-Jalil-2-Bukit-Jalil-Malaysia.jpg",
  office:"https://transform.octanecdn.com/crop/1200x800/https%3A/octanecdn.com/exterminatorenginesites/exterminatorenginesites_370812529.png",
  center:"https://www.2008php.com/2020_Website_appreciate/2020-08-09/20200809000753AOQYzFkMeTVR.jpg",
  tower:"https://fnst.axflare.com/developer/poster/JPEG/yjPLlsIynF.jpeg",
  hotel:"https://images.unsplash.com/photo-1566073771259-6a8506099945?w=900&auto=format&fit=crop",
- mall:"https://images.unsplash.com/photo-1582574586078-7715b134edba?auto=format&fit=crop&w=1200&q=85",
+ mall:"https://images.unsplash.com/photo-1519567241046-7f570eee3ce6?auto=format&fit=crop&w=1200&q=85",
  warehouse:"https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=900&auto=format&fit=crop",
  resort:"https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=900&auto=format&fit=crop"
 };
