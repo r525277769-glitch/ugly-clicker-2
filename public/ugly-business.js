@@ -727,7 +727,7 @@ function animate() {
   }
   for(let i=clubNPCs.length-1;i>=0;i--){if(clubNPCs[i].mode==="exit"&&clubNPCs[i].mesh.position.z>8.25){scene.remove(clubNPCs[i].mesh);const ai=animated.findIndex(a=>a.root===clubNPCs[i].mesh);if(ai>=0)animated.splice(ai,1);clubNPCs.splice(i,1);}}
 
-  stationGroups.forEach((g,i)=>g.visible=i<(state.stations||4));consoleGroups.forEach((g,i)=>g.visible=i<(state.clubData.consoleStations||[]).length);
+  stationGroups.forEach(g=>{g.visible=true;if(g.parent!==scene)scene.add(g);});consoleGroups.forEach((g,i)=>g.visible=i<(state.clubData.consoleStations||[]).length);
   updateCamera(dt);
   activeObject = findInteractable();
   $("simHint").textContent = activeObject ? activeObject.hint : "Двигайся по клубу. Подойди к ресепшену или игровому месту.";
@@ -806,7 +806,7 @@ function updateHUD() {
   const admin=$("simHireAdmin"),adminHired=Boolean(state.clubData.adminEnabled);if(admin){admin.disabled=adminHired;admin.textContent=adminHired?"✓ АДМИНИСТРАТОР НАНЯТ":"👨‍💼 НАНЯТЬ АДМИНИСТРАТОРА · $40 000";}
   const cExpand=$("simExpandConsoleRoom"),crl=Number(state.clubData.consoleRoomLevel||0),crp=[15000,30000,60000];if(cExpand){cExpand.disabled=crl>=3;cExpand.textContent=crl>=3?"🏢 КОНСОЛЬНЫЙ ЗАЛ МАКСИМАЛЬНЫЙ":"🏢 РАСШИРИТЬ КОНСОЛЬНЫЙ ЗАЛ · $"+crp[crl].toLocaleString("ru-RU");}
   const cAdmin=$("simHireConsoleAdmin"),cAdminHired=Boolean(state.clubData.consoleAdminEnabled);if(cAdmin){cAdmin.disabled=cAdminHired;cAdmin.textContent=cAdminHired?"✓ АДМИНИСТРАТОР КОНСОЛЕЙ НАНЯТ":"👨‍💼 НАНЯТЬ АДМИНИСТРАТОРА · $40 000";}
-  stationGroups.forEach((g,i)=>g.visible=i<(state.stations||4));
+  stationGroups.forEach(g=>{g.visible=true;if(g.parent!==scene)scene.add(g);});
   renderClubPanels();if(scene)syncClubNPCs();
 }
 async function loadState() {
