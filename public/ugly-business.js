@@ -5,6 +5,7 @@ const initData = window.Telegram?.WebApp?.initData || "";
 const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
 const state = { cash:0, level:1, customers:0, xp:0, stations:4, adLevel:0, hourlyIncome:0, clubData:{stations:[],queue:[],consoleQueue:[],sessions:[],consoleSessions:[]} };
 let renderer, scene, camera, player, clock, ready = false, raf = 0;
+let compactDevice=false, lowPowerDevice=false, frameInterval=0, lastFrameAt=0, stageResizeObserver=null;
 let yaw = 0, moveX = 0, moveY = 0, activeObject = null, actionBusy = false;
 let joyPointer = null, lookPointer = null, lookLastX = 0, joyCenter = { x: 0, y: 0 };
 let joystickRadius = 48, cameraDistance = 5.8, cameraHeight = 3.2;
@@ -389,7 +390,7 @@ function buildStore(){
  // Ultra Graphics lighting: soft neutral fill, warm key light and cool cinematic rim.
  scene.add(new THREE.AmbientLight("#9aabc5",.48));
  scene.add(new THREE.HemisphereLight("#d7eaff","#25283a",1.35));
- const key=new THREE.DirectionalLight("#fff0d8",3.35);key.position.set(-7,13,8);key.castShadow=true;key.shadow.mapSize.set(4096,4096);key.shadow.bias=-.00008;key.shadow.normalBias=.02;key.shadow.radius=4;key.shadow.camera.left=-19;key.shadow.camera.right=19;key.shadow.camera.top=19;key.shadow.camera.bottom=-19;key.shadow.camera.near=.5;key.shadow.camera.far=42;scene.add(key);
+ const key=new THREE.DirectionalLight("#fff0d8",3.35);key.position.set(-7,13,8);key.castShadow=true;key.shadow.mapSize.set(compactDevice?1024:2048,compactDevice?1024:2048);key.shadow.bias=-.00008;key.shadow.normalBias=.02;key.shadow.radius=compactDevice?2:4;key.shadow.camera.left=-19;key.shadow.camera.right=19;key.shadow.camera.top=19;key.shadow.camera.bottom=-19;key.shadow.camera.near=.5;key.shadow.camera.far=42;scene.add(key);
  const rim=new THREE.DirectionalLight("#83bfff",1.05);rim.position.set(9,8,-10);scene.add(rim);
  for(const [color,intensity,pos] of [["#21cfff",27,[-5,3,-4]],["#9c4dff",24,[6,3,2]],["#ff4e9b",14,[0,3,7]]]){const l=new THREE.PointLight(color,intensity,19,2);l.position.set(...pos);scene.add(l);}
  const roomSize=18+Number(state.clubData.roomLevel||0)*4,roomHalf=roomSize/2;
@@ -604,6 +605,7 @@ function resize() {
   if (!w || !h) return;
   renderer.setSize(w, h, false);
   camera.aspect = w / h; camera.updateProjectionMatrix();
+  if(compactDevice&&window.visualViewport){const vh=window.visualViewport.height;if(vh>0){const stage=canvas.closest(".sim-stage");if(stage)stage.style.setProperty("--sim-vh",Math.round(vh)+"px");}}
 }
 function currentInput() {
   let x = moveX, y = moveY;
@@ -634,6 +636,9 @@ function updateCamera(dt) {
 function animate() {
   raf = requestAnimationFrame(animate);
   if (!ready) return;
+  const frameNow=performance.now();
+  if(frameInterval&&frameNow-lastFrameAt<frameInterval)return;
+  lastFrameAt=frameNow;
   const dt = Math.min(clock.getDelta(), .04), input = currentInput();
   // Forward is the direction the character faces; up on the stick moves into the store.
   tempForward.set(-Math.sin(yaw), 0, -Math.cos(yaw));
@@ -888,16 +893,23 @@ window.initUglyBusiness = async function() {
   if (!initData) { $("simHint").textContent = "Открой игру через Telegram"; return; }
   try {
     const canvas = $("uglyBusinessCanvas");
-    renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: "high-performance", stencil: false, depth: true });
-    const compactScreen = window.matchMedia?.("(max-width: 700px)").matches || /iPhone|Android/i.test(navigator.userAgent);
-    // Render at device-native resolution (up to 2.5x) for crisp 1080p-class output.
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, compactScreen ? 2 : 2.5));
+    compactDevice = window.matchMedia?.("(max-width: 760px), (pointer: coarse)").matches || /iPhone|Android/i.test(navigator.userAgent);
+    const memoryGB=Number(navigator.deviceMemory||4),cores=Number(navigator.hardwareConcurrency||4);
+    lowPowerDevice=compactDevice&&(memoryGB<=4||cores<=4);
+    frameInterval=compactDevice?(lowPowerDevice?1000/30:1000/40):0;
+    renderer = new THREE.WebGLRenderer({ canvas, antialias: !compactDevice, alpha: false, powerPreference: "high-performance", stencil: false, depth: true });
+    // Adaptive render scale: preserve sharpness while avoiding oversized Retina framebuffers.
+    const maxPixelRatio=lowPowerDevice?1.15:compactDevice?1.5:2;
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,maxPixelRatio));
     renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.info.autoReset = true;
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.18;
     renderer.setClearColor("#111a29", 1);
     await loadState(); buildStore(); clock = new THREE.Clock(); bindControls(); ready = true; resize();
+    if(stageResizeObserver)stageResizeObserver.disconnect();
+    if("ResizeObserver" in window){stageResizeObserver=new ResizeObserver(()=>resize());const stage=canvas.closest(".sim-stage");if(stage)stageResizeObserver.observe(stage);}
+    if(window.visualViewport)window.visualViewport.addEventListener("resize",resize,{passive:true});
     if(statePollTimer)clearInterval(statePollTimer);statePollTimer=setInterval(()=>{if(ready&&$("simulator")?.classList.contains("active"))loadState();},5000);
     yaw = 0; camera.position.set(0, 3.2, 11.2); camera.lookAt(player.position.x, 1, player.position.z);
     animate();
@@ -918,5 +930,5 @@ if (page) {
 window.addEventListener("resize", resize);
 document.addEventListener("visibilitychange", () => {
   if (document.hidden && raf) { cancelAnimationFrame(raf); raf = 0; }
-  else if (!document.hidden && ready && $("simulator")?.classList.contains("active") && !raf) { clock.start(); animate(); }
+  else if (!document.hidden && ready && $("simulator")?.classList.contains("active") && !raf) { lastFrameAt=0; clock.start(); animate(); }
 });
