@@ -346,6 +346,7 @@ async function initDatabase() {
       last_accrued_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
+    ALTER TABLE real_estate_players ADD COLUMN IF NOT EXISTS economy_data JSONB NOT NULL DEFAULT '{}'::jsonb;
   `);
 
   databaseReady = true;
@@ -2521,63 +2522,118 @@ const REAL_ESTATE_CATALOG = [
  {id:"shop",name:"Коммерческий магазин",emoji:"🏬",type:"КОММЕРЦИЯ",price:520000,rent:4800,cost:650,description:"Помещение под розничный бизнес."},
  {id:"office",name:"Офисный этаж",emoji:"🏙️",type:"КОММЕРЦИЯ",price:2400000,rent:23000,cost:3100,description:"Площади для аренды компаниям."},
  {id:"center",name:"Бизнес-центр",emoji:"🏢",type:"КОММЕРЦИЯ",price:15000000,rent:155000,cost:19000,description:"Крупный объект с несколькими арендаторами."},
- {id:"tower",name:"Небоскрёб",emoji:"🌆",type:"МЕГА-ПРОЕКТ",price:250000000,rent:2800000,cost:330000,description:"Флагманский актив твоей империи."}
+ {id:"tower",name:"Небоскрёб",emoji:"🌆",type:"МЕГА-ПРОЕКТ",price:250000000,rent:2800000,cost:330000,description:"Флагманский актив твоей империи."},
+ {id:"hotel",name:"Городской отель",emoji:"🏨",type:"ГОСТИНИЦЫ",price:8500000,rent:98000,cost:18000,description:"Отель с постоянным потоком гостей."},
+ {id:"mall",name:"Торговый центр",emoji:"🛍️",type:"ТОРГОВЫЕ ЦЕНТРЫ",price:22000000,rent:260000,cost:52000,description:"Множество магазинов под одной крышей."},
+ {id:"warehouse",name:"Логистический склад",emoji:"🏭",type:"СКЛАДЫ",price:3900000,rent:47000,cost:7800,description:"Большие площади для логистики и хранения."},
+ {id:"resort",name:"Морской курорт",emoji:"🏝️",type:"КУРОРТЫ",price:48000000,rent:610000,cost:145000,description:"Премиальный курортный комплекс."}
 ];
+const REAL_ESTATE_DISTRICTS = [
+ {id:"old-town",name:"Старый город",emoji:"🏘️",price:45000,multiplier:.82,demand:"СТАБИЛЬНЫЙ"},
+ {id:"residential",name:"Жилой квартал",emoji:"🏠",price:75000,multiplier:1,demand:"ВЫСОКИЙ"},
+ {id:"business",name:"Деловой центр",emoji:"🏙️",price:180000,multiplier:1.65,demand:"ОЧЕНЬ ВЫСОКИЙ"},
+ {id:"waterfront",name:"Набережная",emoji:"🌊",price:230000,multiplier:1.9,demand:"ПРЕМИУМ"},
+ {id:"suburb",name:"Пригород",emoji:"🌳",price:55000,multiplier:.92,demand:"РАСТУЩИЙ"},
+ {id:"industrial",name:"Промзона",emoji:"🏭",price:68000,multiplier:1.08,demand:"КОММЕРЧЕСКИЙ"},
+ {id:"university",name:"Университетский",emoji:"🎓",price:115000,multiplier:1.28,demand:"СТУДЕНЧЕСКИЙ"},
+ {id:"airport",name:"Аэропорт-Сити",emoji:"✈️",price:145000,multiplier:1.42,demand:"ДЕЛОВОЙ"},
+ {id:"elite",name:"Элитный район",emoji:"💎",price:320000,multiplier:2.25,demand:"ЛЮКС"},
+ {id:"tech",name:"Технопарк",emoji:"🧬",price:205000,multiplier:1.78,demand:"РАСТУЩИЙ"}
+];
+const REAL_ESTATE_PROJECTS = [
+ {id:"residential",name:"Жилой комплекс",emoji:"🏢",cost:180000,rent:2450,expense:420,seconds:90,description:"Много квартир и стабильная аренда."},
+ {id:"hotel",name:"Отель",emoji:"🏨",cost:850000,rent:11800,expense:2600,seconds:180,description:"Гостиница для туристов и командировок."},
+ {id:"mall",name:"Торговый центр",emoji:"🛍️",cost:2400000,rent:36000,expense:8500,seconds:300,description:"Торговые галереи и крупные арендаторы."},
+ {id:"warehouse",name:"Складской комплекс",emoji:"🏭",cost:620000,rent:8200,expense:1450,seconds:150,description:"Логистический объект с долгой арендой."},
+ {id:"resort",name:"Курорт",emoji:"🏝️",cost:7800000,rent:112000,expense:28500,seconds:420,description:"Большой туристический проект."}
+];
+const REAL_ESTATE_STAFF = [
+ {id:"manager",name:"Управляющий",emoji:"👔",price:85000,description:"+5% к доходу от аренды за каждого."},
+ {id:"agent",name:"Агент по продажам",emoji:"🤝",price:65000,description:"+4% к цене продажи объектов."},
+ {id:"maintenance",name:"Техник",emoji:"🧰",price:55000,description:"−5% к расходам на обслуживание."}
+];
+function getMarketFactor(index){const wave=Math.sin((Math.floor(Date.now()/300000)+index*7)/3.1)*.075+Math.cos((Math.floor(Date.now()/300000)+index*3)/5.2)*.035;return Math.max(.82,Math.min(1.2,1+wave));}
+function normalizeREconomy(raw){const e=raw&&typeof raw==="object"?raw:{};return {land:Array.isArray(e.land)?e.land:[],constructions:Array.isArray(e.constructions)?e.constructions:[],staff:Array.isArray(e.staff)?e.staff:[],loan:Number(e.loan)||0,loanDue:Number(e.loanDue)||0,loanTakenAt:e.loanTakenAt||null,marketUpdatedAt:Math.floor(Date.now()/300000)*300000};}
 async function getRealEstate(client, telegramId, accrue=true) {
  await client.query("INSERT INTO real_estate_players (telegram_id) VALUES ($1) ON CONFLICT (telegram_id) DO NOTHING",[telegramId]);
  const result=await client.query("SELECT * FROM real_estate_players WHERE telegram_id=$1 FOR UPDATE",[telegramId]);
- const row=result.rows[0];let portfolio=Array.isArray(row.portfolio)?row.portfolio:[];
+ const row=result.rows[0];let portfolio=Array.isArray(row.portfolio)?row.portfolio:[],economy=normalizeREconomy(row.economy_data);
+ const now=Date.now();let completed=[];
+ economy.constructions=economy.constructions.filter(job=>{if(new Date(job.completeAt).getTime()<=now){completed.push(job);return false;}return true;});
+ for(const job of completed){const project=REAL_ESTATE_PROJECTS.find(x=>x.id===job.projectId);if(project)portfolio.push({uid:"build-"+job.id,id:"built-"+project.id,name:project.name,emoji:project.emoji,type:"ПОСТРОЕНО",purchasePrice:job.cost,marketValue:Math.round(job.cost*1.22),rent:project.rent,cost:project.expense,level:1,districtId:job.districtId,districtName:job.districtName,purchasedAt:new Date().toISOString()});}
+ const managerCount=economy.staff.filter(x=>x.id==="manager").length,techCount=economy.staff.filter(x=>x.id==="maintenance").length;
  let earned=0;
  if(accrue){
-  const elapsed=Math.min(30*24*3600000,Math.max(0,Date.now()-new Date(row.last_accrued_at).getTime()));
-  const gross=portfolio.reduce((sum,p)=>sum+Math.max(0,Number(p.rent)||0)*Math.max(1,Number(p.level)||1),0);
-  const costs=portfolio.reduce((sum,p)=>sum+Math.max(0,Number(p.cost)||0),0);
+  const elapsed=Math.min(30*24*3600000,Math.max(0,now-new Date(row.last_accrued_at).getTime()));
+  const gross=portfolio.reduce((sum,p)=>sum+Math.max(0,Number(p.rent)||0)*Math.max(1,Number(p.level)||1),0)*(1+managerCount*.05);
+  const costs=portfolio.reduce((sum,p)=>sum+Math.max(0,Number(p.cost)||0),0)*(1-techCount*.05);
   earned=Math.floor((gross-costs)*elapsed/3600000);
   if(earned!==0){row.cash=String(BigInt(row.cash)+BigInt(earned));row.total_profit=String(BigInt(row.total_profit)+BigInt(earned));}
   const xp=Math.max(0,Math.floor(elapsed/3600000*Math.max(0,gross-costs)/1000));
-  row.company_xp=String(BigInt(row.company_xp)+BigInt(xp));
-  row.company_level=Math.min(100,1+Math.floor(Number(row.company_xp)/5000));
-  await client.query("UPDATE real_estate_players SET cash=$1,portfolio=$2::jsonb,total_profit=$3,company_xp=$4,company_level=$5,last_income=$6,last_accrued_at=NOW(),updated_at=NOW() WHERE telegram_id=$7",
-   [row.cash,JSON.stringify(portfolio),row.total_profit,row.company_xp,row.company_level,earned,telegramId]);
- } else {
-  await client.query("UPDATE real_estate_players SET last_accrued_at=NOW() WHERE telegram_id=$1",[telegramId]);
+  row.company_xp=String(BigInt(row.company_xp)+BigInt(xp));row.company_level=Math.min(100,1+Math.floor(Number(row.company_xp)/5000));
+  await client.query("UPDATE real_estate_players SET cash=$1,portfolio=$2::jsonb,economy_data=$3::jsonb,total_profit=$4,company_xp=$5,company_level=$6,last_income=$7,last_accrued_at=NOW(),updated_at=NOW() WHERE telegram_id=$8",
+   [row.cash,JSON.stringify(portfolio),JSON.stringify(economy),row.total_profit,row.company_xp,row.company_level,earned,telegramId]);
+ }else{
+  await client.query("UPDATE real_estate_players SET portfolio=$1::jsonb,economy_data=$2::jsonb,last_accrued_at=NOW() WHERE telegram_id=$3",[JSON.stringify(portfolio),JSON.stringify(economy),telegramId]);
  }
- const gross=portfolio.reduce((sum,p)=>sum+Math.max(0,Number(p.rent)||0)*Math.max(1,Number(p.level)||1),0);
- const costs=portfolio.reduce((sum,p)=>sum+Math.max(0,Number(p.cost)||0),0);
- return {cash:Number(row.cash),portfolio,companyLevel:Number(row.company_level),companyXp:Number(row.company_xp),totalProfit:Number(row.total_profit),lastIncome:earned,hourlyIncome:gross-costs,hourlyCosts:costs,catalog:REAL_ESTATE_CATALOG};
+ const grossBase=portfolio.reduce((sum,p)=>sum+Math.max(0,Number(p.rent)||0)*Math.max(1,Number(p.level)||1),0);
+ const costsBase=portfolio.reduce((sum,p)=>sum+Math.max(0,Number(p.cost)||0),0);
+ const catalog=REAL_ESTATE_CATALOG.map((p,i)=>({...p,marketPrice:Math.round(p.price*getMarketFactor(i))}));
+ const land=REAL_ESTATE_DISTRICTS.map((d,i)=>({...d,marketPrice:Math.round(d.price*getMarketFactor(i+20)),owned:economy.land.some(x=>x.districtId===d.id)}));
+ return {cash:Number(row.cash),portfolio,companyLevel:Number(row.company_level),companyXp:Number(row.company_xp),totalProfit:Number(row.total_profit),lastIncome:earned,hourlyIncome:Math.round(grossBase*(1+managerCount*.05)-costsBase*(1-techCount*.05)),hourlyCosts:Math.round(costsBase*(1-techCount*.05)),catalog,districts:land,projects:REAL_ESTATE_PROJECTS,staffCatalog:REAL_ESTATE_STAFF,staff:economy.staff,land:economy.land,constructions:economy.constructions,loan:economy.loan,loanDue:economy.loanDue,marketUpdatedAt:economy.marketUpdatedAt};
 }
 app.get("/api/real-estate/state",auth,async(req,res)=>{
  const c=await pool.connect();try{await c.query("BEGIN");const state=await getRealEstate(c,req.player.id,true);await c.query("COMMIT");res.json(state);}catch(e){await c.query("ROLLBACK");console.error("Real estate state:",e);res.status(500).json({error:"Не удалось загрузить недвижимость"});}finally{c.release();}
 });
+app.get("/api/real-estate/leaderboard",auth,async(req,res)=>{
+ try{const result=await pool.query(`SELECT p.username,r.telegram_id,r.company_level,r.total_profit,r.cash,
+  COALESCE((SELECT SUM((x->>'marketValue')::numeric) FROM jsonb_array_elements(r.portfolio) x),0) AS asset_value
+  FROM real_estate_players r LEFT JOIN players p ON p.telegram_id=r.telegram_id
+  ORDER BY (r.cash+COALESCE((SELECT SUM((x->>'marketValue')::numeric) FROM jsonb_array_elements(r.portfolio) x),0)) DESC LIMIT 20`);
+ res.json({leaders:result.rows.map((x,i)=>({rank:i+1,name:x.username||("Игрок "+String(x.telegram_id).slice(-4)),level:Number(x.company_level),wealth:Number(x.cash)+Number(x.asset_value),profit:Number(x.total_profit)}))});
+ }catch(e){console.error("Real estate leaderboard:",e);res.status(500).json({error:"Не удалось загрузить рейтинг"});}
+});
 app.post("/api/real-estate/action",auth,async(req,res)=>{
  const {action,id}=req.body||{};const c=await pool.connect();
  try{
-  await c.query("BEGIN");let s=await getRealEstate(c,req.player.id,true);let msg="";
+  await c.query("BEGIN");let s=await getRealEstate(c,req.player.id,true);let msg="",economy={land:s.land,constructions:s.constructions,staff:s.staff,loan:s.loan,loanDue:s.loanDue,loanTakenAt:null};
+  const save=async()=>{await c.query("UPDATE real_estate_players SET cash=$1,portfolio=$2::jsonb,economy_data=$3::jsonb,updated_at=NOW() WHERE telegram_id=$4",[s.cash,JSON.stringify(s.portfolio),JSON.stringify(economy),req.player.id]);};
   if(action==="buy"){
    const item=REAL_ESTATE_CATALOG.find(x=>x.id===id);if(!item)throw Error("Объект не найден");
-   if(s.cash<item.price)throw Error("Недостаточно средств для покупки");
-   const property={uid:Date.now().toString(36)+Math.random().toString(36).slice(2,7),id:item.id,name:item.name,emoji:item.emoji,type:item.type,purchasePrice:item.price,marketValue:item.price,rent:item.rent,cost:item.cost,level:1,purchasedAt:new Date().toISOString()};
-   s.portfolio.push(property);s.cash-=item.price;msg=item.name+" приобретён!";
+   const price=s.catalog.find(x=>x.id===id).marketPrice;if(s.cash<price)throw Error("Недостаточно средств для покупки");
+   s.portfolio.push({uid:Date.now().toString(36)+Math.random().toString(36).slice(2,7),id:item.id,name:item.name,emoji:item.emoji,type:item.type,purchasePrice:price,marketValue:price,rent:item.rent,cost:item.cost,level:1,purchasedAt:new Date().toISOString()});s.cash-=price;msg=item.name+" приобретён по текущей рыночной цене!";
   }else if(action==="sell"){
    const index=s.portfolio.findIndex(p=>p.uid===id);if(index<0)throw Error("Объект не найден");
-   const p=s.portfolio[index],refund=Math.floor(Number(p.marketValue||p.purchasePrice)*.82);s.cash+=refund;s.portfolio.splice(index,1);msg="Объект продан за $"+refund.toLocaleString("ru-RU");
+   const p=s.portfolio[index],agentCount=economy.staff.filter(x=>x.id==="agent").length,refund=Math.floor(Number(p.marketValue||p.purchasePrice)*(.82+agentCount*.04));s.cash+=refund;s.portfolio.splice(index,1);msg="Объект продан за $"+refund.toLocaleString("ru-RU");
   }else if(action==="upgrade"){
-   const p=s.portfolio.find(x=>x.uid===id);if(!p)throw Error("Объект не найден");
-   if(Number(p.level)>=5)throw Error("Максимальный уровень улучшения уже достигнут");
-   const price=Math.round(Number(p.purchasePrice)*(.12+Number(p.level)*.08));
-   if(s.cash<price)throw Error("Для улучшения нужно $"+price.toLocaleString("ru-RU"));
+   const p=s.portfolio.find(x=>x.uid===id);if(!p)throw Error("Объект не найден");if(Number(p.level)>=5)throw Error("Максимальный уровень улучшения уже достигнут");
+   const price=Math.round(Number(p.purchasePrice)*(.12+Number(p.level)*.08));if(s.cash<price)throw Error("Для улучшения нужно $"+price.toLocaleString("ru-RU"));
    s.cash-=price;p.level=Number(p.level)+1;p.rent=Math.round(Number(p.rent)*1.28);p.cost=Math.round(Number(p.cost)*1.12);p.marketValue=Math.round(Number(p.marketValue)*1.16);msg=p.name+" улучшен до уровня "+p.level;
   }else if(action==="build"){
    const price=50000;if(s.cash<price)throw Error("Строительный участок и разрешения стоят $50 000");
-   const p={uid:Date.now().toString(36)+Math.random().toString(36).slice(2,7),id:"custom-building",name:"Новый жилой комплекс",emoji:"🏗️",type:"СТРОИТЕЛЬСТВО",purchasePrice:price,marketValue:price*1.45,rent:720,cost:100,level:1,purchasedAt:new Date().toISOString()};
-   s.cash-=price;s.portfolio.push(p);msg="Жилой комплекс построен и готов к сдаче!";
+   s.cash-=price;s.portfolio.push({uid:Date.now().toString(36)+Math.random().toString(36).slice(2,7),id:"custom-building",name:"Новый жилой комплекс",emoji:"🏗️",type:"СТРОИТЕЛЬСТВО",purchasePrice:price,marketValue:price*1.45,rent:720,cost:100,level:1,purchasedAt:new Date().toISOString()});msg="Небольшой жилой комплекс построен!";
   }else if(action==="office"){
-   const price=250000;if(s.cash<price)throw Error("Корпоративный офис стоит $250 000");
-   if(s.portfolio.some(p=>p.id==="company-office"))throw Error("Офис компании уже куплен");
+   const price=250000;if(s.cash<price)throw Error("Корпоративный офис стоит $250 000");if(s.portfolio.some(p=>p.id==="company-office"))throw Error("Офис компании уже куплен");
    s.cash-=price;s.portfolio.push({uid:"company-office",id:"company-office",name:"Штаб-квартира компании",emoji:"🏢",type:"ОФИС",purchasePrice:price,marketValue:price,rent:0,cost:250,level:1,purchasedAt:new Date().toISOString()});msg="Штаб-квартира открыта!";
+  }else if(action==="buy_land"){
+   const district=REAL_ESTATE_DISTRICTS.find(x=>x.id===id);if(!district)throw Error("Район не найден");if(economy.land.some(x=>x.districtId===id))throw Error("У тебя уже есть участок в этом районе");
+   const price=s.districts.find(x=>x.id===id).marketPrice;if(s.cash<price)throw Error("Недостаточно денег на участок");
+   const plot={id:"plot-"+Date.now().toString(36)+Math.random().toString(36).slice(2,5),districtId:id,districtName:district.name,purchasePrice:price,boughtAt:new Date().toISOString()};economy.land.push(plot);s.cash-=price;msg="Участок в районе «"+district.name+"» куплен!";
+  }else if(action==="start_build"){
+   const plot=economy.land.find(x=>x.id===req.body.landId);if(!plot)throw Error("Сначала купи свободный земельный участок");
+   if(economy.constructions.some(x=>x.landId===plot.id)||s.portfolio.some(x=>x.landId===plot.id))throw Error("Этот участок уже занят");
+   const project=REAL_ESTATE_PROJECTS.find(x=>x.id===id);if(!project)throw Error("Проект не найден");const factor=REAL_ESTATE_DISTRICTS.find(x=>x.id===plot.districtId)?.multiplier||1;const cost=Math.round(project.cost*factor);
+   if(s.cash<cost)throw Error("Для строительства нужно $"+cost.toLocaleString("ru-RU"));
+   s.cash-=cost;economy.constructions.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,7),landId:plot.id,districtId:plot.districtId,districtName:plot.districtName,projectId:id,cost,startedAt:new Date().toISOString(),completeAt:new Date(Date.now()+project.seconds*1000).toISOString()});msg="Строительство «"+project.name+"» началось! Вернись после завершения таймера.";
+  }else if(action==="hire_staff"){
+   const worker=REAL_ESTATE_STAFF.find(x=>x.id===id);if(!worker)throw Error("Специалист не найден");const count=economy.staff.filter(x=>x.id===id).length;if(count>=5)throw Error("Максимум 5 сотрудников каждой специализации");
+   if(s.cash<worker.price)throw Error("Нужно $"+worker.price.toLocaleString("ru-RU")+" для найма");s.cash-=worker.price;economy.staff.push({id:worker.id,name:worker.name,hiredAt:new Date().toISOString()});msg=worker.name+" нанят! "+worker.description;
+  }else if(action==="take_loan"){
+   if(economy.loanDue>0)throw Error("Сначала погаси текущий кредит");const max=500000+Number(s.companyLevel)*250000,amount=Math.min(max,Math.max(100000,Number(req.body.amount)||100000));if(!Number.isFinite(amount)||amount<100000||amount>max)throw Error("Сумма кредита вне лимита");economy.loan=amount;economy.loanDue=Math.ceil(amount*1.08);economy.loanTakenAt=new Date().toISOString();s.cash+=amount;msg="Банк выдал $"+amount.toLocaleString("ru-RU")+". К возврату с процентами: $"+economy.loanDue.toLocaleString("ru-RU");
+  }else if(action==="repay_loan"){
+   if(economy.loanDue<=0)throw Error("У тебя нет активного кредита");const amount=Math.min(economy.loanDue,Math.max(0,Number(req.body.amount)||economy.loanDue));if(amount<=0||s.cash<amount)throw Error("Недостаточно средств для погашения");s.cash-=amount;economy.loanDue-=amount;economy.loan=Math.max(0,economy.loan-amount);if(economy.loanDue===0){economy.loan=0;economy.loanTakenAt=null;}msg="Погашено $"+amount.toLocaleString("ru-RU")+". Остаток долга: $"+economy.loanDue.toLocaleString("ru-RU");
   }else throw Error("Неизвестное действие");
-  await c.query("UPDATE real_estate_players SET cash=$1,portfolio=$2::jsonb,updated_at=NOW() WHERE telegram_id=$3",[s.cash,JSON.stringify(s.portfolio),req.player.id]);
-  const next=await getRealEstate(c,req.player.id,false);await c.query("COMMIT");res.json({success:true,message:msg,state:next});
+  await save();const next=await getRealEstate(c,req.player.id,false);await c.query("COMMIT");res.json({success:true,message:msg,state:next});
  }catch(e){await c.query("ROLLBACK");res.status(400).json({error:e.message});}finally{c.release();}
 });
 
